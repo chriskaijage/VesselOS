@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=600, initial-scale=0.67">
+    <title>Audit Log - Marine Service Center</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .audit-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px 12px 0 0 !important;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f5f5f5 !important;
+        }
+        .badge-created { background-color: #28a745; }
+        .badge-updated { background-color: #007bff; }
+        .badge-deleted { background-color: #dc3545; }
+        .badge-approved { background-color: #20c997; }
+        .badge-rejected { background-color: #fd7e14; }
+        .timestamp {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .filter-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .entity-type {
+            font-weight: 600;
+            color: #667eea;
+        }
+        .change-detail {
+            font-size: 0.9em;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+        .old-value {
+            color: #dc3545;
+        }
+        .new-value {
+            color: #28a745;
+        }
+        .stats-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .stats-number {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .stats-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="audit-container">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">📊 System Audit Log</h2>
+                    <small>Real-Time Activity Tracking</small>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Complete audit trail of all system changes, updates, and activities.</p>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="filter-label">Time Range (Hours)</label>
+                    <select name="hours" class="form-select" onchange="this.form.submit()">
+                        <option value="1" {% if hours_filter == 1 %}selected{% endif %}>Last 1 Hour</option>
+                        <option value="6" {% if hours_filter == 6 %}selected{% endif %}>Last 6 Hours</option>
+                        <option value="24" {% if hours_filter == 24 %}selected{% endif %}>Last 24 Hours</option>
+                        <option value="168" {% if hours_filter == 168 %}selected{% endif %}>Last Week</option>
+                        <option value="720" {% if hours_filter == 720 %}selected{% endif %}>Last Month</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="filter-label">Action Type</label>
+                    <select name="action_type" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Actions</option>
+                        <option value="create" {% if action_filter == 'create' %}selected{% endif %}>Create</option>
+                        <option value="update" {% if action_filter == 'update' %}selected{% endif %}>Update</option>
+                        <option value="delete" {% if action_filter == 'delete' %}selected{% endif %}>Delete</option>
+                        <option value="approve" {% if action_filter == 'approve' %}selected{% endif %}>Approve</option>
+                        <option value="reject" {% if action_filter == 'reject' %}selected{% endif %}>Reject</option>
+                        <option value="login" {% if action_filter == 'login' %}selected{% endif %}>Login</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="filter-label">Export</label>
+                    <a href="/api/realtime/export-audit?hours={{ hours_filter }}" class="btn btn-success w-100">
+                        📥 Download CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-box">
+                    <div class="stats-number">{{ total_records }}</div>
+                    <div class="stats-label">Total Records</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-box">
+                    <div class="stats-number">{{ (total_records / (hours_filter or 24)) | round(1) }}</div>
+                    <div class="stats-label">Per Hour Average</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-box">
+                    <div class="stats-number">{{ total_pages }}</div>
+                    <div class="stats-label">Total Pages</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-box">
+                    <div class="stats-number">{{ current_page }}</div>
+                    <div class="stats-label">Current Page</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Records Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Audit Records</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Entity</th>
+                            <th>Changes</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if audit_records %}
+                            {% for record in audit_records %}
+                            <tr>
+                                <td class="timestamp">{{ record.timestamp }}</td>
+                                <td>
+                                    {% if record.user_id %}
+                                        <small class="badge bg-info">{{ record.user_id }}</small>
+                                    {% else %}
+                                        <small class="text-muted">System</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ record.action_type | lower }}">
+                                        {{ record.action_type | title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="entity-type">{{ record.entity_type | title }}</span>
+                                    {% if record.entity_id %}
+                                        <br><small class="text-muted">ID: {{ record.entity_id }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.old_value or record.new_value %}
+                                        <div class="change-detail">
+                                            {% if record.old_value %}
+                                                <span class="old-value">{{ record.old_value }}</span>
+                                            {% endif %}
+                                            {% if record.old_value and record.new_value %}
+                                                <span>→</span>
+                                            {% endif %}
+                                            {% if record.new_value %}
+                                                <span class="new-value">{{ record.new_value }}</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ record.ip_address or '-' }}</small>
+                                </td>
+                                <td>
+                                    {% if record.status == 'completed' %}
+                                        <span class="badge bg-success">✓ Completed</span>
+                                    {% elif record.status == 'pending' %}
+                                        <span class="badge bg-warning">⏳ Pending</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">✗ Failed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <p class="text-muted">No audit records found for the selected filters.</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <!-- Previous Page -->
+                {% if current_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ current_page - 1 }}&hours={{ hours_filter }}&action_type={{ action_filter or '' }}&user_id={{ user_filter or '' }}">
+                            Previous
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                {% endif %}
+
+                <!-- Page Numbers -->
+                {% for page_num in range(1, total_pages + 1) %}
+                    {% if page_num == current_page %}
+                        <li class="page-item active">
+                            <span class="page-link">
+                                {{ page_num }}
+                                <span class="visually-hidden">(current)</span>
+                            </span>
+                        </li>
+                    {% elif page_num <= current_page + 2 and page_num >= current_page - 2 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_num }}&hours={{ hours_filter }}&action_type={{ action_filter or '' }}&user_id={{ user_filter or '' }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next Page -->
+                {% if current_page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ current_page + 1 }}&hours={{ hours_filter }}&action_type={{ action_filter or '' }}&user_id={{ user_filter or '' }}">
+                            Next
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Help Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">📖 How to Use This Audit Log</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>🔍 Filtering</h6>
+                        <ul class="small">
+                            <li>Filter by time range (1 hour to 1 month)</li>
+                            <li>Filter by action type (create, update, delete, etc.)</li>
+                            <li>Combine filters for detailed searches</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>💾 Export</h6>
+                        <ul class="small">
+                            <li>Download audit data as CSV</li>
+                            <li>Use for external analysis</li>
+                            <li>Keep compliance records</li>
+                        </ul>
+                    </div>
+                </div>
+                <hr class="my-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>📊 Understanding the Log</h6>
+                        <ul class="small">
+                            <li><strong>Timestamp:</strong> Exact time of change</li>
+                            <li><strong>User:</strong> Who made the change</li>
+                            <li><strong>Action:</strong> What type of action</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>📝 Change Details</h6>
+                        <ul class="small">
+                            <li><span class="old-value">Red text</span> = Old value</li>
+                            <li><span class="new-value">Green text</span> = New value</li>
+                            <li>Complete change history available</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Documentation -->
+        <div class="card mt-3 mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">🔌 API Endpoints</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">These endpoints provide programmatic access to audit data:</p>
+                <ul class="small">
+                    <li><code>/api/realtime/audit-trail</code> - Get audit trail data</li>
+                    <li><code>/api/realtime/dashboard</code> - Get real-time metrics</li>
+                    <li><code>/api/realtime/user-activity/&lt;user_id&gt;</code> - Get user activity</li>
+                    <li><code>/api/realtime/entity-history/&lt;type&gt;/&lt;id&gt;</code> - Get entity history</li>
+                    <li><code>/api/realtime/export-audit</code> - Export audit data</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center text-white mb-4">
+            <small>Real-Time Activity Tracking System | Marine Service Center</small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

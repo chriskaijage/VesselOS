@@ -317,14 +317,163 @@ def log_activity(activity, details=""):
         try:
             c = conn.cursor()
             current_time = datetime.now()
-            c.execute("INSERT INTO activity_logs (user_id, activity, details, timestamp) VALUES (?, ?, ?, ?)",
-                      (current_user.id, activity, details, current_time))
+            user_ip = request.remote_addr if request else "127.0.0.1"
+            
+            # Log to activity_logs (main log)
+            c.execute("INSERT INTO activity_logs (user_id, activity, details, ip_address, timestamp) VALUES (?, ?, ?, ?, ?)",
+                      (current_user.id, activity, details, user_ip, current_time))
+            
+            # Also log to audit_trail for comprehensive tracking
+            c.execute("INSERT INTO audit_trail (timestamp, user_id, action_type, entity_type, ip_address, status) VALUES (?, ?, ?, ?, ?, ?)",
+                      (current_time, current_user.id, activity, "general", user_ip, "completed"))
+            
+            # Update last activity timestamp
             c.execute("UPDATE users SET last_activity = ? WHERE user_id = ?", (current_time, current_user.id))
             conn.commit()
         except Exception as e:
             app.logger.error(f"Error logging activity: {e}")
         finally:
             conn.close()
+
+def log_entity_change(entity_type, entity_id, field_name, old_value, new_value, action_type="update", change_reason=""):
+    """Log changes to any entity in real-time with complete audit trail."""
+    if not current_user.is_authenticated:
+        current_user_id = "system"
+    else:
+        current_user_id = current_user.id
+    
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        current_time = datetime.now()
+        user_ip = request.remote_addr if request else "127.0.0.1"
+        
+        # Record in audit_trail
+        c.execute("""
+            INSERT INTO audit_trail 
+            (timestamp, user_id, action_type, entity_type, entity_id, old_value, new_value, ip_address, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (current_time, current_user_id, action_type, entity_type, entity_id, 
+              str(old_value), str(new_value), user_ip, "completed"))
+        
+        # Record in update_history for detailed change tracking
+        c.execute("""
+            INSERT INTO update_history 
+            (timestamp, table_name, record_id, field_name, old_value, new_value, user_id, change_reason)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (current_time, entity_type, entity_id, field_name, str(old_value), str(new_value), current_user_id, change_reason))
+        
+        # Create system event for real-time monitoring
+        c.execute("""
+            INSERT INTO system_events 
+            (timestamp, event_type, entity_type, entity_id, event_data, severity)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (current_time, action_type, entity_type, entity_id, 
+              f"Changed {field_name} from '{old_value}' to '{new_value}'", "info"))
+        
+        conn.commit()
+        app.logger.info(f"[AUDIT] {action_type.upper()} {entity_type}:{entity_id} - {field_name}: '{old_value}' → '{new_value}'")
+        
+    except Exception as e:
+        app.logger.error(f"Error logging entity change: {e}")
+    finally:
+        conn.close()
+
+def log_system_event(event_type, entity_type, entity_id, event_data, severity="info"):
+    """Log system-level events in real-time for monitoring."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        current_time = datetime.now()
+        
+        c.execute("""
+            INSERT INTO system_events 
+            (timestamp, event_type, entity_type, entity_id, event_data, severity, processed)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (current_time, event_type, entity_type, entity_id, str(event_data), severity, 0))
+        
+        conn.commit()
+        app.logger.info(f"[SYSTEM EVENT] {severity.upper()}: {event_type} - {event_data}")
+        
+    except Exception as e:
+        app.logger.error(f"Error logging system event: {e}")
+    finally:
+        conn.close()
+
+def get_user_activity_timeline(user_id, limit=50, hours=24):
+    """Get real-time activity timeline for a user."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        
+        c.execute("""
+            SELECT id, activity, details, timestamp, ip_address 
+            FROM activity_logs 
+            WHERE user_id = ? AND timestamp > ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (user_id, cutoff_time, limit))
+        
+        activities = [dict(row) for row in c.fetchall()]
+        return activities
+    except Exception as e:
+        app.logger.error(f"Error getting activity timeline: {e}")
+        return []
+    finally:
+        conn.close()
+
+def get_entity_change_history(entity_type, entity_id, limit=100):
+    """Get complete change history for any entity."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT timestamp, field_name, old_value, new_value, user_id, change_reason
+            FROM update_history
+            WHERE table_name = ? AND record_id = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (entity_type, entity_id, limit))
+        
+        history = [dict(row) for row in c.fetchall()]
+        return history
+    except Exception as e:
+        app.logger.error(f"Error getting entity history: {e}")
+        return []
+    finally:
+        conn.close()
+
+def get_real_time_events(hours=1, severity_filter=None):
+    """Get real-time system events for monitoring."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        
+        if severity_filter:
+            c.execute("""
+                SELECT id, timestamp, event_type, entity_type, entity_id, event_data, severity
+                FROM system_events
+                WHERE timestamp > ? AND severity = ?
+                ORDER BY timestamp DESC
+            """, (cutoff_time, severity_filter))
+        else:
+            c.execute("""
+                SELECT id, timestamp, event_type, entity_type, entity_id, event_data, severity
+                FROM system_events
+                WHERE timestamp > ?
+                ORDER BY timestamp DESC
+            """, (cutoff_time,))
+        
+        events = [dict(row) for row in c.fetchall()]
+        return events
+    except Exception as e:
+        app.logger.error(f"Error getting real-time events: {e}")
+        return []
+    finally:
+        conn.close()
 
 def create_notification(user_id, title, message, notif_type, action_url="#"):
     """Create a notification with real-time timestamp."""
@@ -9119,6 +9268,53 @@ def init_db():
             )
         ''')
 
+        # Create comprehensive audit_trail table for real-time tracking
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS audit_trail (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user_id TEXT,
+                action_type TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT,
+                old_value TEXT,
+                new_value TEXT,
+                ip_address TEXT,
+                status TEXT DEFAULT 'completed',
+                error_message TEXT,
+                FOREIGN KEY (user_id) REFERENCES users (user_id)
+            )
+        ''')
+
+        # Create system_events table for real-time system monitoring
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS system_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                event_type TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT,
+                event_data TEXT,
+                severity TEXT DEFAULT 'info',
+                processed INTEGER DEFAULT 0
+            )
+        ''')
+
+        # Create update_history table to track all changes with timestamps
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS update_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                table_name TEXT NOT NULL,
+                record_id TEXT NOT NULL,
+                field_name TEXT NOT NULL,
+                old_value TEXT,
+                new_value TEXT,
+                user_id TEXT,
+                change_reason TEXT
+            )
+        ''')
+
         # Create user_documents table
         c.execute('''
             CREATE TABLE IF NOT EXISTS user_documents (
@@ -11351,6 +11547,290 @@ if __name__ == '__main__':
     print("="*70)
     print("✅ System Initialized")
     print("📊 Database: SQLite with dynamic schema management")
+# ==================== REAL-TIME MONITORING & AUDIT ROUTES ====================
+
+@app.route('/api/realtime/user-activity/<user_id>')
+@login_required
+def api_user_activity_timeline(user_id):
+    """Get real-time activity timeline for a user."""
+    # Check permission - users can only see their own activity or admins can see all
+    if current_user.id != user_id and current_user.role not in ['admin', 'port_engineer']:
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    
+    hours = request.args.get('hours', 24, type=int)
+    limit = request.args.get('limit', 50, type=int)
+    
+    activities = get_user_activity_timeline(user_id, limit=limit, hours=hours)
+    
+    return jsonify({
+        'success': True,
+        'user_id': user_id,
+        'activities': activities,
+        'count': len(activities),
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/realtime/entity-history/<entity_type>/<entity_id>')
+@login_required
+def api_entity_change_history(entity_type, entity_id):
+    """Get complete change history for any entity with timestamps."""
+    limit = request.args.get('limit', 100, type=int)
+    
+    history = get_entity_change_history(entity_type, entity_id, limit=limit)
+    
+    return jsonify({
+        'success': True,
+        'entity_type': entity_type,
+        'entity_id': entity_id,
+        'changes': history,
+        'count': len(history),
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/realtime/system-events')
+@login_required
+@role_required(['admin', 'port_engineer', 'manager'])
+def api_system_events():
+    """Get real-time system events for monitoring."""
+    hours = request.args.get('hours', 1, type=int)
+    severity = request.args.get('severity', None)
+    
+    events = get_real_time_events(hours=hours, severity_filter=severity)
+    
+    return jsonify({
+        'success': True,
+        'events': events,
+        'count': len(events),
+        'hours_included': hours,
+        'severity_filter': severity,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/realtime/audit-trail')
+@login_required
+@role_required(['admin', 'port_engineer'])
+def api_audit_trail():
+    """Get audit trail of all system changes."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        hours = request.args.get('hours', 24, type=int)
+        limit = request.args.get('limit', 200, type=int)
+        
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        
+        c.execute("""
+            SELECT id, timestamp, user_id, action_type, entity_type, entity_id, 
+                   old_value, new_value, ip_address, status
+            FROM audit_trail
+            WHERE timestamp > ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (cutoff_time, limit))
+        
+        audit_records = [dict(row) for row in c.fetchall()]
+        
+        return jsonify({
+            'success': True,
+            'records': audit_records,
+            'count': len(audit_records),
+            'hours_included': hours,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error retrieving audit trail: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/realtime/dashboard')
+@login_required
+def api_realtime_dashboard():
+    """Get real-time system dashboard with all current metrics."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        current_time = datetime.now()
+        one_hour_ago = current_time - timedelta(hours=1)
+        
+        # Count active users (logged in last hour)
+        c.execute("""
+            SELECT COUNT(DISTINCT user_id) as count 
+            FROM activity_logs 
+            WHERE timestamp > ?
+        """, (one_hour_ago,))
+        active_users = c.fetchone()['count']
+        
+        # Count recent activities
+        c.execute("""
+            SELECT COUNT(*) as count FROM activity_logs WHERE timestamp > ?
+        """, (one_hour_ago,))
+        recent_activities = c.fetchone()['count']
+        
+        # Count recent system events
+        c.execute("""
+            SELECT COUNT(*) as count FROM system_events WHERE timestamp > ? AND severity = 'error'
+        """, (one_hour_ago,))
+        recent_errors = c.fetchone()['count']
+        
+        # Get latest activities
+        c.execute("""
+            SELECT user_id, activity, details, timestamp FROM activity_logs
+            ORDER BY timestamp DESC LIMIT 10
+        """)
+        latest_activities = [dict(row) for row in c.fetchall()]
+        
+        # Get pending items
+        c.execute("SELECT COUNT(*) as count FROM maintenance_requests WHERE status = 'pending'")
+        pending_maintenance = c.fetchone()['count']
+        
+        c.execute("SELECT COUNT(*) as count FROM emergency_requests WHERE status IN ('pending', 'active')")
+        active_emergencies = c.fetchone()['count']
+        
+        # Count users online (activity in last 15 minutes)
+        fifteen_min_ago = current_time - timedelta(minutes=15)
+        c.execute("""
+            SELECT COUNT(DISTINCT user_id) as count 
+            FROM activity_logs 
+            WHERE timestamp > ?
+        """, (fifteen_min_ago,))
+        online_users = c.fetchone()['count']
+        
+        return jsonify({
+            'success': True,
+            'timestamp': current_time.isoformat(),
+            'metrics': {
+                'active_users_1h': active_users,
+                'recent_activities_1h': recent_activities,
+                'recent_errors_1h': recent_errors,
+                'online_users_15m': online_users,
+                'pending_maintenance': pending_maintenance,
+                'active_emergencies': active_emergencies
+            },
+            'latest_activities': latest_activities
+        })
+    except Exception as e:
+        app.logger.error(f"Error retrieving dashboard: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/admin/audit-log')
+@login_required
+@role_required(['admin', 'port_engineer'])
+def audit_log_page():
+    """View complete audit log with filters."""
+    page = request.args.get('page', 1, type=int)
+    hours = request.args.get('hours', 24, type=int)
+    action_type = request.args.get('action_type', None)
+    user_filter = request.args.get('user_id', None)
+    
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        
+        # Build query
+        query = "SELECT * FROM audit_trail WHERE timestamp > ?"
+        params = [cutoff_time]
+        
+        if action_type:
+            query += " AND action_type = ?"
+            params.append(action_type)
+        
+        if user_filter:
+            query += " AND user_id = ?"
+            params.append(user_filter)
+        
+        query += " ORDER BY timestamp DESC LIMIT 100 OFFSET ?"
+        params.append((page - 1) * 100)
+        
+        c.execute(query, params)
+        audit_records = [dict(row) for row in c.fetchall()]
+        
+        # Get total count
+        count_query = "SELECT COUNT(*) as total FROM audit_trail WHERE timestamp > ?"
+        count_params = [cutoff_time]
+        if action_type:
+            count_query += " AND action_type = ?"
+            count_params.append(action_type)
+        if user_filter:
+            count_query += " AND user_id = ?"
+            count_params.append(user_filter)
+        
+        c.execute(count_query, count_params)
+        total_records = c.fetchone()['total']
+        
+        return render_template('audit_log.html', 
+                             audit_records=audit_records,
+                             current_page=page,
+                             total_records=total_records,
+                             total_pages=(total_records + 99) // 100,
+                             hours_filter=hours,
+                             action_filter=action_type,
+                             user_filter=user_filter)
+    except Exception as e:
+        app.logger.error(f"Error loading audit log: {e}")
+        flash(f"Error loading audit log: {e}", "danger")
+        return redirect(url_for('dashboard'))
+    finally:
+        conn.close()
+
+@app.route('/api/realtime/export-audit')
+@login_required
+@role_required(['admin', 'port_engineer'])
+def export_audit_data():
+    """Export audit data as CSV for external analysis."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        hours = request.args.get('hours', 24, type=int)
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        
+        c.execute("""
+            SELECT id, timestamp, user_id, action_type, entity_type, entity_id,
+                   old_value, new_value, ip_address, status
+            FROM audit_trail
+            WHERE timestamp > ?
+            ORDER BY timestamp DESC
+        """, (cutoff_time,))
+        
+        audit_records = c.fetchall()
+        
+        # Create CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['ID', 'Timestamp', 'User ID', 'Action Type', 'Entity Type', 'Entity ID',
+                        'Old Value', 'New Value', 'IP Address', 'Status'])
+        
+        for record in audit_records:
+            writer.writerow([
+                record['id'],
+                record['timestamp'],
+                record['user_id'],
+                record['action_type'],
+                record['entity_type'],
+                record['entity_id'],
+                record['old_value'],
+                record['new_value'],
+                record['ip_address'],
+                record['status']
+            ])
+        
+        output.seek(0)
+        
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'audit-trail-{datetime.now().strftime("%Y%m%d-%H%M%S")}.csv'
+        )
+    except Exception as e:
+        app.logger.error(f"Error exporting audit data: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
     print("📁 File Upload: Up to 100MB supported")
     print("📈 Reports: CSV generation")
     print("🔐 Security: Role-based access control")
