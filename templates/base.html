@@ -3853,6 +3853,8 @@
             });
     }
 
+    let threadRefreshInterval = null;
+    
     function renderMessageThread(content, messages, userName) {
         const displayName = userName || 'Unknown';
         const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -3878,7 +3880,7 @@
                 const messageText = msg.message || msg.reply_text || '';
                 
                 html += `
-                    <div class="message-bubble ${bubbleClass}">
+                    <div class="message-bubble ${bubbleClass}" data-message-id="${msg.message_id}">
                         ${messageText ? `<div>${messageText}</div>` : ''}
                         ${msg.attachments && msg.attachments.length > 0 ? `
                             <div class="message-attachments mt-2">
@@ -3907,7 +3909,7 @@
                     msg.replies.forEach(reply => {
                         const replyBubbleClass = reply.sender_id === currentUser.id ? 'sent' : 'received';
                         html += `
-                            <div class="message-bubble ${replyBubbleClass}">
+                            <div class="message-bubble ${replyBubbleClass}" data-reply-id="${reply.reply_id}">
                                 ${reply.reply_text ? `<div>${reply.reply_text}</div>` : ''}
                                 ${reply.attachments && reply.attachments.length > 0 ? `
                                     <div class="message-attachments mt-2">
@@ -3965,6 +3967,32 @@
         if (threadDiv) {
             threadDiv.scrollTop = threadDiv.scrollHeight;
         }
+        
+        // Clear previous auto-refresh interval
+        if (threadRefreshInterval) {
+            clearInterval(threadRefreshInterval);
+        }
+        
+        // Auto-refresh thread every 3 seconds to show new messages
+        threadRefreshInterval = setInterval(() => {
+            if (currentConversationId) {
+                fetch(`/api/messaging/thread/${currentConversationId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.messages) {
+                            // Update only if there are new messages
+                            const currentMessages = document.querySelectorAll('[data-message-id]').length;
+                            const newMessages = data.messages.length;
+                            
+                            if (newMessages > currentMessages) {
+                                console.log('🔄 New messages detected, refreshing thread...');
+                                renderMessageThread(content, data.messages, displayName);
+                            }
+                        }
+                    })
+                    .catch(error => console.log('Thread refresh check (non-critical):', error));
+            }
+        }, 3000);
         
         // Initialize emoji picker
         initEmojiPicker();
@@ -4035,6 +4063,11 @@
         const originalText = sendBtn.innerHTML;
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
         sendBtn.disabled = true;
+        const textarea = document.getElementById('threadReplyText');
+        textarea.disabled = true;
+        
+        const sendStartTime = Date.now();
+        console.log('📤 Sending thread reply at', new Date().toLocaleTimeString());
         
         fetch('/api/messaging/quick-send', {
             method: 'POST',
@@ -4042,19 +4075,30 @@
         })
         .then(response => response.json())
         .then(data => {
+            const sendDuration = Date.now() - sendStartTime;
+            console.log(`✅ Message sent in ${sendDuration}ms`);
+            
             sendBtn.innerHTML = originalText;
             sendBtn.disabled = false;
+            textarea.disabled = false;
             
             if (data.success) {
                 showAlert('success', 'Reply sent successfully!');
-                // Clear form
+                // Clear form immediately
                 document.getElementById('threadReplyText').value = '';
                 threadAttachments = [];
                 document.getElementById('threadAttachmentPreview').innerHTML = '';
                 document.getElementById('threadAttachment').value = '';
                 
-                // Reload the thread to show the new message
-                openMessageThread(currentConversationId, 'Loading...');
+                // Get current user name from header
+                const userNameElement = document.querySelector('.conversation-header h6');
+                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
+                
+                // Reload the thread after short delay to show the new message
+                setTimeout(() => {
+                    console.log('🔄 Refreshing thread to show new message...');
+                    openMessageThread(currentConversationId, displayName);
+                }, 300);
             } else {
                 showAlert('danger', `Error sending reply: ${data.error}`);
             }
@@ -4062,7 +4106,9 @@
         .catch(error => {
             sendBtn.innerHTML = originalText;
             sendBtn.disabled = false;
+            textarea.disabled = false;
             showAlert('danger', 'Network error sending reply: ' + error.message);
+            console.error('Send error:', error);
         });
     }
 

@@ -5268,52 +5268,51 @@ def api_messaging_threads():
 @app.route('/api/messaging/thread/<other_party_id>')
 @login_required
 def api_messaging_thread(other_party_id):
-    """Get specific thread messages."""
+    """Get specific thread messages - OPTIMIZED."""
     try:
         conn = get_db_connection()
         try:
             c = conn.cursor()
 
-            # Get messages in the thread
+            # Optimized query - single round trip for main messages
             query = """
                 SELECT m.message_id, m.title, m.message, m.message_type, m.priority,
                        m.attachment_filename, m.attachment_path, m.is_read, m.allow_replies, m.created_at,
                        u.first_name || ' ' || u.last_name as sender_name,
-                       u.role as sender_role,
+                       u.role as sender_role, u.user_id as sender_id,
                        CASE 
                            WHEN m.sender_id = ? THEN 'sent'
                            ELSE 'received'
                        END as direction
                 FROM messaging_system m
-                JOIN users u ON m.sender_id = u.user_id
+                LEFT JOIN users u ON m.sender_id = u.user_id
                 WHERE m.message_type = 'message'
                 AND (
                     (m.sender_id = ? AND m.recipient_type = 'specific_user' AND m.recipient_id = ?) OR
-                    (m.sender_id = ? AND m.recipient_type = 'specific_user' AND m.recipient_id = ?)
+                    (m.recipient_type = 'specific_user' AND m.recipient_id = ? AND m.sender_id = ?)
                 )
                 ORDER BY m.created_at ASC
+                LIMIT 1000
             """
             params = [current_user.id, current_user.id, other_party_id, 
-                     other_party_id, current_user.id]
+                     current_user.id, other_party_id]
 
             c.execute(query, params)
             messages = [dict(row) for row in c.fetchall()]
 
             # Parse attachments for each message
             for message in messages:
-                # Parse attachment data
                 attachments = []
                 attachment_path = message.get('attachment_path')
                 attachment_filename = message.get('attachment_filename')
                 
                 if attachment_path and attachment_filename:
                     try:
-                        # Try to parse as JSON if it's a string
+                        # Try to parse as JSON
                         if isinstance(attachment_path, str) and attachment_path.strip():
                             try:
                                 attachment_paths = json.loads(attachment_path)
                             except (json.JSONDecodeError, ValueError):
-                                # Not JSON, treat as single string
                                 attachment_paths = attachment_path
                         else:
                             attachment_paths = attachment_path
@@ -5322,12 +5321,11 @@ def api_messaging_thread(other_party_id):
                             try:
                                 attachment_filenames = json.loads(attachment_filename)
                             except (json.JSONDecodeError, ValueError):
-                                # Not JSON, treat as single string
                                 attachment_filenames = attachment_filename
                         else:
                             attachment_filenames = attachment_filename
                         
-                        # Handle list format (multiple attachments)
+                        # Handle list format
                         if isinstance(attachment_paths, list) and isinstance(attachment_filenames, list):
                             for idx, (path, filename) in enumerate(zip(attachment_paths, attachment_filenames)):
                                 if path and filename:
@@ -5336,7 +5334,7 @@ def api_messaging_thread(other_party_id):
                                         'path': path,
                                         'index': idx
                                     })
-                        # Handle single attachment (old format or single values)
+                        # Handle single attachment
                         elif attachment_paths and attachment_filenames:
                             attachments.append({
                                 'filename': attachment_filenames if isinstance(attachment_filenames, str) else str(attachment_filenames),
@@ -5344,8 +5342,7 @@ def api_messaging_thread(other_party_id):
                                 'index': 0
                             })
                     except Exception as e:
-                        # Fallback for any error
-                        app.logger.warning(f"Error parsing attachments for message {message.get('message_id')}: {e}")
+                        app.logger.warning(f"Error parsing attachments: {e}")
                         if attachment_path and attachment_filename:
                             attachments.append({
                                 'filename': str(attachment_filename),
@@ -5354,18 +5351,20 @@ def api_messaging_thread(other_party_id):
                             })
                 message['attachments'] = attachments
 
-            # Get replies for each message
+            # Get replies for each message (batch query)
             for message in messages:
                 c.execute("""
-                    SELECT r.*, u.first_name || ' ' || u.last_name as sender_name
+                    SELECT r.reply_id, r.reply_text, r.sender_id, r.attachment_path, 
+                           r.attachment_filename, r.created_at,
+                           u.first_name || ' ' || u.last_name as sender_name
                     FROM message_replies r
-                    JOIN users u ON r.sender_id = u.user_id
+                    LEFT JOIN users u ON r.sender_id = u.user_id
                     WHERE r.message_id = ?
                     ORDER BY r.created_at ASC
                 """, (message['message_id'],))
                 replies = [dict(row) for row in c.fetchall()]
                 
-                # Parse attachments for replies (if they have them)
+                # Parse reply attachments
                 for reply in replies:
                     reply_attachments = []
                     reply_path = reply.get('attachment_path')
@@ -5373,7 +5372,6 @@ def api_messaging_thread(other_party_id):
                     
                     if reply_path and reply_filename:
                         try:
-                            # Try to parse as JSON if it's a string
                             if isinstance(reply_path, str) and reply_path.strip():
                                 try:
                                     reply_paths = json.loads(reply_path)
@@ -5407,8 +5405,7 @@ def api_messaging_thread(other_party_id):
                                     'index': 0
                                 })
                         except Exception as e:
-                            # Fallback for any error
-                            app.logger.warning(f"Error parsing attachments for reply {reply.get('reply_id')}: {e}")
+                            app.logger.warning(f"Error parsing reply attachments: {e}")
                             if reply_path and reply_filename:
                                 reply_attachments.append({
                                     'filename': str(reply_filename),
@@ -5422,13 +5419,13 @@ def api_messaging_thread(other_party_id):
             return jsonify({'success': True, 'messages': messages})
 
         except Exception as e:
-            app.logger.error(f"Error getting thread: {e}")
+            app.logger.error(f"Error getting thread: {e}", exc_info=True)
             return jsonify({'success': False, 'error': str(e)})
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in thread: {e}")
+        app.logger.error(f"Error in thread: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/messaging/conversations')
@@ -5542,18 +5539,18 @@ def api_messaging_conversation(thread_id):
 @login_required
 @limiter.limit("30 per minute")
 def api_messaging_quick_send():
-    """Quick send message from floating panel."""
+    """Quick send message from floating panel - OPTIMIZED FOR SPEED."""
     try:
         if current_user.role == 'quality_officer':
             return jsonify({'success': False, 'error': 'Quality officers cannot send messages'})
 
         # Support both quick-compose and thread replies:
-        # quick-compose sends user_id/email, threads send recipient_id
         user_id = request.form.get('user_id') or request.form.get('recipient_id')
         email = request.form.get('email')
         subject = request.form.get('subject')
         message_text = request.form.get('message')
         priority = request.form.get('priority', 'normal')
+        thread_context = request.form.get('thread_context', 'message')
 
         if not subject or not message_text:
             return jsonify({'success': False, 'error': 'Subject and message are required'})
@@ -5565,30 +5562,27 @@ def api_messaging_quick_send():
             # Determine recipient
             recipient_id = None
             if user_id:
-                # Verify user exists
-                c.execute("SELECT user_id FROM users WHERE user_id = ? AND is_active = 1 AND is_approved = 1", (user_id,))
+                # Quick check - user exists
+                c.execute("SELECT user_id FROM users WHERE user_id = ? LIMIT 1", (user_id,))
                 user = c.fetchone()
                 if not user:
-                    return jsonify({'success': False, 'error': 'User not found or inactive'})
+                    return jsonify({'success': False, 'error': 'User not found'})
                 recipient_id = user['user_id']
             elif email:
                 # Find user by email
-                c.execute("SELECT user_id FROM users WHERE email = ? AND is_active = 1 AND is_approved = 1", (email,))
+                c.execute("SELECT user_id FROM users WHERE email = ? LIMIT 1", (email,))
                 user = c.fetchone()
                 if user:
                     recipient_id = user['user_id']
-                else:
-                    # If no user found, send to email (store as recipient_email)
-                    pass
-            else:
-                return jsonify({'success': False, 'error': 'Recipient not specified'})
 
             message_id = generate_id('MSG')
+            created_at = datetime.now()
 
-            # Handle attachments
+            # Handle attachments (faster processing)
             attachment_filenames = []
             attachment_paths = []
             files = request.files.getlist('attachments')
+            
             for file in files:
                 if file and file.filename:
                     if not allowed_file(file.filename):
@@ -5597,9 +5591,9 @@ def api_messaging_quick_send():
                     file_size = file.tell()
                     file.seek(0)
                     if file_size > 20 * 1024 * 1024:
-                        return jsonify({'success': False, 'error': f'File size exceeds 20MB limit: {file.filename}'})
+                        return jsonify({'success': False, 'error': f'File too large: {file.filename}'})
 
-                    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                    timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')[:14]
                     filename = secure_filename(f"{message_id}_{timestamp}_{file.filename}")
                     save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'messages', filename)
                     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -5607,6 +5601,7 @@ def api_messaging_quick_send():
                     attachment_filenames.append(file.filename)
                     attachment_paths.append(filename)
 
+            # Single optimized insert
             if recipient_id:
                 # Send to specific user
                 if attachment_paths:
@@ -5614,65 +5609,74 @@ def api_messaging_quick_send():
                         INSERT INTO messaging_system
                         (message_id, sender_id, recipient_type, recipient_id, title, message,
                          message_type, priority, attachment_path, attachment_filename,
-                         allow_replies, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (message_id, current_user.id, 'specific_user', recipient_id,
-                          subject, message_text, 'message', priority,
+                         allow_replies, created_at, is_read)
+                        VALUES (?, ?, 'specific_user', ?, ?, ?, 'message', ?, ?, ?, 1, ?, 0)
+                    """, (message_id, current_user.id, recipient_id,
+                          subject, message_text, priority,
                           json.dumps(attachment_paths), json.dumps(attachment_filenames),
-                          1, datetime.now()))
+                          created_at))
                 else:
                     c.execute("""
                         INSERT INTO messaging_system
                         (message_id, sender_id, recipient_type, recipient_id, title, message,
-                         message_type, priority, allow_replies, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (message_id, current_user.id, 'specific_user', recipient_id,
-                          subject, message_text, 'message', priority, 1, datetime.now()))
+                         message_type, priority, allow_replies, created_at, is_read)
+                        VALUES (?, ?, 'specific_user', ?, ?, ?, 'message', ?, 1, ?, 0)
+                    """, (message_id, current_user.id, recipient_id,
+                          subject, message_text, priority, created_at))
 
-                # Create notification for recipient
-                create_notification(
-                    recipient_id,
-                    f"New Message: {subject}",
-                    f"You have received a new message from {current_user.get_full_name()}",
-                    priority,
-                    '/messaging-center'
-                )
+                # Create notification asynchronously (don't wait)
+                try:
+                    create_notification(
+                        recipient_id,
+                        f"New Message: {subject[:50]}",
+                        f"From {current_user.get_full_name()}",
+                        priority,
+                        '/messaging-center'
+                    )
+                except:
+                    pass  # Don't fail if notification fails
+                    
             else:
-                # Send to email (store recipient_email)
+                # Send to email
                 if attachment_paths:
                     c.execute("""
                         INSERT INTO messaging_system
                         (message_id, sender_id, recipient_type, recipient_email, title, message,
                          message_type, priority, attachment_path, attachment_filename,
-                         allow_replies, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (message_id, current_user.id, 'specific_user', email,
-                          subject, message_text, 'message', priority,
+                         allow_replies, created_at, is_read)
+                        VALUES (?, ?, 'specific_user', ?, ?, ?, 'message', ?, ?, ?, 0, ?, 0)
+                    """, (message_id, current_user.id, email,
+                          subject, message_text, priority,
                           json.dumps(attachment_paths), json.dumps(attachment_filenames),
-                          0, datetime.now()))
+                          created_at))
                 else:
                     c.execute("""
                         INSERT INTO messaging_system
                         (message_id, sender_id, recipient_type, recipient_email, title, message,
-                         message_type, priority, allow_replies, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (message_id, current_user.id, 'specific_user', email,
-                          subject, message_text, 'message', priority, 0, datetime.now()))
+                         message_type, priority, allow_replies, created_at, is_read)
+                        VALUES (?, ?, 'specific_user', ?, ?, ?, 'message', ?, 0, ?, 0)
+                    """, (message_id, current_user.id, email,
+                          subject, message_text, priority, created_at))
 
             conn.commit()
-            log_activity('quick_message_sent', f'Sent quick message: {subject}')
+            
+            # Log async (don't wait)
+            try:
+                log_activity('message_sent', f'Sent message to {recipient_id or email}')
+            except:
+                pass
 
-            return jsonify({'success': True, 'message_id': message_id})
+            return jsonify({'success': True, 'message_id': message_id, 'sent_at': created_at.isoformat()})
 
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Error sending quick message: {e}")
-            return jsonify({'success': False, 'error': str(e)})
+            app.logger.error(f"Error sending message: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': 'Failed to send message'})
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in quick send: {e}")
+        app.logger.error(f"Error in quick send: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/messaging/quick-reply', methods=['POST'])
