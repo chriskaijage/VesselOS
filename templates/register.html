@@ -3,29 +3,29 @@
 {% block title %}Register - Marine Service Center{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center mt-4">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white text-center">
-                    <div class="d-flex align-items-center justify-content-center">
-                        <i class="fas fa-user-plus me-3 fa-2x"></i>
+<div class="container-fluid px-3 px-sm-0">
+    <div class="row justify-content-center py-3 py-sm-4">
+        <div class="col-12 col-sm-11 col-md-10 col-lg-8 col-xl-7">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3 py-sm-4">
+                    <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
+                        <i class="fas fa-user-plus fa-lg"></i>
                         <div>
-                            <h3 class="mb-1">Create New Account</h3>
+                            <h4 class="mb-1">Create New Account</h4>
                             <p class="mb-0 small">Join the Marine Service System</p>
                         </div>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3 p-sm-4">
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                             {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }} me-2"></i>
                                         <div>{{ message }}</div>
                                     </div>
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             {% endfor %}
                         {% endif %}
@@ -33,29 +33,29 @@
                     
                     <form method="POST" action="{{ url_for('register') }}" onsubmit="return validateForm()">
                         <!-- Personal Information -->
-                        <div class="card mb-4">
+                        <div class="card mb-3 mb-sm-4">
                             <div class="card-header bg-light">
-                                <h5 class="mb-0"><i class="fas fa-user me-2"></i> Personal Information</h5>
+                                <h6 class="mb-0 fs-6"><i class="fas fa-user me-2"></i> Personal Information</h6>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">First Name *</label>
-                                            <input type="text" class="form-control" name="first_name" required>
+                            <div class="card-body p-3">
+                                <div class="row g-2 g-sm-3">
+                                    <div class="col-12 col-sm-6">
+                                        <div class="mb-2 mb-sm-3">
+                                            <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control form-control-sm" name="first_name" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Last Name *</label>
-                                            <input type="text" class="form-control" name="last_name" required>
+                                    <div class="col-12 col-sm-6">
+                                        <div class="mb-2 mb-sm-3">
+                                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control form-control-sm" name="last_name" required>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="mb-3">
-                                    <label class="form-label">Email Address *</label>
-                                    <div class="input-group">
+                                <div class="mb-2 mb-sm-3">
+                                    <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                                    <div class="input-group input-group-sm">
                                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                                         <input type="email" class="form-control" name="email" required>
                                     </div>
