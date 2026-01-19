@@ -19,6 +19,12 @@ from flask import Flask, render_template, request, jsonify, send_file, redirect,
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user, AnonymousUserMixin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+# Email and SMS imports
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 try:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import letter, A4
@@ -47,6 +53,29 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
 )
+
+# ==================== EMAIL CONFIGURATION ====================
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'marineservice@gmail.com')
+SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', '')
+SMTP_ENABLED = bool(SENDER_PASSWORD)
+
+# ==================== SMS CONFIGURATION (Twilio) ====================
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE = os.environ.get('TWILIO_PHONE', '+1234567890')
+SMS_ENABLED = bool(TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN)
+
+# Try to import Twilio if credentials available
+TWILIO_CLIENT = None
+if SMS_ENABLED:
+    try:
+        from twilio.rest import Client
+        TWILIO_CLIENT = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    except ImportError:
+        app.logger.warning("Twilio library not installed. SMS notifications disabled.")
+        SMS_ENABLED = False
 
         # Create upload directories
 for folder in ['profile_pics', 'documents', 'documents/inventory', 'reports', 'maintenance_requests', 'signatures', 'messages', 'messages/replies']:
@@ -310,6 +339,127 @@ def create_notification(user_id, title, message, notif_type, action_url="#"):
         app.logger.error(f"Error creating notification: {e}")
     finally:
         conn.close()
+
+# ==================== EMAIL FUNCTIONS ====================
+
+def send_email(recipient_email, subject, html_body, plain_text=None):
+    """
+    Send email notification to recipient.
+    
+    Args:
+        recipient_email: Email address to send to
+        subject: Email subject line
+        html_body: HTML content of email
+        plain_text: Plain text fallback (optional)
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if not SMTP_ENABLED or not SENDER_PASSWORD:
+        app.logger.warning(f"Email disabled. Would have sent: {subject} to {recipient_email}")
+        return False
+    
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = recipient_email
+        
+        # Add plain text part
+        if plain_text:
+            msg.attach(MIMEText(plain_text, 'plain'))
+        
+        # Add HTML part
+        msg.attach(MIMEText(html_body, 'html'))
+        
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+        
+        app.logger.info(f"Email sent to {recipient_email}: {subject}")
+        return True
+    
+    except Exception as e:
+        app.logger.error(f"Error sending email to {recipient_email}: {e}")
+        return False
+
+def send_sms(phone_number, message_text):
+    """
+    Send SMS notification using Twilio.
+    
+    Args:
+        phone_number: Phone number in international format (e.g., +1234567890)
+        message_text: SMS message content (max 160 characters recommended)
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if not SMS_ENABLED or not TWILIO_CLIENT:
+        app.logger.warning(f"SMS disabled. Would have sent to {phone_number}: {message_text}")
+        return False
+    
+    try:
+        message = TWILIO_CLIENT.messages.create(
+            body=message_text,
+            from_=TWILIO_PHONE,
+            to=phone_number
+        )
+        app.logger.info(f"SMS sent to {phone_number}. SID: {message.sid}")
+        return True
+    
+    except Exception as e:
+        app.logger.error(f"Error sending SMS to {phone_number}: {e}")
+        return False
+
+def send_notification_email(user_email, user_name, title, message, action_url="#"):
+    """
+    Send formatted notification email.
+    
+    Args:
+        user_email: User's email address
+        user_name: User's name
+        title: Notification title
+        message: Notification message
+        action_url: Link to take action
+    """
+    html_body = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #007acc; padding-bottom: 20px;">
+                    <h2 style="color: #333; margin: 0;">🚢 Marine Service Center</h2>
+                    <p style="color: #666; margin: 5px 0 0 0;">International Standard System</p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #666;">Hello <strong>{user_name}</strong>,</p>
+                </div>
+                
+                <div style="background-color: #f0f8ff; padding: 20px; border-left: 4px solid #007acc; margin-bottom: 20px;">
+                    <h3 style="color: #007acc; margin-top: 0;">{title}</h3>
+                    <p style="color: #333; line-height: 1.6;">{message}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{action_url}" style="display: inline-block; background-color: #007acc; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        View Details
+                    </a>
+                </div>
+                
+                <div style="border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #999; font-size: 12px;">
+                    <p>© 2026 Marine Service Center. All rights reserved.<br>
+                    This is an automated notification. Please do not reply to this email.</p>
+                </div>
+            </div>
+        </body>
+    </html>
+    """
+    
+    plain_text = f"Marine Service Center - {title}\n\n{message}\n\nFor more details, visit: {action_url}"
+    
+    return send_email(user_email, f"🚢 {title}", html_body, plain_text)
 
 # ==================== MAINTENANCE REQUEST WORKFLOW HELPERS ====================
 
