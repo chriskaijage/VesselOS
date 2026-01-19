@@ -9842,6 +9842,11 @@ def init_db():
                 FOREIGN KEY (sender_id) REFERENCES users (user_id),
                 FOREIGN KEY (parent_message_id) REFERENCES messaging_system (message_id)
             )
+                -- Performance indexes for messaging
+                CREATE INDEX IF NOT EXISTS idx_messaging_recipient_id ON messaging_system (recipient_id);
+                CREATE INDEX IF NOT EXISTS idx_messaging_sender_id ON messaging_system (sender_id);
+                CREATE INDEX IF NOT EXISTS idx_messaging_created_at ON messaging_system (created_at);
+                CREATE INDEX IF NOT EXISTS idx_messaging_is_read ON messaging_system (is_read);
         ''')
         
         # Create message_replies table
