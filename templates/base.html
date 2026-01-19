@@ -3565,8 +3565,8 @@
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between">
-                                <strong class="text-truncate" style="max-width: 200px;">${message.sender_name}</strong>
-                                <small class="text-muted">${formatTimeAgo(message.created_at)}</small>
+                                  <strong class="text-truncate" style="max-width: 200px;">${message.sender_name}</strong>
+                                  <small class="text-muted">${formatDateTime(message.created_at)}</small>
                             </div>
                             <p class="mb-1 text-truncate" style="max-width: 250px;">${message.title}</p>
                             ${!message.is_read ? '<span class="badge bg-primary badge-sm">NEW</span>' : ''}
@@ -3799,8 +3799,8 @@
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between">
-                                <strong>${partyName}</strong>
-                                <small class="text-muted">${formatTimeAgo(thread.last_message_date)}</small>
+                                    <strong>${partyName}</strong>
+                                    <small class="text-muted">${formatDateTime(thread.last_message_date)}</small>
                             </div>
                             <p class="mb-1 text-truncate" style="max-width: 250px;">${thread.message_count || 0} messages</p>
                         </div>
@@ -4464,7 +4464,7 @@
         document.querySelectorAll('[data-timestamp]').forEach(element => {
             const timestamp = element.getAttribute('data-timestamp');
             if (timestamp) {
-                element.textContent = formatTimeAgo(timestamp);
+                    element.textContent = formatDateTime(timestamp);
             }
         });
     }
@@ -4545,7 +4545,7 @@
                                             </div>
                                             <p class="mb-1 small text-truncate" style="max-width: 250px;">${notif.message}</p>
                                             <small class="text-muted">
-                                                <i class="fas fa-clock me-1"></i>${formatTimeAgo(notif.timestamp || notif.created_at)}
+                                                   <i class="fas fa-clock me-1"></i>${formatDateTime(notif.timestamp || notif.created_at)}
                                             </small>
                                         </div>
                                     </div>
