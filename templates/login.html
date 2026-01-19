@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white text-center">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Marine Service Center Logo" class="login-logo me-3">
+                        <div>
+                            <h3 class="mb-1">Marine Service System</h3>
+                            <p class="mb-0 small">International Standard Login</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }} me-2"></i>
+                                        <div>{{ message }}</div>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('login') }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email" required 
+                                       placeholder="email@marineservice.com">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" required 
+                                       placeholder="password">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">Remember me </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i> Login
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-3">New to the system?</p>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-2"></i> Create New Account
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="text-center mb-3">System Roles</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card bg-manager mb-2">
+                                    <div class="card-body p-2 text-center">
+                                        <i class="fas fa-user-shield mb-1"></i>
+                                        <small>Port Engineer</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-maintenance mb-2">
+                                    <div class="card-body p-2 text-center">
+                                        <i class="fas fa-tools mb-1"></i>
+                                        <small>Harbour Master</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-chief mb-2">
+                                    <div class="card-body p-2 text-center">
+                                        <i class="fas fa-hard-hat mb-1"></i>
+                                        <small>Chief Engineer</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-4 offset-md-2">
+                                <div class="card bg-captain mb-2">
+                                    <div class="card-body p-2 text-center">
+                                        <i class="fas fa-ship mb-1"></i>
+                                        <small>Captain</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-quality mb-2">
+                                    <div class="card-body p-2 text-center">
+                                        <i class="fas fa-clipboard-check mb-1"></i>
+                                        <small>Quality</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Forgot password? Contact your port engineer for assistance.
+                    </small>
+                    <div class="mt-2">
+                        <a href="/maintenance-request" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-ship me-1"></i> Maintenance Request
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Demo Accounts -->
+            <div class="card mt-3 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-users me-2"></i> Demo Accounts</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <small class="text-muted">Port Engineer</small><br>
+                            <code>port_engineer@marine.com</code><br>
+                            <small>Admin@2025</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Harbour Master</small><br>
+                            <code>harbour_master@marine.com</code><br>
+                            <small>Maintenance@2025</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Quality</small><br>
+                            <code>quality@marine.com</code><br>
+                            <small>Quality@2025</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordField = document.getElementById('password');
+    const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordField.setAttribute('type', type);
+}
+</script>
+
+<style>
+/* Login page background - white with watermark */
+body {
+    background: white !important;
+    position: relative;
+}
+
+/* Watermark using logo.png */
+body::before {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    height: 500px;
+    background-image: url('{{ url_for("static", filename="images/logo.png") }}');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+        opacity: 0.2;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Ensure content is above watermark */
+body > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Reduce visibility of login cards to show watermark */
+.container .card {
+    background: rgba(255, 255, 255, 0.35) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.bg-manager { background: linear-gradient(135deg, #dc3545, #b02a37); }
+.bg-maintenance { background: linear-gradient(135deg, #ffc107, #e0a800); }
+.bg-quality { background: linear-gradient(135deg, #28a745, #218838); }
+
+/* Make icons and text black in role cards for visibility */
+.bg-manager i,
+.bg-manager small,
+.bg-maintenance i,
+.bg-maintenance small,
+.bg-quality i,
+.bg-quality small {
+    color: #000000 !important;
+}
+
+/* Maintenance Request button - white background with black icon and text */
+a.btn-outline-secondary,
+a.btn-outline-secondary i {
+    background: white !important;
+    border-color: #6c757d !important;
+    color: #000000 !important;
+}
+
+a.btn-outline-secondary:hover,
+a.btn-outline-secondary:hover i {
+    background: #f8f9fa !important;
+    border-color: #6c757d !important;
+    color: #000000 !important;
+}
+
+.login-logo {
+    height: 80px;
+    width: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+    border: 4px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+</style>
+{% endblock %}
+
+
+

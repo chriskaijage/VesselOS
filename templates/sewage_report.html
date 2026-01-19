@@ -1,0 +1,419 @@
+{% extends "base.html" %}
+
+{% block title %}Sewage Report - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-toilet fa-2x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">Sewage Report</h2>
+                            <p class="mb-0">MARPOL Annex IV Compliance - Sewage Discharge, Transfer, or Treatment Log</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MARPOL Annex IV Compliance Alert -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-2 border-info">
+                <h6 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>MARPOL Annex IV Compliance Requirements</h6>
+                <ul class="mb-0 small">
+                    <li><strong>Sewage Management:</strong> All sewage must be either discharged to port reception facility, retained in holding tank, or discharged in designated areas ≥12 nautical miles from nearest land</li>
+                    <li><strong>Treatment Systems:</strong> Comminuted/disinfected sewage may be discharged ≥3 nautical miles from land; untreated sewage ≥12 nautical miles</li>
+                    <li><strong>GPS Position Tracking:</strong> Record precise latitude/longitude of discharge location for regulatory compliance</li>
+                    <li><strong>Tank Soundings:</strong> Document holding tank levels before and after all operations for accountability</li>
+                    <li><strong>Operation Logging:</strong> All discharge, transfer, or treatment operations must be recorded with start/stop times (UTC/GMT)</li>
+                    <li><strong>Port Reception Facility:</strong> Use PRF for port calls; transfer to holding tank if PRF unavailable</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <form id="sewageReportForm">
+                <!-- Vessel Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-ship me-2"></i> Vessel Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vessel Name *</label>
+                                <input type="text" class="form-control" name="vessel_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IMO Number *</label>
+                                <input type="text" class="form-control" name="imo_number" placeholder="IMO1234567" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Details (UTC/GMT) -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Operation Timing (UTC/GMT)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Operation Start Date (UTC) *</label>
+                                <input type="date" class="form-control" name="operation_start_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Operation Start Time (UTC) *</label>
+                                <input type="time" class="form-control" name="operation_start_time" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Operation Stop Date (UTC) *</label>
+                                <input type="date" class="form-control" name="operation_stop_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Operation Stop Time (UTC) *</label>
+                                <input type="time" class="form-control" name="operation_stop_time" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Position of Ship (GPS) -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i> Position of Ship (GPS/Chart Datum)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Latitude/Longitude format: DD°MM'SS"N/S or DD°MM'SS"E/W (Example: 40°45'30"N, 070°15'45"W)</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Latitude (Operation Location) *</label>
+                                <input type="text" class="form-control" name="operation_latitude" placeholder="40°45'30&quot;N" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Longitude (Operation Location) *</label>
+                                <input type="text" class="form-control" name="operation_longitude" placeholder="070°15'45&quot;W" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Distance from Nearest Land (nautical miles) *</label>
+                                <input type="number" class="form-control" name="distance_from_land" min="0" step="0.1" placeholder="e.g., 15" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Type of Operation -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> Type of Operation *</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Select Operation Type *</label>
+                            <select class="form-select" id="operationType" name="operation_type" required>
+                                <option value="">-- Select Operation Type --</option>
+                                <option value="discharge_sea">Discharge to Sea</option>
+                                <option value="discharge_prf">Discharge to Port Reception Facility (PRF)</option>
+                                <option value="transfer_holding">Transfer to Holding Tank</option>
+                            </select>
+                        </div>
+
+                        <!-- Discharge to Sea Section -->
+                        <div id="dischargeSeaSection" style="display: none;">
+                            <div class="border rounded p-3 bg-light">
+                                <h6 class="mb-3"><i class="fas fa-water me-2"></i> Discharge to Sea Details</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Treatment System Type *</label>
+                                        <select class="form-select" name="sewage_treatment_system" required>
+                                            <option value="">-- Select System --</option>
+                                            <option value="comminuted_disinfected">Comminuted & Disinfected (≥3nm from land)</option>
+                                            <option value="stc_approved">STC-Approved Treatment System (≥3nm from land)</option>
+                                            <option value="untreated">Untreated (≥12nm from land)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Distance from Nearest Land (nm) *</label>
+                                        <input type="number" class="form-control" name="discharge_distance_land" min="0" step="0.1" placeholder="e.g., 15 nm" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Port Reception Facility Section -->
+                        <div id="prfSection" style="display: none;">
+                            <div class="border rounded p-3 bg-light">
+                                <h6 class="mb-3"><i class="fas fa-building me-2"></i> Port Reception Facility Details</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Port Name *</label>
+                                        <input type="text" class="form-control" name="prf_port_name" placeholder="e.g., Rotterdam" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">PRF Facility Name *</label>
+                                        <input type="text" class="form-control" name="prf_facility_name" placeholder="e.g., Port Services BV" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Reception Certificate / Reference *</label>
+                                    <input type="text" class="form-control" name="prf_receipt_reference" placeholder="e.g., Receipt #12345" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Transfer to Holding Tank Section -->
+                        <div id="holdingTankSection" style="display: none;">
+                            <div class="border rounded p-3 bg-light">
+                                <h6 class="mb-3"><i class="fas fa-tank me-2"></i> Transfer to Holding Tank Details</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Reason for Transfer *</label>
+                                    <select class="form-select" name="transfer_reason" required>
+                                        <option value="">-- Select Reason --</option>
+                                        <option value="prf_unavailable">PRF Unavailable at Port</option>
+                                        <option value="insufficient_capacity">Insufficient PRF Capacity</option>
+                                        <option value="equipment_failure">Equipment Failure During Discharge</option>
+                                        <option value="weather_conditions">Adverse Weather Conditions</option>
+                                        <option value="operational">Operational Decision</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sewage Tank Levels (Before & After) -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-water me-2"></i> Sewage Tank Soundings</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Record holding tank level soundings before and after discharge, transfer, or treatment operations for accountability and volume verification.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sewage Tank Level BEFORE Operation (m³) *</label>
+                                <input type="number" class="form-control" name="tank_level_before" min="0" step="0.1" placeholder="e.g., 45.5" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sewage Tank Level AFTER Operation (m³) *</label>
+                                <input type="number" class="form-control" name="tank_level_after" min="0" step="0.1" placeholder="e.g., 15.2" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity of Sewage -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-cube me-2"></i> Quantity of Sewage</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Total volume of sewage discharged, transferred, or retained during this operation. Can be calculated as Tank Before - Tank After.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Volume Discharged/Transferred (m³) *</label>
+                                <input type="number" class="form-control" name="quantity_discharged" min="0" step="0.1" placeholder="e.g., 30.3" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Remaining in Holding Tank (m³)</label>
+                                <input type="number" class="form-control" name="quantity_remaining" min="0" step="0.1" placeholder="Auto-calculated">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Responsible Officer -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i> Responsible Officer</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Officer Name (Auto-filled)</label>
+                                <input type="text" class="form-control" id="officer_name" readonly value="{{ current_user.first_name }} {{ current_user.last_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Officer Rank/Position *</label>
+                                <input type="text" class="form-control" name="officer_rank" placeholder="Chief Engineer / Captain" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remarks & Observations -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i> Remarks & Observations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">General Remarks</label>
+                            <textarea class="form-control" name="remarks" rows="3" placeholder="Observations about sewage operation, equipment condition, weather, port reception facility quality, etc."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" name="additional_notes" rows="3" placeholder="Supporting information, special circumstances, or deviations from normal procedures"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Officer Signature & Certification -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-pen-fancy me-2"></i> Officer Signature & Certification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="border rounded p-3" style="background-color: #f8f9fa; min-height: 150px;">
+                            <canvas id="signatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
+                        </div>
+                        <div class="mt-2 mb-3">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="clearSignature()">Clear Signature</button>
+                        </div>
+                        <div class="alert alert-warning small mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Certification:</strong> I hereby certify that the above information is true and accurate to the best of my knowledge. This sewage report complies with MARPOL Annex IV and international maritime regulations.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-check me-2"></i> Submit Sewage Report
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Operation Type Toggle
+document.getElementById('operationType').addEventListener('change', function() {
+    const dischargeSeaSection = document.getElementById('dischargeSeaSection');
+    const prfSection = document.getElementById('prfSection');
+    const holdingTankSection = document.getElementById('holdingTankSection');
+    
+    // Hide all sections
+    dischargeSeaSection.style.display = 'none';
+    prfSection.style.display = 'none';
+    holdingTankSection.style.display = 'none';
+    
+    // Remove required from all conditional fields
+    document.querySelectorAll('#dischargeSeaSection select, #dischargeSeaSection input').forEach(el => el.removeAttribute('required'));
+    document.querySelectorAll('#prfSection input').forEach(el => el.removeAttribute('required'));
+    document.querySelectorAll('#holdingTankSection select').forEach(el => el.removeAttribute('required'));
+    
+    // Show appropriate section
+    if (this.value === 'discharge_sea') {
+        dischargeSeaSection.style.display = 'block';
+        document.querySelectorAll('#dischargeSeaSection select, #dischargeSeaSection input').forEach(el => el.setAttribute('required', 'required'));
+    } else if (this.value === 'discharge_prf') {
+        prfSection.style.display = 'block';
+        document.querySelectorAll('#prfSection input').forEach(el => el.setAttribute('required', 'required'));
+    } else if (this.value === 'transfer_holding') {
+        holdingTankSection.style.display = 'block';
+        document.querySelectorAll('#holdingTankSection select').forEach(el => el.setAttribute('required', 'required'));
+    }
+});
+
+// Signature Canvas Setup
+let signatureCanvas = document.getElementById('signatureCanvas');
+let canvasContext = signatureCanvas.getContext('2d');
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+
+function resizeCanvas() {
+    signatureCanvas.width = signatureCanvas.offsetWidth;
+    signatureCanvas.height = 150;
+    canvasContext.strokeStyle = '#000';
+    canvasContext.lineWidth = 2;
+    canvasContext.lineCap = 'round';
+    canvasContext.lineJoin = 'round';
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+signatureCanvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    canvasContext.beginPath();
+    canvasContext.moveTo(lastX, lastY);
+    canvasContext.lineTo(e.offsetX, e.offsetY);
+    canvasContext.stroke();
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
+signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+function clearSignature() {
+    canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+}
+
+// Form Submission
+document.getElementById('sewageReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    data.signature_data = signatureCanvas.toDataURL();
+    
+    fetch('/api/sewage-report', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', `Sewage Report ${result.report_id} submitted successfully!`);
+            setTimeout(() => window.location.href = '/sewage-reports_list', 2000);
+        } else {
+            showAlert('danger', result.error || 'Failed to submit report');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error.message);
+    });
+});
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+document.querySelector('input[name="operation_start_date"]').valueAsDate = new Date();
+document.querySelector('input[name="operation_stop_date"]').valueAsDate = new Date();
+</script>
+{% endblock %}

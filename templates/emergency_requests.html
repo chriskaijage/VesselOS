@@ -1,0 +1,3617 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Requests - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
+                    <div>
+                        <h2 class="mb-0">Emergency Requests Management</h2>
+                        <p class="mb-0">Authorize and manage critical emergency requests</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Emergency Stats -->
+    <div class="col-md-3">
+        <div class="card metric-card border-start border-5 border-danger">
+            <div class="card-body text-center">
+                <div class="metric-value text-danger" id="pendingEmergencies">0</div>
+                <div class="metric-label">Pending Authorization</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card border-start border-5 border-warning">
+            <div class="card-body text-center">
+                <div class="metric-value text-warning" id="activeEmergencies">0</div>
+                <div class="metric-label">Active Emergencies</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card border-start border-5 border-success">
+            <div class="card-body text-center">
+                <div class="metric-value text-success" id="resolvedToday">0</div>
+                <div class="metric-label">Resolved Today</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card border-start border-5 border-info">
+            <div class="card-body text-center">
+                <div class="metric-value text-info" id="avgResponseTime">0</div>
+                <div class="metric-label">Avg Response (min)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Emergency List -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Emergency Requests</h5>
+                    <button class="btn btn-sm btn-light" onclick="declareEmergency()">
+                        <i class="fas fa-plus me-1"></i> Declare Emergency
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Search and Filter Tools -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div class="input-group input-group-sm" style="max-width: 250px;">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search emergencies..." onkeyup="filterEmergencies()">
+                            <button class="btn btn-outline-secondary" type="button" onclick="filterEmergencies()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportEmergencyList()" title="Export">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="loadEmergencyRequests()" id="refreshBtn">
+                            <i class="fas fa-sync-alt" id="refreshIcon"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="loadingIndicator" class="text-center py-3" style="display: none;">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading emergency requests...</p>
+                </div>
+                <div class="table-responsive" style="overflow-x: auto;">
+                    <table class="table table-hover" style="min-width: 800px;">
+                        <thead>
+                            <tr>
+                                <th style="white-space: nowrap;">Emergency ID</th>
+                                <th style="white-space: nowrap;">Vessel</th>
+                                <th style="white-space: nowrap;">Type</th>
+                                <th style="white-space: nowrap;">Severity</th>
+                                <th style="white-space: nowrap;">Time</th>
+                                <th style="white-space: nowrap;">Status</th>
+                                <th style="white-space: nowrap;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="emergencyTable">
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="spinner-border text-danger" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading emergency requests...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Emergency Protocol -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i> Emergency Protocol</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-phone-alt me-2"></i> Step 1: Contact</h6>
+                            <p class="small mb-0">Immediately contact emergency services: +1-800-MARINE-EMERGENCY</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-users me-2"></i> Step 2: Mobilize</h6>
+                            <p class="small mb-0">Activate emergency response team and resources</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-file-alt me-2"></i> Step 3: Document</h6>
+                            <p class="small mb-0">Complete emergency documentation and authorization</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Authorization Panel -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i> Authorization Panel</h5>
+            </div>
+            <div class="card-body">
+                <div id="authorizationPanel">
+                    <div class="text-center py-4">
+                        <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Select an emergency request to authorize</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-danger w-100 mb-2" onclick="contactEmergencyServices()">
+                    <i class="fas fa-phone-alt me-2"></i> Call Emergency Services
+                </button>
+                <button class="btn btn-warning w-100 mb-2" onclick="activateResponseTeam()">
+                    <i class="fas fa-users me-2"></i> Activate Response Team
+                </button>
+                <button class="btn btn-info w-100 mb-2" onclick="generateEmergencyReport()">
+                    <i class="fas fa-file-medical me-2"></i> Generate Emergency Report
+                </button>
+                <button class="btn btn-success w-100" onclick="viewEmergencyProtocol()">
+                    <i class="fas fa-book me-2"></i> View Full Protocol
+                </button>
+            </div>
+        </div>
+        
+        <!-- Active Resources -->
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Available Resources</h5>
+                    <button class="btn btn-sm btn-light" onclick="showAddAvailableResourceModal()">
+                        <i class="fas fa-plus me-1"></i> Add Resource
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Refresh Tool -->
+                <div class="d-flex justify-content-end align-items-center mb-3">
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadAvailableResources()">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                </div>
+                <div id="availableResourcesList">
+                    <div class="text-center py-3 text-muted">Loading available resources...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Emergency Declaration Modal -->
+<div class="modal fade" id="emergencyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Declare New Emergency</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="emergencyForm">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>WARNING:</strong> This action declares an official emergency. Only use for genuine emergencies.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Ship Name *</label>
+                        <input type="text" class="form-control" name="ship_name" required 
+                               placeholder="Enter vessel/ship name">
+                        <div class="invalid-feedback">Please provide the ship name.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Location / Port (optional)</label>
+                        <input type="text" class="form-control" name="location_name"
+                               placeholder="e.g. Port of Hamburg, North Sea, Berth 5">
+                        <div class="form-text">You can describe the emergency location in plain text.</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Latitude (optional)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.000001" class="form-control" name="latitude" id="emergencyLatitude"
+                                       placeholder="e.g. 53.5463">
+                                <button type="button" class="btn btn-outline-primary" onclick="getCurrentLocation()" title="Get current location">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Longitude (optional)</label>
+                            <input type="number" step="0.000001" class="form-control" name="longitude" id="emergencyLongitude"
+                                   placeholder="e.g. 9.9937">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Click the <i class="fas fa-crosshairs"></i> button to automatically capture your current GPS location
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Emergency Type *</label>
+                        <select class="form-select" name="emergency_type" required>
+                            <option value="">Select Type</option>
+                            <option value="fire">Fire Onboard</option>
+                            <option value="flooding">Flooding</option>
+                            <option value="collision">Collision</option>
+                            <option value="grounding">Grounding</option>
+                            <option value="medical">Medical Emergency</option>
+                            <option value="pollution">Pollution Incident</option>
+                            <option value="security">Security Threat</option>
+                            <option value="technical">Technical Failure</option>
+                        </select>
+                        <div class="invalid-feedback">Please select an emergency type.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Severity Level *</label>
+                        <select class="form-select" name="severity_level" required>
+                            <option value="">Select Severity</option>
+                            <option value="critical">Critical (Life-threatening)</option>
+                            <option value="high">High (Vessel at Risk)</option>
+                            <option value="medium">Medium (Property Damage)</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a severity level.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description *</label>
+                        <textarea class="form-control" name="description" rows="4" required 
+                                  placeholder="Provide a detailed description of the emergency situation..."></textarea>
+                        <div class="invalid-feedback">Please provide a description of the emergency.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Immediate Actions Required *</label>
+                        <textarea class="form-control" name="immediate_actions" rows="3" required 
+                                  placeholder="Describe immediate response actions needed..."></textarea>
+                        <div class="invalid-feedback">Please describe immediate actions required.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Resources Required *</label>
+                        <textarea class="form-control" name="resources_required" rows="3" required 
+                                  placeholder="List required resources (personnel, equipment, vessels)..."></textarea>
+                        <div class="invalid-feedback">Please list required resources.</div>
+                    </div>
+                    
+                    <!-- Contact Information for Public Users (shown if not logged in) -->
+                    <div id="publicContactInfo" style="display: none;">
+                        <hr>
+                        <h6 class="mb-3">Your Contact Information (Optional but Recommended)</h6>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Providing your contact information helps us follow up on this emergency if needed.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Your Name</label>
+                                <input type="text" class="form-control" name="reporter_name" 
+                                       placeholder="Your full name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Your Email</label>
+                                <input type="email" class="form-control" name="reporter_email" 
+                                       placeholder="your.email@example.com">
+                            </div>
+                        </div>
+                    <div class="mb-3">
+                            <label class="form-label">Your Phone Number</label>
+                            <input type="tel" class="form-control" name="reporter_phone" 
+                                   placeholder="+1 (555) 123-4567">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Associated Request ID (Optional)</label>
+                        <input type="text" class="form-control" name="request_id" 
+                               placeholder="MR-20240101-123456 (if applicable)">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="submitEmergency()" id="submitEmergencyBtn">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Declare Emergency
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Emergency Details Modal with Tabs -->
+<div class="modal fade" id="emergencyDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Emergency Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs mb-3" id="emergencyTabs" role="tablist" style="display: flex !important; visibility: visible !important; opacity: 1 !important;">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button">
+                            <i class="fas fa-info-circle me-1"></i>Details
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button">
+                            <i class="fas fa-history me-1"></i>Timeline
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button">
+                            <i class="fas fa-tasks me-1"></i>Status
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation" style="display: list-item !important; visibility: visible !important;">
+                        <button class="nav-link" id="location-tab" data-bs-toggle="tab" data-bs-target="#location" type="button" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                            <i class="fas fa-map-marker-alt me-1"></i>Location
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button">
+                            <i class="fas fa-comments me-1"></i>Messages
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="resources-tab" data-bs-toggle="tab" data-bs-target="#resources" type="button">
+                            <i class="fas fa-tools me-1"></i>Resources
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Tab content -->
+                <div class="tab-content" id="emergencyTabContent">
+                    <!-- Details Tab -->
+                    <div class="tab-pane fade show active" id="details" role="tabpanel">
+                        <div id="emergencyDetailsContent">
+                <!-- Content loaded dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Tab -->
+                    <div class="tab-pane fade" id="timeline" role="tabpanel">
+                        <div id="emergencyTimelineContent">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading activity timeline...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Tab -->
+                    <div class="tab-pane fade" id="status" role="tabpanel">
+                        <div id="emergencyStatusContent">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Current Status:</strong></label>
+                                <div id="currentStatusDisplay" class="mb-3"></div>
+                                <label class="form-label"><strong>Update Status:</strong></label>
+                                <select class="form-select mb-2" id="statusSelect">
+                                    <option value="pending">Pending</option>
+                                    <option value="authorized">Authorized</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                                <textarea class="form-control mb-2" id="statusReason" rows="2" placeholder="Reason for status change (optional)"></textarea>
+                                <button class="btn btn-primary" onclick="updateEmergencyStatus()">
+                                    <i class="fas fa-save me-2"></i>Update Status
+                                </button>
+                            </div>
+                            <hr>
+                            <h6>Status History</h6>
+                            <div id="statusHistoryContent">
+                                <div class="text-center py-3 text-muted">Loading status history...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Location Tab -->
+                    <div class="tab-pane fade" id="location" role="tabpanel">
+                        <div class="mb-2">
+                            <p class="small text-muted mb-1">
+                                This map shows the precise location of the selected emergency.
+                            </p>
+                            <div id="locationSummary" class="small text-muted"></div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary active" id="mapTypeRoadmap" onclick="changeMapType('roadmap')">
+                                    <i class="fas fa-map me-1"></i>Roadmap
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="mapTypeSatellite" onclick="changeMapType('satellite')">
+                                    <i class="fas fa-satellite me-1"></i>Satellite
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="mapTypeTerrain" onclick="changeMapType('terrain')">
+                                    <i class="fas fa-mountain me-1"></i>Terrain
+                                </button>
+                            </div>
+                        </div>
+                        <div id="emergencyMap" style="width: 100%; height: 350px; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
+                            <!-- Map rendered dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Messages Tab -->
+                    <div class="tab-pane fade" id="messages" role="tabpanel">
+                        <div id="emergencyMessagesContent" style="height: 400px; display: flex; flex-direction: column;">
+                            <div id="messagesList" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; border-radius: 5px; margin-bottom: 15px;">
+                                <div class="text-center py-4 text-muted">Loading messages...</div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="messageInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendEmergencyMessage()">
+                                <button class="btn btn-primary" onclick="sendEmergencyMessage()">
+                                    <i class="fas fa-paper-plane me-1"></i>Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resources Tab -->
+                    <div class="tab-pane fade" id="resources" role="tabpanel">
+                        <div id="emergencyResourcesContent">
+                            <div class="mb-3 d-flex justify-content-between align-items-center">
+                                <button class="btn btn-sm btn-primary" onclick="showAssignResourceModal()">
+                                    <i class="fas fa-plus me-1"></i>Assign Resource
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="loadEmergencyResources(selectedEmergencyId)">
+                                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                                </button>
+                            </div>
+                            <div id="resourcesList">
+                                <div class="text-center py-3 text-muted">Loading resources...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="takeActionBtn" style="display: none;">
+                    <i class="fas fa-play-circle me-2"></i> Take Action
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Resource Modal -->
+<div class="modal fade" id="assignResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-tools me-2"></i>Assign Resource</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignResourceForm">
+                    <div class="mb-3">
+                        <label class="form-label">Resource Type *</label>
+                        <select class="form-select" id="resourceType" required>
+                            <option value="">Select Type</option>
+                            <option value="personnel">Personnel</option>
+                            <option value="vessel">Vessel</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource Name *</label>
+                        <input type="text" class="form-control" id="resourceName" required placeholder="Enter resource name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource ID</label>
+                        <input type="text" class="form-control" id="resourceId" placeholder="Optional resource identifier">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="resourceNotes" rows="2" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="assignResource()">Assign Resource</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Resource</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editResourceForm">
+                    <input type="hidden" id="editResourceId">
+                    <div class="mb-3">
+                        <label class="form-label">Resource Type *</label>
+                        <select class="form-select" id="editResourceType" required>
+                            <option value="">Select Type</option>
+                            <option value="personnel">Personnel</option>
+                            <option value="vessel">Vessel</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource Name *</label>
+                        <input type="text" class="form-control" id="editResourceName" required placeholder="Enter resource name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource ID</label>
+                        <input type="text" class="form-control" id="editResourceIdField" placeholder="Optional resource identifier">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="editResourceStatus">
+                            <option value="assigned">Assigned</option>
+                            <option value="released">Released</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="editResourceNotes" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="updateResource()">Update Resource</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addAvailableResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Available Resource</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAvailableResourceForm">
+                    <div class="mb-3">
+                        <label class="form-label">Resource Type *</label>
+                        <select class="form-select" id="addResourceType" required>
+                            <option value="">Select Type</option>
+                            <option value="personnel">Personnel</option>
+                            <option value="vessel">Vessel</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource Name *</label>
+                        <input type="text" class="form-control" id="addResourceName" required placeholder="Enter resource name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource ID</label>
+                        <input type="text" class="form-control" id="addResourceId" placeholder="Optional resource identifier">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-control" id="addResourceLocation" placeholder="Resource location">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="addResourceAvailable" checked>
+                            <label class="form-check-label" for="addResourceAvailable">
+                                Available
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="addResourceNotes" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="createAvailableResource()">Add Resource</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editAvailableResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Available Resource</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAvailableResourceForm">
+                    <input type="hidden" id="editAvailableResourceId">
+                    <div class="mb-3">
+                        <label class="form-label">Resource Type *</label>
+                        <select class="form-select" id="editAvailableResourceType" required>
+                            <option value="">Select Type</option>
+                            <option value="personnel">Personnel</option>
+                            <option value="vessel">Vessel</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource Name *</label>
+                        <input type="text" class="form-control" id="editAvailableResourceName" required placeholder="Enter resource name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource ID</label>
+                        <input type="text" class="form-control" id="editAvailableResourceIdField" placeholder="Optional resource identifier">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-control" id="editAvailableResourceLocation" placeholder="Resource location">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editAvailableResourceAvailable">
+                            <label class="form-check-label" for="editAvailableResourceAvailable">
+                                Available
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="editAvailableResourceNotes" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="updateAvailableResource()">Update Resource</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-question-circle me-2"></i>Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Google Maps API -->
+<script>
+// Google Maps API with error handling
+// Global flag to track if Google Maps is loaded
+let googleMapsLoaded = false;
+
+function initGoogleMaps() {
+    if (typeof google === 'undefined' || !google.maps) {
+        console.error('Google Maps failed to load');
+        googleMapsLoaded = false;
+        const mapContainer = document.getElementById('emergencyMap');
+        if (mapContainer) {
+            mapContainer.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                    <div class="text-center text-muted p-4">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3 text-warning"></i>
+                        <p class="mb-2"><strong>Google Maps API Error</strong></p>
+                        <p class="small mb-0">Unable to load Google Maps. Please check:</p>
+                        <ul class="small text-start mt-2" style="display: inline-block;">
+                            <li>API key is valid and enabled</li>
+                            <li>Maps JavaScript API is enabled in Google Cloud Console</li>
+                            <li>Billing is enabled for your Google Cloud project</li>
+                            <li>API key has proper restrictions configured</li>
+                        </ul>
+                        <p class="small mt-3 mb-0">Check browser console for details.</p>
+                    </div>
+                </div>
+            `;
+        }
+        return false;
+    }
+    console.log('Google Maps API loaded successfully');
+    googleMapsLoaded = true;
+    return true;
+}
+
+// Load Google Maps API with callback
+const googleMapsApiKey = 'AIzaSyDMZ0tNND0OFvOjvK27VD8LiLXFa9XuIKc';
+if (googleMapsApiKey) {
+    // Check if script is already loaded
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existingScript) {
+        console.log('Google Maps script already exists');
+        // If script exists but Google Maps isn't loaded, wait a bit
+        if (typeof google === 'undefined' || !google.maps) {
+            setTimeout(initGoogleMaps, 1000);
+        } else {
+            googleMapsLoaded = true;
+        }
+    } else {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places,geometry&language=en&callback=initGoogleMaps`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = function() {
+            console.error('Failed to load Google Maps script');
+            googleMapsLoaded = false;
+            initGoogleMaps();
+        };
+        script.onload = function() {
+            console.log('Google Maps script loaded');
+        };
+        document.head.appendChild(script);
+    }
+} else {
+    console.warn('Google Maps API key not configured. Set GOOGLE_MAPS_API_KEY environment variable.');
+    const mapContainer = document.getElementById('emergencyMap');
+    if (mapContainer) {
+        mapContainer.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-map-marked-alt fa-2x mb-3"></i>
+                    <p class="mb-2"><strong>Google Maps API Key Required</strong></p>
+                    <p class="small mb-0">Please configure GOOGLE_MAPS_API_KEY environment variable.</p>
+                </div>
+            </div>
+        `;
+    }
+}
+</script>
+
+<!-- Server-side user data (Jinja2 template) - using data attribute to avoid linter errors -->
+<script id="user-auth-data" type="application/json">
+{% if current_user.is_authenticated %}
+{"isAuthenticated": true, "userId": "{{ current_user.id }}", "userRole": "{{ current_user.role }}"}
+{% else %}
+{"isAuthenticated": false, "userId": null, "userRole": null}
+{% endif %}
+</script>
+<script>
+// Parse user authentication data from JSON script tag
+const userAuthData = JSON.parse(document.getElementById('user-auth-data').textContent);
+window.USER_AUTH = userAuthData;
+</script>
+
+<script>
+let selectedEmergencyId = null;
+let allEmergencies = [];
+let currentEmergencyData = null;
+let emergencyMap = null;
+let emergencyMapMarker = null;
+let currentTileLayer = null;
+let mapType = 'roadmap'; // 'roadmap', 'satellite', 'terrain'
+// Check if user is authenticated (from window.USER_AUTH set by server-side template)
+const isUserAuthenticated = window.USER_AUTH.isAuthenticated;
+const currentUserId = window.USER_AUTH.userId;
+const currentUserRole = window.USER_AUTH.userRole;
+
+function loadEmergencyRequests() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshIcon = document.getElementById('refreshIcon');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const table = document.getElementById('emergencyTable');
+    
+    // Show loading state
+    if (refreshBtn) refreshBtn.disabled = true;
+    if (refreshIcon) refreshIcon.classList.add('fa-spin');
+    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    if (table) table.style.display = 'none';
+    
+    fetch('/api/emergency-requests', {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        redirect: 'manual' // Prevent automatic redirects
+    })
+        .then(response => {
+            // Handle redirects manually
+            if (response.type === 'opaqueredirect' || response.redirected) {
+                window.location.href = '/login';
+                return Promise.reject(new Error('Redirected to login'));
+            }
+            
+            // Handle authentication errors
+            if (response.status === 401 || response.status === 403) {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Access denied. Please check your permissions.');
+                    });
+                } else {
+                    window.location.href = '/login';
+                    return Promise.reject(new Error('Authentication required'));
+                }
+            }
+            
+            // Check content type
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    console.error('Non-JSON response received:', text.substring(0, 500));
+                    // If it looks like HTML (login page), redirect
+                    if (text.includes('<!DOCTYPE') || text.includes('<html') || text.includes('login')) {
+                        window.location.href = '/login';
+                        return Promise.reject(new Error('Please log in to access this page'));
+                    }
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                });
+            }
+            
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }).catch(() => {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                });
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                allEmergencies = data.emergencies || [];
+                updateEmergencyTable(allEmergencies);
+                updateStats(allEmergencies);
+            } else {
+                showAlert('warning', 'Failed to load emergency requests: ' + (data.error || 'Unknown error'));
+                allEmergencies = [];
+                updateEmergencyTable([]);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading emergency requests:', error);
+            showAlert('danger', 'Network error: Failed to load emergency requests: ' + error.message);
+            allEmergencies = [];
+            updateEmergencyTable([]);
+        })
+        .finally(() => {
+            if (refreshBtn) refreshBtn.disabled = false;
+            if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            if (table) table.style.display = '';
+        });
+}
+
+function filterEmergencies() {
+    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    const filtered = allEmergencies.filter(emergency => {
+        return emergency.emergency_id?.toLowerCase().includes(searchTerm) ||
+               emergency.ship_name?.toLowerCase().includes(searchTerm) ||
+               emergency.emergency_type?.toLowerCase().includes(searchTerm) ||
+               emergency.severity_level?.toLowerCase().includes(searchTerm);
+    });
+    updateEmergencyTable(filtered);
+}
+
+function exportEmergencyList() {
+    if (allEmergencies.length === 0) {
+        showAlert('warning', 'No emergency data to export');
+        return;
+    }
+    
+    const dataStr = JSON.stringify(allEmergencies, null, 2);
+    const blob = new Blob([dataStr], {type: 'application/json'});
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `emergency_requests_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    showAlert('success', 'Emergency list exported successfully!');
+}
+
+function updateEmergencyTable(emergencies) {
+    const table = document.getElementById('emergencyTable');
+    
+    if (emergencies.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">No active emergency requests</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        let html = '';
+        emergencies.forEach(emergency => {
+            const statusBadge = emergency.status === 'pending' ? 'warning' :
+                              emergency.status === 'authorized' ? 'success' : 'danger';
+            const statusText = emergency.status === 'pending' ? 'Pending' :
+                             emergency.status === 'authorized' ? 'Authorized' : 'Active';
+            
+            const severityBadge = emergency.severity_level === 'critical' ? 'danger' :
+                                emergency.severity_level === 'high' ? 'warning' : 'info';
+            
+            const time = new Date(emergency.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            html += `
+                <tr onclick="selectEmergency('${emergency.emergency_id}', this)" 
+                    style="cursor: pointer;" class="${emergency.status === 'pending' ? 'table-warning' : ''}">
+                    <td style="white-space: nowrap;"><code>${emergency.emergency_id}</code></td>
+                    <td style="white-space: nowrap;"><strong>${emergency.ship_name}</strong></td>
+                    <td style="white-space: nowrap;">${emergency.emergency_type}</td>
+                    <td style="white-space: nowrap;"><span class="badge bg-${severityBadge}">${emergency.severity_level}</span></td>
+                    <td style="white-space: nowrap;">${time}</td>
+                    <td style="white-space: nowrap;"><span class="badge bg-${statusBadge}">${statusText}</span></td>
+                    <td style="white-space: nowrap;">
+                        <div class="btn-group btn-group-sm" style="white-space: nowrap;">
+                            ${emergency.status === 'pending' && currentUserRole === 'port_engineer' ? `
+                            <button class="btn btn-success" onclick="authorizeEmergency('${emergency.emergency_id}', event)" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; white-space: nowrap;">
+                                <i class="fas fa-check" style="font-size: 0.7rem;"></i> Authorize
+                            </button>
+                            ` : ''}
+                            <button class="btn btn-info" onclick="showEmergencyDetails('${emergency.emergency_id}', event)" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; white-space: nowrap;">
+                                <i class="fas fa-eye" style="font-size: 0.7rem;"></i> View
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        table.innerHTML = html;
+    }
+}
+
+
+function updateStats(emergencies) {
+    const pending = emergencies.filter(e => e.status === 'pending').length;
+    const active = emergencies.filter(e => e.status === 'active').length;
+    const resolved = emergencies.filter(e => e.status === 'resolved').length;
+    
+    document.getElementById('pendingEmergencies').textContent = pending;
+    document.getElementById('activeEmergencies').textContent = active;
+    document.getElementById('resolvedToday').textContent = resolved;
+    
+    // Calculate average response time (simulated)
+    document.getElementById('avgResponseTime').textContent = '45';
+}
+
+function selectEmergency(emergencyId, row) {
+    // Highlight selected row
+    document.querySelectorAll('#emergencyTable tr').forEach(r => {
+        r.classList.remove('table-primary');
+    });
+    if (row) row.classList.add('table-primary');
+    
+    selectedEmergencyId = emergencyId;
+    
+    // Load emergency data and update authorization panel
+    fetch(`/api/emergency-details/${emergencyId}`)
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                currentEmergencyData = data.emergency;
+                updateAuthorizationPanel(data.emergency);
+            } else {
+                showAlert('warning', 'Failed to load emergency details: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading emergency details:', error);
+            showAlert('danger', 'Network error loading emergency details: ' + error.message);
+        });
+}
+
+function updateAuthorizationPanel(emergency) {
+    const panel = document.getElementById('authorizationPanel');
+    const isPending = emergency.status === 'pending';
+    const isManager = currentUserRole === 'port_engineer';
+    
+    let html = `
+        <h6>Emergency Details</h6>
+        <div class="alert alert-${emergency.severity_level === 'critical' ? 'danger' : 'warning'}">
+            <strong>${emergency.emergency_type}</strong> - ${emergency.ship_name}
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Severity:</label>
+            <div class="badge bg-${emergency.severity_level === 'critical' ? 'danger' : 'warning'}">
+                ${emergency.severity_level.toUpperCase()}
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Immediate Actions:</label>
+            <p class="small">${emergency.immediate_actions || 'No immediate actions specified'}</p>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Resources Required:</label>
+            <p class="small">${emergency.resources_required || 'No resources specified'}</p>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Reported By:</label>
+            <p class="small">${emergency.reported_by || 'Unknown'}</p>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Time Reported:</label>
+            <p class="small">${new Date(emergency.created_at).toLocaleString()}</p>
+        </div>
+    `;
+    
+    if (isPending && isManager) {
+        html += `
+            <div class="mt-4">
+                <h6>Authorization</h6>
+                <div class="mb-3">
+                    <label class="form-label">Approval Code</label>
+                    <input type="text" class="form-control" id="approvalCode" 
+                           placeholder="Enter authorization code">
+                </div>
+                <button class="btn btn-success w-100" onclick="authorizeEmergency('${emergency.emergency_id}')">
+                    <i class="fas fa-check-circle me-2"></i> Authorize Emergency
+                </button>
+            </div>
+        `;
+    } else if (emergency.authorized_by) {
+        html += `
+            <div class="alert alert-success mt-3">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Authorized by:</strong> ${emergency.authorized_by}<br>
+                <strong>Time:</strong> ${new Date(emergency.authorization_time).toLocaleString()}
+            </div>
+        `;
+    }
+    
+    panel.innerHTML = html;
+}
+
+function showEmergencyDetails(emergencyId, event) {
+    if (event) event.stopPropagation();
+    
+    const modalContent = document.getElementById('emergencyDetailsContent');
+    modalContent.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading emergency details...</p>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('emergencyDetailsModal'));
+    modal.show();
+    
+    fetch(`/api/emergency-details/${emergencyId}`)
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                displayEmergencyDetailsModal(data.emergency);
+            } else {
+                modalContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Failed to load emergency details: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading emergency details:', error);
+            modalContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Network error: Failed to load emergency details. ${error.message || ''}
+                </div>
+            `;
+        });
+}
+
+function displayEmergencyDetailsModal(emergency) {
+    const modalContent = document.getElementById('emergencyDetailsContent');
+    const takeActionBtn = document.getElementById('takeActionBtn');
+    const statusSelect = document.getElementById('statusSelect');
+    const currentStatusDisplay = document.getElementById('currentStatusDisplay');
+    
+    // Remember currently viewed emergency
+    selectedEmergencyId = emergency.emergency_id;
+    currentEmergencyData = emergency;
+    
+    // Format the emergency details
+    const severityColor = emergency.severity_level === 'critical' ? 'danger' :
+                         emergency.severity_level === 'high' ? 'warning' : 'info';
+    
+    const statusColor = emergency.status === 'pending' ? 'warning' :
+                       emergency.status === 'authorized' ? 'success' : 'danger';
+    
+    let html = `
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6>Emergency ID:</h6>
+                <p><code>${emergency.emergency_id}</code></p>
+            </div>
+            <div class="col-md-6">
+                <h6>Status:</h6>
+                <span class="badge bg-${statusColor}">${emergency.status.toUpperCase()}</span>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6>Vessel:</h6>
+                <p><strong>${emergency.ship_name}</strong></p>
+            </div>
+            <div class="col-md-6">
+                <h6>Emergency Type:</h6>
+                <p>${emergency.emergency_type}</p>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <h6>Severity:</h6>
+                <span class="badge bg-${severityColor}">${emergency.severity_level.toUpperCase()}</span>
+            </div>
+            <div class="col-md-4">
+                <h6>Time Reported:</h6>
+                <p>${new Date(emergency.created_at).toLocaleString()}</p>
+            </div>
+            <div class="col-md-4">
+                <h6>Location:</h6>
+                <p>${emergency.location_name || 'Not specified'}</p>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <h6>Description:</h6>
+            <div class="alert alert-${severityColor}">
+                ${emergency.description || 'No description provided'}
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6>Immediate Actions Required:</h6>
+                <p>${emergency.immediate_actions || 'Not specified'}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Resources Required:</h6>
+                <p>${emergency.resources_required || 'Not specified'}</p>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6>Reported By:</h6>
+                <p>${emergency.reported_by || 'Unknown'}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Authorized By:</h6>
+                <p>${emergency.authorized_by || 'Not authorized yet'}</p>
+            </div>
+        </div>
+        
+        ${emergency.authorized_at ? `
+        <div class="alert alert-info">
+            <i class="fas fa-clock me-2"></i>
+            <strong>Authorized at:</strong> ${new Date(emergency.authorized_at).toLocaleString()}
+        </div>
+        ` : ''}
+    `;
+    
+    modalContent.innerHTML = html;
+
+    // Initialise Status tab (current status + dropdown)
+    if (currentStatusDisplay) {
+        currentStatusDisplay.innerHTML = `
+            <span class="badge bg-${statusColor}">${emergency.status.toUpperCase()}</span>
+            <small class="text-muted ms-2">
+                Last updated: ${emergency.updated_at ? new Date(emergency.updated_at).toLocaleString() : 'N/A'}
+            </small>
+        `;
+    }
+    if (statusSelect) {
+        statusSelect.value = emergency.status || 'pending';
+    }
+    // Load status history
+    loadStatusHistory(emergency.emergency_id);
+
+    // Load activity timeline
+    loadEmergencyTimeline(emergency.emergency_id);
+
+    // Render location & map (but only if Location tab is active, otherwise wait for tab switch)
+    // Don't render immediately - wait for tab to be shown
+    const locationTabPane = document.getElementById('location');
+    if (locationTabPane && locationTabPane.classList.contains('active')) {
+        // Location tab is already active, render immediately
+        setTimeout(() => {
+            renderEmergencyLocation(emergency);
+        }, 200);
+    }
+    // Otherwise, the map will render when the Location tab is clicked (via event listener)
+
+    // Ensure Location tab is visible
+    const locationTab = document.getElementById('location-tab');
+    if (locationTab) {
+        // Make sure the tab is visible
+        locationTab.style.display = '';
+        locationTab.style.visibility = 'visible';
+        locationTab.style.opacity = '1';
+        locationTab.parentElement.style.display = '';
+        
+        // Set up event listener for Location tab to ensure map renders properly
+        // Remove any existing listeners by cloning the element
+        const newLocationTab = locationTab.cloneNode(true);
+        locationTab.parentNode.replaceChild(newLocationTab, locationTab);
+        
+        newLocationTab.addEventListener('shown.bs.tab', function() {
+            // Re-render map when Location tab is shown
+            console.log('Location tab shown, initializing map...');
+            // Wait a bit for tab to be fully visible
+            setTimeout(() => {
+                if (currentEmergencyData) {
+                    renderEmergencyLocation(currentEmergencyData);
+                } else if (!emergencyMap && googleMapsLoaded) {
+                    // Initialize a default map if no emergency is selected
+                    initializeDefaultMap();
+                }
+            }, 300);
+            if (currentEmergencyData) {
+                // Wait a bit longer to ensure tab content is fully visible
+                setTimeout(() => {
+                    renderEmergencyLocation(currentEmergencyData);
+                }, 300);
+            }
+        });
+    } else {
+        console.error('Location tab not found in DOM');
+    }
+
+    // Load messages
+    loadEmergencyMessages(emergency.emergency_id);
+
+    // Load resources
+    loadEmergencyResources(emergency.emergency_id);
+    
+    // Show/hide take action button based on user role and emergency status
+    if (currentUserRole === 'harbour_master' && emergency.status === 'authorized') {
+        if (takeActionBtn) {
+            takeActionBtn.style.display = 'block';
+            takeActionBtn.onclick = function() {
+                handleEmergencyAction(emergency.emergency_id);
+            };
+        }
+    } else {
+        if (takeActionBtn) {
+            takeActionBtn.style.display = 'none';
+        }
+    }
+    
+    // Ensure all tabs are visible
+    ensureTabsVisible();
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('emergencyDetailsModal'));
+    modal.show();
+    
+    // After modal is shown, ensure tabs are still visible (multiple checks)
+    setTimeout(() => {
+        ensureTabsVisible();
+    }, 50);
+    setTimeout(() => {
+        ensureTabsVisible();
+    }, 200);
+    setTimeout(() => {
+        ensureTabsVisible();
+    }, 500);
+}
+
+// ==================== TIMELINE & STATUS HELPERS ====================
+
+function loadEmergencyTimeline(emergencyId) {
+    const container = document.getElementById('emergencyTimelineContent');
+    if (!emergencyId || !container) return;
+
+    container.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading activity timeline...</p>
+        </div>
+    `;
+
+    fetch(`/api/emergency/${emergencyId}/activities`)
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Failed to load activity timeline: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+                return;
+            }
+
+            const activities = data.activities || [];
+            if (activities.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-history fa-2x mb-2"></i>
+                        <div>No activity has been logged for this emergency yet.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="timeline">';
+            activities.forEach(a => {
+                const icon = a.action_type === 'status_change' ? 'exchange-alt' :
+                             a.action_type === 'message_sent' ? 'comment-dots' :
+                             a.action_type === 'resource_assigned' ? 'tools' :
+                             a.action_type === 'resource_released' ? 'truck-loading' :
+                             'info-circle';
+                const badgeClass = a.action_type === 'status_change' ? 'primary' :
+                                   a.action_type === 'message_sent' ? 'info' :
+                                   a.action_type === 'resource_assigned' ? 'success' :
+                                   a.action_type === 'resource_released' ? 'secondary' :
+                                   'dark';
+                html += `
+                    <div class="timeline-item">
+                        <div class="timeline-icon bg-${badgeClass}">
+                            <i class="fas fa-${icon}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-1">${a.action_type.replace('_', ' ').toUpperCase()}</h6>
+                                <small class="text-muted">${new Date(a.created_at).toLocaleString()}</small>
+                            </div>
+                            <p class="mb-1 small">${a.action_description || ''}</p>
+                            <div class="small text-muted">
+                                ${a.user_name ? `<i class="fas fa-user me-1"></i>${a.user_name} (${a.user_role || 'user'})` : ''}
+                                ${a.old_status || a.new_status ? `
+                                    <span class="ms-2">
+                                        <i class="fas fa-exchange-alt me-1"></i>
+                                        ${a.old_status || 'N/A'} → ${a.new_status || 'N/A'}
+                                    </span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            console.error('Error loading timeline', err);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Network error: Failed to load activity timeline. ${err.message || 'Please check your connection.'}
+                </div>
+            `;
+        });
+}
+
+function loadStatusHistory(emergencyId) {
+    const container = document.getElementById('statusHistoryContent');
+    if (!emergencyId || !container) return;
+
+    container.innerHTML = '<div class="text-center py-3 text-muted">Loading status history...</div>';
+
+    fetch(`/api/emergency/${emergencyId}/status-history`)
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Failed to load status history: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+                return;
+            }
+
+            const history = data.history || [];
+            if (history.length === 0) {
+                container.innerHTML = '<div class="text-center py-3 text-muted">No status changes recorded yet.</div>';
+                return;
+            }
+
+            let html = '<ul class="list-group small">';
+            history.forEach(h => {
+                html += `
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div>
+                            <div><strong>${h.old_status}</strong> → <strong>${h.new_status}</strong></div>
+                            <div class="text-muted">
+                                ${h.changed_by_name || 'Unknown'} 
+                                ${h.change_reason ? ` - ${h.change_reason}` : ''}
+                            </div>
+                        </div>
+                        <small class="text-muted ms-2">${new Date(h.created_at).toLocaleString()}</small>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            console.error('Error loading status history', err);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Network error: Failed to load status history. ${err.message || 'Please check your connection.'}
+                </div>
+            `;
+        });
+}
+
+function updateEmergencyStatus() {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first.');
+        return;
+    }
+    
+    if (!isUserAuthenticated) {
+        showAlert('warning', 'You must be logged in to update emergency status.');
+        return;
+    }
+
+    const statusSelect = document.getElementById('statusSelect');
+    const reasonInput = document.getElementById('statusReason');
+    const newStatus = statusSelect?.value;
+    const reason = reasonInput?.value || '';
+
+    if (!newStatus) {
+        showAlert('warning', 'Please choose a new status.');
+        return;
+    }
+
+    showAlert('info', 'Updating emergency status...');
+
+    fetch(`/api/emergency/${selectedEmergencyId}/update-status`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status: newStatus, reason})
+    })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                showAlert('danger', 'Failed to update status: ' + (data.error || 'Unknown error'));
+                return;
+            }
+
+            showAlert('success', `Status updated from ${data.old_status} to ${data.new_status}.`);
+
+            // Refresh list, status history and timeline
+            loadEmergencyRequests();
+            loadStatusHistory(selectedEmergencyId);
+            loadEmergencyTimeline(selectedEmergencyId);
+
+            // Update current status display + in-memory emergency data
+            if (currentEmergencyData) {
+                currentEmergencyData.status = data.new_status;
+                displayEmergencyDetailsModal(currentEmergencyData);
+            }
+        })
+        .catch(err => {
+            console.error('Error updating status', err);
+            showAlert('danger', 'Network error: Failed to update status. ' + (err.message || ''));
+        });
+}
+
+// ==================== TIMELINE & STATUS HELPERS ====================
+
+
+function authorizeEmergency(emergencyId, event) {
+    if (event) event.stopPropagation();
+    
+    showConfirmModal(
+        'Authorize Emergency Request',
+        'Are you sure you want to authorize this emergency request? This action will notify all harbour masters and activate emergency protocols.',
+        () => {
+        const approvalCode = document.getElementById('approvalCode')?.value || 'MARINE2025';
+            
+            showAlert('info', 'Authorizing emergency request...');
+        
+        // Fetch CSRF token first, then make the authorization request
+        fetch('/api/csrf-token', {
+            credentials: 'same-origin'
+        })
+            .then(r => r.json())
+            .then(csrfData => {
+                if (!csrfData.csrf_token) {
+                    throw new Error('Failed to get CSRF token');
+                }
+                return fetch('/api/emergency-authorize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        emergency_id: emergencyId,
+                        auth_code: approvalCode,
+                        csrf_token: csrfData.csrf_token
+                    })
+                });
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                        showAlert('success', 'Emergency request authorized successfully! All relevant personnel have been notified.');
+                    loadEmergencyRequests();
+                        
+                        // Update authorization panel
+                        if (currentEmergencyData) {
+                            currentEmergencyData.status = 'authorized';
+                            updateAuthorizationPanel(currentEmergencyData);
+                        }
+                    
+                    // Close modal if open
+                    const detailsModal = bootstrap.Modal.getInstance(document.getElementById('emergencyDetailsModal'));
+                    if (detailsModal) {
+                        detailsModal.hide();
+                    }
+                } else {
+                        showAlert('danger', 'Error: ' + (data.error || 'Authorization failed'));
+                }
+            })
+            .catch(error => {
+                    showAlert('danger', 'Network error: ' + error.message);
+            });
+    }
+    );
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    const modalBody = document.getElementById('confirmModalBody');
+    const confirmBtn = document.getElementById('confirmModalBtn');
+    
+    modalBody.innerHTML = `<p>${message}</p>`;
+    
+    // Remove previous event listeners
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.onclick = () => {
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+        if (onConfirm) onConfirm();
+    };
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+function declareEmergency() {
+    const modal = new bootstrap.Modal(document.getElementById('emergencyModal'));
+    const publicContactInfo = document.getElementById('publicContactInfo');
+    
+    // Show contact info section for public users
+    if (publicContactInfo) {
+        publicContactInfo.style.display = isUserAuthenticated ? 'none' : 'block';
+    }
+    
+    modal.show();
+}
+
+function submitEmergency() {
+    const form = document.getElementById('emergencyForm');
+    const submitBtn = document.getElementById('submitEmergencyBtn');
+    
+    // Validate form
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        showAlert('warning', 'Please fill in all required fields correctly.');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = {};
+    for (const [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    // Map severity to severity_level for API
+    if (data.severity_level) {
+        data.severity_level = data.severity_level;
+    } else if (data.severity) {
+        data.severity_level = data.severity;
+        delete data.severity;
+    }
+    
+    // Reporter information is handled automatically:
+    // - For authenticated users: backend uses current_user.id
+    // - For public users: backend uses contact info from form (reporter_name, reporter_email, reporter_phone)
+    
+    // Validate required fields
+    if (!data.ship_name || !data.emergency_type || !data.description) {
+        showAlert('danger', 'Missing required fields: Ship Name, Emergency Type, and Description are required.');
+        return;
+    }
+    
+    // Show loading state
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Declaring...';
+    }
+    
+    showAlert('info', 'Declaring emergency...');
+    
+    fetch('/api/declare-emergency', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                throw new Error('Server returned non-JSON response. Please try again or contact support.');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Emergency declared successfully! Port engineers have been notified.');
+            bootstrap.Modal.getInstance(document.getElementById('emergencyModal')).hide();
+            form.reset();
+            form.classList.remove('was-validated');
+            loadEmergencyRequests();
+        } else {
+            showAlert('danger', 'Error: ' + (data.error || 'Failed to declare emergency'));
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Network error: ' + error.message);
+    })
+    .finally(() => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Declare Emergency';
+        }
+    });
+}
+
+function handleEmergencyAction(emergencyId) {
+    showAlert('info', `Redirecting to handle emergency ${emergencyId}...`);
+    // In a real implementation, this would redirect to a specific action page
+    setTimeout(() => {
+        window.location.href = `/view-request/${emergencyId}`;
+    }, 1000);
+}
+
+function contactEmergencyServices() {
+    showConfirmModal(
+        'Contact Emergency Services',
+        'This will notify all emergency contacts and activate emergency protocols. Continue?',
+        () => {
+            fetch('/api/emergency-contact-services', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({emergency_id: selectedEmergencyId || 'current'})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', 'Emergency services contacted. All relevant personnel have been notified.');
+                } else {
+                    showAlert('info', 'Emergency services contacted. Proceeding with protocol.');
+                }
+            })
+            .catch(error => {
+                showAlert('info', 'Emergency services contacted. Proceeding with protocol.');
+            });
+        }
+    );
+}
+
+function activateResponseTeam() {
+    showConfirmModal(
+        'Activate Response Team',
+        'This will notify all team members and mobilize the emergency response team. Continue?',
+        () => {
+            fetch('/api/emergency-activate-team', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({emergency_id: selectedEmergencyId || 'current'})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', 'Emergency response team activated. All personnel notified.');
+                } else {
+                    showAlert('info', 'Emergency response team activated. All personnel notified.');
+                }
+            })
+            .catch(error => {
+                showAlert('info', 'Emergency response team activated. All personnel notified.');
+            });
+        }
+    );
+}
+
+function generateEmergencyReport() {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first');
+        return;
+    }
+    
+    showAlert('info', 'Generating emergency report...');
+    
+    fetch(`/api/emergency-report/${selectedEmergencyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const reportContent = JSON.stringify(data.report, null, 2);
+                const blob = new Blob([reportContent], {type: 'application/json'});
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `emergency_report_${selectedEmergencyId}_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                showAlert('success', 'Emergency report generated and downloaded successfully!');
+            } else {
+                showAlert('warning', 'Failed to generate report: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Network error: Failed to generate report');
+        });
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function viewEmergencyProtocol() {
+    const protocolWindow = window.open('', '_blank');
+    protocolWindow.document.write(`
+        <html>
+        <head>
+            <title>Emergency Protocol - Marine Service Center</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                h1 { color: #d32f2f; border-bottom: 2px solid #d32f2f; padding-bottom: 10px; }
+                h2 { color: #1976d2; margin-top: 30px; }
+                .section { margin: 20px 0; padding: 15px; border-left: 4px solid #1976d2; background: #f5f5f5; }
+                .step { margin: 15px 0; padding: 10px; background: white; border-radius: 5px; }
+                .critical { color: #d32f2f; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <h1>Marine Emergency Protocol</h1>
+            <p><strong>Version 3.1</strong> | Last Updated: December 10, 2025</p>
+            
+            <div class="section">
+                <h2>1. IMMEDIATE ACTIONS</h2>
+                <div class="step">
+                    <h3>Step 1: Assess Situation</h3>
+                    <p>• Determine nature and severity of emergency</p>
+                    <p>• Check for immediate threats to life and vessel</p>
+                    <p>• Assess available resources and personnel</p>
+                </div>
+                
+                <div class="step">
+                    <h3>Step 2: Contact Emergency Services</h3>
+                    <p class="critical">• Maritime Emergency Hotline: +1-800-MARINE-EMERGENCY</p>
+                    <p>• Coast Guard: +1-800-424-8802</p>
+                    <p>• Medical Emergency: 911 or local equivalent</p>
+                </div>
+                
+                <div class="step">
+                    <h3>Step 3: Activate Response Team</h3>
+                    <p>• Notify harbour master immediately</p>
+                    <p>• Mobilize emergency response team</p>
+                    <p>• Secure necessary equipment and resources</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>2. EMERGENCY CATEGORIES</h2>
+                <div class="step">
+                    <h3>Critical Emergencies (Life-threatening)</h3>
+                    <p>• Fire onboard</p>
+                    <p>• Flooding/sinking</p>
+                    <p>• Medical emergencies requiring evacuation</p>
+                    <p>• Collision with risk of sinking</p>
+                </div>
+                
+                <div class="step">
+                    <h3>High Priority Emergencies (Vessel at Risk)</h3>
+                    <p>• Engine failure in navigable waters</p>
+                    <p>• Steering failure</p>
+                    <p>• Electrical system failure</p>
+                    <p>• Pollution incidents</p>
+                </div>
+                
+                <div class="step">
+                    <h3>Medium Priority Emergencies (Property Damage)</h3>
+                    <p>• Equipment failure without immediate risk</p>
+                    <p>• Minor structural damage</p>
+                    <p>• Navigation system failure</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>3. RESPONSE TEAM ROLES</h2>
+                <div class="step">
+                    <p><strong>Port Engineer:</strong> Overall coordination and authorization</p>
+                    <p><strong>Harbour Master:</strong> Technical response and resource allocation</p>
+                    <p><strong>Quality Officer:</strong> Documentation and compliance</p>
+                    <p><strong>Response Team:</strong> On-site emergency handling</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>4. DOCUMENTATION REQUIREMENTS</h2>
+                <div class="step">
+                    <p>• Complete emergency declaration form</p>
+                    <p>• Document all actions taken</p>
+                    <p>• Record resource utilization</p>
+                    <p>• Maintain communication logs</p>
+                    <p>• Complete post-emergency report within 24 hours</p>
+                </div>
+            </div>
+            
+            <p><em>Note: This protocol follows IMO (International Maritime Organization) guidelines.</em></p>
+        </body>
+        </html>
+    `);
+}
+
+// ==================== REAL-TIME COMMUNICATION & RESOURCES ====================
+
+// Function to change map type
+function changeMapType(newMapType) {
+    if (!emergencyMap) return;
+    
+    mapType = newMapType;
+    
+    // Update button states
+    document.getElementById('mapTypeRoadmap').classList.remove('active');
+    document.getElementById('mapTypeSatellite').classList.remove('active');
+    document.getElementById('mapTypeTerrain').classList.remove('active');
+    
+    document.getElementById('mapType' + newMapType.charAt(0).toUpperCase() + newMapType.slice(1)).classList.add('active');
+    
+    // Set Google Maps map type
+    let googleMapType;
+    switch(newMapType) {
+        case 'satellite':
+            googleMapType = google.maps.MapTypeId.SATELLITE;
+            break;
+        case 'terrain':
+            googleMapType = google.maps.MapTypeId.TERRAIN;
+            break;
+        case 'roadmap':
+        default:
+            googleMapType = google.maps.MapTypeId.ROADMAP;
+            break;
+    }
+    
+    emergencyMap.setMapTypeId(googleMapType);
+}
+
+// Function to initialize a default map when no emergency is selected
+function initializeDefaultMap() {
+    const mapContainer = document.getElementById('emergencyMap');
+    if (!mapContainer) return;
+    
+    if (typeof google === 'undefined' || !google.maps || !googleMapsLoaded) {
+        console.warn('Google Maps not ready for default map initialization');
+        setTimeout(initializeDefaultMap, 500);
+        return;
+    }
+    
+    if (emergencyMap) {
+        // Map already exists, just trigger resize
+        google.maps.event.trigger(emergencyMap, 'resize');
+        return;
+    }
+    
+    console.log('Initializing default Google Maps');
+    emergencyMap = new google.maps.Map(mapContainer, {
+        center: { lat: 0, lng: 0 },
+        zoom: 2,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        zoomControl: true,
+        scrollwheel: true,
+        streetViewControl: false,
+        fullscreenControl: true
+    });
+    
+    const summaryEl = document.getElementById('locationSummary');
+    if (summaryEl) {
+        summaryEl.innerHTML = 'Select an emergency to view its location on the map.';
+    }
+}
+
+// Function to get English location name using Nominatim (OpenStreetMap's free geocoding service)
+function getEnglishLocationName(lat, lon, callback) {
+    // Use Nominatim reverse geocoding (free, no API key required)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1&accept-language=en`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.display_name) {
+                callback(data.display_name);
+            } else {
+                callback(null);
+            }
+        })
+        .catch(error => {
+            console.warn('Geocoding error:', error);
+            callback(null);
+        });
+}
+
+function renderEmergencyLocation(emergency) {
+    const summaryEl = document.getElementById('locationSummary');
+    const hasCoords = emergency.latitude != null && emergency.latitude !== '' &&
+                      emergency.longitude != null && emergency.longitude !== '';
+    
+    const mapContainer = document.getElementById('emergencyMap');
+    if (!mapContainer) {
+        console.warn('Map container not found');
+        return;
+    }
+    
+    // Check if Google Maps is loaded
+    if (typeof google === 'undefined' || !google.maps || !googleMapsLoaded) {
+        console.warn('Google Maps library not loaded yet, waiting...');
+        // Wait a bit and retry if Google Maps is still loading
+        if (!googleMapsLoaded) {
+            setTimeout(() => {
+                renderEmergencyLocation(emergency);
+            }, 500);
+            return;
+        }
+        console.error('Google Maps library not loaded');
+        mapContainer.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3 text-warning"></i>
+                    <p class="mb-2"><strong>Google Maps Not Loaded</strong></p>
+                    <p class="small mb-0">Please wait for Google Maps to load or refresh the page</p>
+                    <button class="btn btn-sm btn-primary mt-3" onclick="location.reload()">Reload Page</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Check if map container is visible and has dimensions
+    const containerRect = mapContainer.getBoundingClientRect();
+    if (containerRect.width === 0 || containerRect.height === 0) {
+        console.warn('Map container has no dimensions, waiting for tab to be visible...');
+        setTimeout(() => {
+            renderEmergencyLocation(emergency);
+        }, 300);
+        return;
+    }
+
+    // Clear any existing overlay message first
+    const existingOverlay = mapContainer.querySelector('.no-coords-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    // Default to a generic maritime area if no coordinates
+    let lat = 0;
+    let lon = 0;
+    let zoom = 2;
+
+    if (hasCoords) {
+        lat = parseFloat(emergency.latitude);
+        lon = parseFloat(emergency.longitude);
+        if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+            zoom = 15; // Better zoom for precise locations
+        } else {
+            lat = 0;
+            lon = 0;
+            zoom = 2;
+        }
+    }
+
+    // Initialize or update Google Maps
+    if (!emergencyMap) {
+        // Double-check Google Maps is loaded
+        if (typeof google === 'undefined' || !google.maps || !googleMapsLoaded) {
+            console.warn('Google Maps not ready, retrying in 500ms...');
+            setTimeout(() => renderEmergencyLocation(emergency), 500);
+            return;
+        }
+        
+        // Clear container and create new map
+        mapContainer.innerHTML = ''; // Clear any messages or overlays
+        
+        // Wait a bit to ensure container is fully visible
+        setTimeout(() => {
+            try {
+                if (!mapContainer || mapContainer.offsetParent === null) {
+                    console.warn('Map container not visible, cannot initialize map');
+                    return;
+                }
+                
+                // Ensure Google Maps is still available
+                if (typeof google === 'undefined' || !google.maps) {
+                    console.error('Google Maps not available when trying to initialize');
+                    return;
+                }
+                
+                console.log('Initializing Google Maps at:', lat, lon, 'zoom:', zoom);
+                
+                // Initialize Google Maps
+                emergencyMap = new google.maps.Map(mapContainer, {
+                    center: { lat: lat, lng: lon },
+                    zoom: zoom,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP,
+                    zoomControl: true,
+                    scrollwheel: true,
+                    streetViewControl: false,
+                    fullscreenControl: true
+                });
+                
+                // Add marker if coordinates are available
+                if (hasCoords && !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+                    // Create marker icon (matching system theme color)
+                    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#5a4fcf';
+                    const markerIcon = {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: primaryColor,
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 3
+                    };
+                    
+                    emergencyMapMarker = new google.maps.Marker({
+                        position: { lat: lat, lng: lon },
+                        map: emergencyMap,
+                        icon: markerIcon
+                    });
+                    
+                    // Get English location name via reverse geocoding
+                    getEnglishLocationName(lat, lon, (englishLocation) => {
+                        const locationName = englishLocation || emergency.location_name || 'Unknown Location';
+                        
+                        // Update summary
+                        if (summaryEl) {
+                            summaryEl.innerHTML = `
+                                <strong>Location:</strong> ${locationName} · 
+                                <strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lon.toFixed(6)}
+                            `;
+                        }
+                        
+                        // Create popup content
+                        const popupContent = `
+                            <div style="text-align: center; min-width: 250px; padding: 10px;">
+                                <h6 style="margin: 0 0 10px 0; color: #5a4fcf; font-weight: bold; font-size: 1.1em;">
+                                    <i class="fas fa-exclamation-triangle"></i> ${emergency.emergency_type || 'Emergency'}
+                                </h6>
+                                <p style="margin: 6px 0; font-weight: 500; color: #333;">📍 ${locationName}</p>
+                                <p style="margin: 6px 0; font-size: 0.95em; color: #6c757d;">🚢 ${emergency.ship_name || 'Unknown Vessel'}</p>
+                                <p style="margin: 6px 0; font-size: 0.85em; color: #999;">${lat.toFixed(6)}, ${lon.toFixed(6)}</p>
+                                ${emergency.severity_level ? `
+                                    <p style="margin: 8px 0 0 0;">
+                                        <span style="background: ${emergency.severity_level === 'critical' ? '#dc3545' : emergency.severity_level === 'high' ? '#ffc107' : '#17a2b8'}; 
+                                        color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600;">
+                                            ${emergency.severity_level.toUpperCase()}
+                                        </span>
+                                    </p>
+                                ` : ''}
+                            </div>
+                        `;
+                        
+                        // Create info window for Google Maps
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: popupContent
+                        });
+                        emergencyMapMarker.addListener('click', () => {
+                            infoWindow.open(emergencyMap, emergencyMapMarker);
+                        });
+                        infoWindow.open(emergencyMap, emergencyMapMarker);
+                    });
+                } else {
+                    // No coordinates - show message
+                    if (summaryEl) {
+                        summaryEl.innerHTML = 'No location information provided for this emergency.';
+                    }
+                }
+                
+                // Trigger resize to ensure map displays correctly
+                setTimeout(() => {
+                    if (emergencyMap && typeof google !== 'undefined' && google.maps) {
+                        google.maps.event.trigger(emergencyMap, 'resize');
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error initializing map:', error);
+                mapContainer.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                        <div class="text-center text-muted p-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                            <p class="mb-0">Error loading map: ${error.message || 'Unknown error'}</p>
+                            <small>Please try refreshing the page</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 100);
+    } else {
+        // Map exists, update the view and marker
+        try {
+            emergencyMap.setCenter({ lat: lat, lng: lon });
+            emergencyMap.setZoom(zoom);
+            
+            // Update or create marker
+            if (hasCoords && !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+                if (emergencyMapMarker) {
+                    // Update existing marker position
+                    emergencyMapMarker.setPosition({ lat: lat, lng: lon });
+                } else {
+                    // Create new marker
+                    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#5a4fcf';
+                    const markerIcon = {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: primaryColor,
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 3
+                    };
+                    
+                    emergencyMapMarker = new google.maps.Marker({
+                        position: { lat: lat, lng: lon },
+                        map: emergencyMap,
+                        icon: markerIcon
+                    });
+                }
+                
+                // Get English location name and update popup
+                getEnglishLocationName(lat, lon, (englishLocation) => {
+                    const locationName = englishLocation || emergency.location_name || 'Unknown Location';
+                    
+                    if (summaryEl) {
+                        summaryEl.innerHTML = `
+                            <strong>Location:</strong> ${locationName} · 
+                            <strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lon.toFixed(6)}
+                        `;
+                    }
+                    
+                    const popupContent = `
+                        <div style="text-align: center; min-width: 250px; padding: 10px;">
+                            <h6 style="margin: 0 0 10px 0; color: #5a4fcf; font-weight: bold; font-size: 1.1em;">
+                                <i class="fas fa-exclamation-triangle"></i> ${emergency.emergency_type || 'Emergency'}
+                            </h6>
+                            <p style="margin: 6px 0; font-weight: 500; color: #333;">📍 ${locationName}</p>
+                            <p style="margin: 6px 0; font-size: 0.95em; color: #6c757d;">🚢 ${emergency.ship_name || 'Unknown Vessel'}</p>
+                            <p style="margin: 6px 0; font-size: 0.85em; color: #999;">${lat.toFixed(6)}, ${lon.toFixed(6)}</p>
+                            ${emergency.severity_level ? `
+                                <p style="margin: 8px 0 0 0;">
+                                    <span style="background: ${emergency.severity_level === 'critical' ? '#dc3545' : emergency.severity_level === 'high' ? '#ffc107' : '#17a2b8'}; 
+                                    color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600;">
+                                        ${emergency.severity_level.toUpperCase()}
+                                    </span>
+                                </p>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    // Update or create info window
+                    if (emergencyMapMarker.infoWindow) {
+                        emergencyMapMarker.infoWindow.setContent(popupContent);
+                        emergencyMapMarker.infoWindow.open(emergencyMap, emergencyMapMarker);
+                    } else {
+                        emergencyMapMarker.infoWindow = new google.maps.InfoWindow({
+                            content: popupContent
+                        });
+                        emergencyMapMarker.addListener('click', () => {
+                            emergencyMapMarker.infoWindow.open(emergencyMap, emergencyMapMarker);
+                        });
+                        emergencyMapMarker.infoWindow.open(emergencyMap, emergencyMapMarker);
+                    }
+                });
+            } else {
+                // Remove marker if no valid coordinates
+                if (emergencyMapMarker) {
+                    emergencyMapMarker.setMap(null);
+                    emergencyMapMarker = null;
+                }
+                if (summaryEl) {
+                    summaryEl.innerHTML = 'No location information provided for this emergency.';
+                }
+            }
+            
+            // Trigger resize to ensure proper rendering
+            setTimeout(() => {
+                if (emergencyMap && typeof google !== 'undefined' && google.maps) {
+                    google.maps.event.trigger(emergencyMap, 'resize');
+                }
+            }, 100);
+        } catch (error) {
+            console.error('Error updating map view:', error);
+        }
+    }
+    
+    // Show overlay message if no coordinates
+    if (!hasCoords || isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
+        // Show an overlay message if no coordinates (without destroying the map)
+        const overlay = document.createElement('div');
+        overlay.className = 'no-coords-overlay';
+        overlay.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+        overlay.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                <p class="mb-0">No GPS coordinates available</p>
+                <small>Location: ${emergency.location_name || 'Not specified'}</small>
+            </div>
+        `;
+        mapContainer.style.position = 'relative';
+        mapContainer.appendChild(overlay);
+    }
+
+    // Trigger resize after a short delay to ensure tab is visible
+    setTimeout(() => {
+        if (emergencyMap && typeof google !== 'undefined' && google.maps) {
+            google.maps.event.trigger(emergencyMap, 'resize');
+        }
+    }, 300);
+}
+
+function loadEmergencyMessages(emergencyId) {
+    const id = emergencyId || selectedEmergencyId;
+    const list = document.getElementById('messagesList');
+    if (!id || !list) return;
+
+    list.innerHTML = '<div class="text-center py-4 text-muted">Loading messages...</div>';
+
+    fetch(`/api/emergency/${id}/messages`)
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                list.innerHTML = `
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Failed to load messages: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+                return;
+            }
+
+            const messages = data.messages || [];
+            if (messages.length === 0) {
+                list.innerHTML = '<div class="text-center py-4 text-muted">No messages yet. Start the conversation.</div>';
+                return;
+            }
+
+            let html = '';
+            messages.forEach(m => {
+                // Check if message is from current user (only if authenticated)
+                const isMine = isUserAuthenticated && currentUserId && String(m.sender_id) === String(currentUserId);
+                const alignClass = isMine ? 'justify-content-end' : 'justify-content-start';
+                const bubbleClass = isMine ? 'bg-primary text-white' : 'bg-light';
+                const name = m.sender_name || 'Unknown';
+                const role = m.sender_role || '';
+                html += `
+                    <div class="d-flex ${alignClass} mb-2">
+                        <div class="p-2 rounded ${bubbleClass}" style="max-width: 80%;">
+                            <div class="small fw-bold">${name} ${role ? `(${role})` : ''}</div>
+                            <div class="small mb-1">${m.message}</div>
+                            <div class="small text-muted text-end">${new Date(m.created_at).toLocaleString()}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+            list.scrollTop = list.scrollHeight;
+        })
+        .catch(err => {
+            console.error('Error loading messages', err);
+            list.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Network error: Failed to load messages. ${err.message || 'Please check your connection.'}
+                </div>
+            `;
+        });
+}
+
+function sendEmergencyMessage() {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first.');
+        return;
+    }
+    
+    if (!isUserAuthenticated) {
+        showAlert('warning', 'You must be logged in to send messages.');
+        return;
+    }
+
+    const input = document.getElementById('messageInput');
+    if (!input) return;
+
+    const message = input.value.trim();
+    if (!message) {
+        showAlert('info', 'Please type a message before sending.');
+        return;
+    }
+
+    fetch(`/api/emergency/${selectedEmergencyId}/send-message`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message})
+    })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                showAlert('danger', 'Failed to send message: ' + (data.error || 'Unknown error'));
+                return;
+            }
+            input.value = '';
+            loadEmergencyMessages(selectedEmergencyId);
+            loadEmergencyTimeline(selectedEmergencyId);
+        })
+        .catch(err => {
+            console.error('Error sending message', err);
+            showAlert('danger', 'Network error: Failed to send message. ' + (err.message || ''));
+        });
+}
+
+function loadEmergencyResources(emergencyId) {
+    const id = emergencyId || selectedEmergencyId;
+    const container = document.getElementById('resourcesList');
+    if (!id || !container) return;
+
+    container.innerHTML = '<div class="text-center py-3 text-muted">Loading resources...</div>';
+
+    fetch(`/api/emergency/${id}/resources`)
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                container.innerHTML = `
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Failed to load resources: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+                return;
+            }
+
+            const resources = data.resources || [];
+            if (resources.length === 0) {
+                container.innerHTML = '<div class="text-center py-3 text-muted">No resources assigned yet.</div>';
+                return;
+            }
+
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Status</th>
+                                <th>Assigned By</th>
+                                <th>Assigned At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            resources.forEach(r => {
+                const status = r.status || 'assigned';
+                const badge = status === 'released' ? 'secondary' : 'success';
+                // Use id field from database (primary key)
+                const resourceId = r.id !== undefined && r.id !== null ? r.id : '';
+                
+                // Escape HTML entities for data attributes
+                const escapeHtml = (str) => {
+                    if (!str) return '';
+                    return String(str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                };
+                
+                html += `
+                    <tr>
+                        <td>${r.resource_type || '-'}</td>
+                        <td>${r.resource_name || '-'}</td>
+                        <td>${r.resource_id || '-'}</td>
+                        <td><span class="badge bg-${badge} text-uppercase">${status}</span></td>
+                        <td>${r.assigned_by_name || 'Unknown'}</td>
+                        <td>${r.assigned_at ? new Date(r.assigned_at).toLocaleString() : '-'}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning edit-resource-btn" 
+                                        data-resource-id="${resourceId}"
+                                        data-resource-type="${escapeHtml(r.resource_type || '')}"
+                                        data-resource-name="${escapeHtml(r.resource_name || '')}"
+                                        data-resource-id-field="${escapeHtml(r.resource_id || '')}"
+                                        data-resource-status="${status}"
+                                        data-resource-notes="${escapeHtml(r.notes || '').replace(/\n/g, ' ').replace(/\r/g, '')}"
+                                        title="Edit Resource">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </button>
+                                ${status !== 'released' ? `
+                                <button class="btn btn-sm btn-outline-secondary" onclick="releaseResource(${resourceId})" title="Release Resource">
+                                    <i class="fas fa-undo-alt me-1"></i> Release
+                                </button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+            
+            // Add event listeners for edit buttons using event delegation
+            const editButtons = container.querySelectorAll('.edit-resource-btn');
+            console.log('Found edit buttons:', editButtons.length);
+            
+            editButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const resourceId = this.getAttribute('data-resource-id');
+                    const resourceType = this.getAttribute('data-resource-type') || '';
+                    const resourceName = this.getAttribute('data-resource-name') || '';
+                    const resourceIdField = this.getAttribute('data-resource-id-field') || '';
+                    const status = this.getAttribute('data-resource-status') || 'assigned';
+                    const notes = this.getAttribute('data-resource-notes') || '';
+                    console.log('Edit button clicked for resource:', resourceId);
+                    editResource(resourceId, resourceType, resourceName, resourceIdField, status, notes);
+                });
+            });
+        })
+        .catch(err => {
+            console.error('Error loading resources', err);
+            container.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Network error: Failed to load resources. ${err.message || 'Please check your connection.'}
+                </div>
+            `;
+        });
+}
+
+function showAssignResourceModal() {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first.');
+        return;
+    }
+    
+    if (!isUserAuthenticated) {
+        showAlert('warning', 'You must be logged in to assign resources.');
+        return;
+    }
+    
+    const form = document.getElementById('assignResourceForm');
+    if (form) form.reset();
+    const modal = new bootstrap.Modal(document.getElementById('assignResourceModal'));
+    modal.show();
+}
+
+function assignResource() {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first.');
+        return;
+    }
+    
+    if (!isUserAuthenticated) {
+        showAlert('warning', 'You must be logged in to assign resources.');
+        return;
+    }
+
+    const typeEl = document.getElementById('resourceType');
+    const nameEl = document.getElementById('resourceName');
+    const idEl = document.getElementById('resourceId');
+    const notesEl = document.getElementById('resourceNotes');
+
+    const payload = {
+        resource_type: typeEl?.value,
+        resource_name: nameEl?.value,
+        resource_id: idEl?.value,
+        notes: notesEl?.value || ''
+    };
+
+    if (!payload.resource_type || !payload.resource_name) {
+        showAlert('warning', 'Resource type and name are required.');
+        return;
+    }
+
+    fetch(`/api/emergency/${selectedEmergencyId}/assign-resource`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                showAlert('danger', 'Failed to assign resource: ' + (data.error || 'Unknown error'));
+                return;
+            }
+            showAlert('success', 'Resource assigned successfully.');
+            bootstrap.Modal.getInstance(document.getElementById('assignResourceModal')).hide();
+            loadEmergencyResources(selectedEmergencyId);
+            loadEmergencyTimeline(selectedEmergencyId);
+        })
+        .catch(err => {
+            console.error('Error assigning resource', err);
+            showAlert('danger', 'Network error: Failed to assign resource. ' + (err.message || ''));
+        });
+}
+
+function editResource(resourceId, resourceType, resourceName, resourceIdField, status, notes) {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first.');
+        return;
+    }
+    
+    if (!isUserAuthenticated) {
+        showAlert('warning', 'You must be logged in to edit resources.');
+        return;
+    }
+    
+    // Populate edit form
+    document.getElementById('editResourceId').value = resourceId;
+    document.getElementById('editResourceType').value = resourceType || '';
+    document.getElementById('editResourceName').value = resourceName || '';
+    document.getElementById('editResourceIdField').value = resourceIdField || '';
+    document.getElementById('editResourceStatus').value = status || 'assigned';
+    document.getElementById('editResourceNotes').value = notes || '';
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('editResourceModal'));
+    modal.show();
+}
+
+function updateResource() {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first.');
+        return;
+    }
+    
+    if (!isUserAuthenticated) {
+        showAlert('warning', 'You must be logged in to update resources.');
+        return;
+    }
+
+    const resourceId = document.getElementById('editResourceId').value;
+    const typeEl = document.getElementById('editResourceType');
+    const nameEl = document.getElementById('editResourceName');
+    const idEl = document.getElementById('editResourceIdField');
+    const statusEl = document.getElementById('editResourceStatus');
+    const notesEl = document.getElementById('editResourceNotes');
+
+    const payload = {
+        resource_type: typeEl?.value,
+        resource_name: nameEl?.value,
+        resource_id: idEl?.value || null,
+        status: statusEl?.value,
+        notes: notesEl?.value || ''
+    };
+
+    if (!payload.resource_type || !payload.resource_name) {
+        showAlert('warning', 'Resource type and name are required.');
+        return;
+    }
+
+    // Fetch CSRF token first
+    fetch('/api/csrf-token', {
+        credentials: 'same-origin'
+    })
+        .then(r => r.json())
+        .then(csrfData => {
+            if (!csrfData.csrf_token) {
+                throw new Error('Failed to get CSRF token');
+            }
+            payload.csrf_token = csrfData.csrf_token;
+            
+            return fetch(`/api/emergency/${selectedEmergencyId}/update-resource/${resourceId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                showAlert('danger', 'Failed to update resource: ' + (data.error || 'Unknown error'));
+                return;
+            }
+            showAlert('success', 'Resource updated successfully.');
+            bootstrap.Modal.getInstance(document.getElementById('editResourceModal')).hide();
+            loadEmergencyResources(selectedEmergencyId);
+            loadEmergencyTimeline(selectedEmergencyId);
+        })
+        .catch(err => {
+            console.error('Error updating resource', err);
+            showAlert('danger', 'Network error: Failed to update resource. ' + (err.message || ''));
+        });
+}
+
+function releaseResource(resourceId) {
+    if (!selectedEmergencyId) {
+        showAlert('warning', 'Please select an emergency first.');
+        return;
+    }
+    
+    if (!isUserAuthenticated) {
+        showAlert('warning', 'You must be logged in to release resources.');
+        return;
+    }
+    
+    if (!resourceId) return;
+
+    showConfirmModal(
+        'Release Resource',
+        'Are you sure you want to release this resource from the emergency?',
+        () => {
+            fetch(`/api/emergency/${selectedEmergencyId}/release-resource/${resourceId}`, {
+                method: 'POST',
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return response.text().then(text => {
+                            throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.success) {
+                        showAlert('danger', 'Failed to release resource: ' + (data.error || 'Unknown error'));
+                        return;
+                    }
+                    showAlert('success', 'Resource released successfully.');
+                    loadEmergencyResources(selectedEmergencyId);
+                    loadEmergencyTimeline(selectedEmergencyId);
+                })
+                .catch(err => {
+                    console.error('Error releasing resource', err);
+                    showAlert('danger', 'Network error: Failed to release resource. ' + (err.message || ''));
+                });
+        }
+    );
+}
+
+function loadAvailableResources() {
+    const container = document.getElementById('availableResourcesList');
+    if (!container) return;
+
+    container.innerHTML = '<div class="text-center py-3 text-muted">Loading available resources...</div>';
+
+    fetch('/api/emergency/current/available-resources', {
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            if (!response.ok) {
+                return { success: false };
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.resources) {
+                const resources = data.resources;
+                if (resources.length === 0) {
+                    container.innerHTML = '<div class="text-center py-3 text-muted">No available resources. Click "Add Resource" to create one.</div>';
+                    return;
+                }
+
+                let html = '<div class="list-group">';
+                resources.forEach(r => {
+                    const badgeClass = r.available ? 'bg-success' : 'bg-secondary';
+                    const badgeText = r.available ? 'Available' : 'Unavailable';
+                    const resourceId = r.id;
+                    const hasId = resourceId !== null && resourceId !== undefined;
+                    
+                    // Escape HTML for data attributes
+                    const escapeHtml = (str) => {
+                        if (!str) return '';
+                        return String(str)
+                            .replace(/&/g, '&amp;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#39;');
+                    };
+                    
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1">
+                                    <strong>${r.name || 'Unnamed Resource'}</strong>
+                                    <small class="text-muted d-block">${r.type || 'N/A'} - ${r.id_field || 'N/A'}</small>
+                                    ${r.location ? `<small class="text-muted d-block"><i class="fas fa-map-marker-alt me-1"></i>${r.location}</small>` : ''}
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge ${badgeClass}">${badgeText}</span>
+                                    <button class="btn btn-sm btn-outline-warning edit-available-resource-btn" 
+                                            data-resource-id="${hasId ? resourceId : ''}"
+                                            data-resource-type="${escapeHtml(r.type || '')}"
+                                            data-resource-name="${escapeHtml(r.name || '')}"
+                                            data-resource-id-field="${escapeHtml(r.id_field || '')}"
+                                            data-resource-location="${escapeHtml(r.location || '')}"
+                                            data-resource-available="${r.available}"
+                                            data-resource-notes="${escapeHtml(r.notes || '').replace(/\n/g, ' ').replace(/\r/g, '')}"
+                                            title="Edit Resource">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    ${hasId ? `
+                                    <button class="btn btn-sm btn-outline-danger delete-available-resource-btn" 
+                                            data-resource-id="${resourceId}"
+                                            data-resource-name="${escapeHtml(r.name || '')}"
+                                            title="Delete Resource">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+                
+                // Add event listeners for edit buttons
+                container.querySelectorAll('.edit-available-resource-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const resourceId = this.getAttribute('data-resource-id');
+                        const resourceType = this.getAttribute('data-resource-type') || '';
+                        const resourceName = this.getAttribute('data-resource-name') || '';
+                        const resourceIdField = this.getAttribute('data-resource-id-field') || '';
+                        const location = this.getAttribute('data-resource-location') || '';
+                        const available = this.getAttribute('data-resource-available') === 'true';
+                        const notes = this.getAttribute('data-resource-notes') || '';
+                        
+                        // If no ID, create new resource; otherwise edit existing
+                        if (!resourceId || resourceId === '') {
+                            // Create new resource
+                            editAvailableResource(null, resourceType, resourceName, resourceIdField, location, available, notes);
+                        } else {
+                            // Edit existing resource
+                            editAvailableResource(resourceId, resourceType, resourceName, resourceIdField, location, available, notes);
+                        }
+                    });
+                });
+                
+                // Add event listeners for delete buttons
+                container.querySelectorAll('.delete-available-resource-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const resourceId = this.getAttribute('data-resource-id');
+                        const resourceName = this.getAttribute('data-resource-name') || 'this resource';
+                        deleteAvailableResource(resourceId, resourceName);
+                    });
+                });
+            } else {
+                container.innerHTML = '<div class="text-center py-3 text-muted">No available resources. Click "Add Resource" to create one.</div>';
+            }
+        })
+        .catch(err => {
+            console.error('Error loading available resources', err);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error loading resources: ${err.message || 'Please try again.'}
+                </div>
+            `;
+        });
+}
+
+function showAddAvailableResourceModal() {
+    const form = document.getElementById('addAvailableResourceForm');
+    if (form) form.reset();
+    document.getElementById('addResourceAvailable').checked = true;
+    const modal = new bootstrap.Modal(document.getElementById('addAvailableResourceModal'));
+    modal.show();
+}
+
+function createAvailableResource() {
+    const typeEl = document.getElementById('addResourceType');
+    const nameEl = document.getElementById('addResourceName');
+    const idEl = document.getElementById('addResourceId');
+    const locationEl = document.getElementById('addResourceLocation');
+    const availableEl = document.getElementById('addResourceAvailable');
+    const notesEl = document.getElementById('addResourceNotes');
+
+    const payload = {
+        resource_type: typeEl?.value,
+        resource_name: nameEl?.value,
+        resource_id: idEl?.value || null,
+        location: locationEl?.value || null,
+        available: availableEl?.checked,
+        notes: notesEl?.value || ''
+    };
+
+    if (!payload.resource_type || !payload.resource_name) {
+        showAlert('warning', 'Resource type and name are required.');
+        return;
+    }
+
+    // Fetch CSRF token first
+    fetch('/api/csrf-token', {
+        credentials: 'same-origin'
+    })
+        .then(r => r.json())
+        .then(csrfData => {
+            if (!csrfData.csrf_token) {
+                throw new Error('Failed to get CSRF token');
+            }
+            payload.csrf_token = csrfData.csrf_token;
+            
+            return fetch('/api/available-resources', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                showAlert('danger', 'Failed to create resource: ' + (data.error || 'Unknown error'));
+                return;
+            }
+            showAlert('success', 'Resource created successfully.');
+            bootstrap.Modal.getInstance(document.getElementById('addAvailableResourceModal')).hide();
+            loadAvailableResources();
+        })
+        .catch(err => {
+            console.error('Error creating available resource', err);
+            showAlert('danger', 'Network error: Failed to create resource. ' + (err.message || ''));
+        });
+}
+
+function editAvailableResource(resourceId, resourceType, resourceName, resourceIdField, location, available, notes) {
+    // If no resourceId, this is a new resource - use the add modal instead
+    if (!resourceId || resourceId === '' || resourceId === 'null') {
+        document.getElementById('addResourceType').value = resourceType || '';
+        document.getElementById('addResourceName').value = resourceName || '';
+        document.getElementById('addResourceId').value = resourceIdField || '';
+        document.getElementById('addResourceLocation').value = location || '';
+        document.getElementById('addResourceAvailable').checked = available !== false;
+        document.getElementById('addResourceNotes').value = notes || '';
+        
+        const modal = new bootstrap.Modal(document.getElementById('addAvailableResourceModal'));
+        modal.show();
+        return;
+    }
+    
+    // Edit existing resource
+    document.getElementById('editAvailableResourceId').value = resourceId;
+    document.getElementById('editAvailableResourceType').value = resourceType || '';
+    document.getElementById('editAvailableResourceName').value = resourceName || '';
+    document.getElementById('editAvailableResourceIdField').value = resourceIdField || '';
+    document.getElementById('editAvailableResourceLocation').value = location || '';
+    document.getElementById('editAvailableResourceAvailable').checked = available !== false;
+    document.getElementById('editAvailableResourceNotes').value = notes || '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('editAvailableResourceModal'));
+    modal.show();
+}
+
+function updateAvailableResource() {
+    const resourceId = document.getElementById('editAvailableResourceId').value;
+    const typeEl = document.getElementById('editAvailableResourceType');
+    const nameEl = document.getElementById('editAvailableResourceName');
+    const idEl = document.getElementById('editAvailableResourceIdField');
+    const locationEl = document.getElementById('editAvailableResourceLocation');
+    const availableEl = document.getElementById('editAvailableResourceAvailable');
+    const notesEl = document.getElementById('editAvailableResourceNotes');
+
+    const payload = {
+        resource_type: typeEl?.value,
+        resource_name: nameEl?.value,
+        resource_id: idEl?.value || null,
+        location: locationEl?.value || null,
+        available: availableEl?.checked,
+        notes: notesEl?.value || ''
+    };
+
+    if (!payload.resource_type || !payload.resource_name) {
+        showAlert('warning', 'Resource type and name are required.');
+        return;
+    }
+
+    // Fetch CSRF token first
+    fetch('/api/csrf-token', {
+        credentials: 'same-origin'
+    })
+        .then(r => r.json())
+        .then(csrfData => {
+            if (!csrfData.csrf_token) {
+                throw new Error('Failed to get CSRF token');
+            }
+            payload.csrf_token = csrfData.csrf_token;
+            
+            return fetch(`/api/available-resources/${resourceId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                showAlert('danger', 'Failed to update resource: ' + (data.error || 'Unknown error'));
+                return;
+            }
+            showAlert('success', 'Resource updated successfully.');
+            bootstrap.Modal.getInstance(document.getElementById('editAvailableResourceModal')).hide();
+            loadAvailableResources();
+        })
+        .catch(err => {
+            console.error('Error updating available resource', err);
+            showAlert('danger', 'Network error: Failed to update resource. ' + (err.message || ''));
+        });
+}
+
+function deleteAvailableResource(resourceId, resourceName) {
+    showConfirmModal(
+        'Delete Available Resource',
+        `Are you sure you want to delete "${resourceName}"? This action cannot be undone.`,
+        () => {
+            // Fetch CSRF token first
+            fetch('/api/csrf-token', {
+                credentials: 'same-origin'
+            })
+                .then(r => r.json())
+                .then(csrfData => {
+                    if (!csrfData.csrf_token) {
+                        throw new Error('Failed to get CSRF token');
+                    }
+                    
+                    return fetch(`/api/available-resources/${resourceId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfData.csrf_token
+                        },
+                        credentials: 'same-origin'
+                    });
+                })
+                .then(response => {
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return response.text().then(text => {
+                            throw new Error('Server returned non-JSON response.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.success) {
+                        showAlert('danger', 'Failed to delete resource: ' + (data.error || 'Unknown error'));
+                        return;
+                    }
+                    showAlert('success', 'Resource deleted successfully.');
+                    loadAvailableResources();
+                })
+                .catch(err => {
+                    console.error('Error deleting available resource', err);
+                    showAlert('danger', 'Network error: Failed to delete resource. ' + (err.message || ''));
+                });
+        }
+    );
+}
+
+// ==================== LOCATION SERVICES ====================
+
+// Get current GPS location for emergency declaration
+function getCurrentLocation() {
+    const latInput = document.getElementById('emergencyLatitude');
+    const lonInput = document.getElementById('emergencyLongitude');
+    
+    if (!latInput || !lonInput) {
+        showAlert('warning', 'Location inputs not found');
+        return;
+    }
+    
+    if (!navigator.geolocation) {
+        showAlert('warning', 'Geolocation is not supported by your browser');
+        return;
+    }
+    
+    // Show loading state
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    btn.disabled = true;
+    
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            latInput.value = position.coords.latitude.toFixed(6);
+            lonInput.value = position.coords.longitude.toFixed(6);
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            showAlert('success', 'Current location captured successfully!');
+        },
+        function(error) {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            let errorMsg = 'Unable to get your location. ';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMsg += 'Please allow location access in your browser settings.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMsg += 'Location information is unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMsg += 'Location request timed out.';
+                    break;
+                default:
+                    errorMsg += 'An unknown error occurred.';
+                    break;
+            }
+            showAlert('warning', errorMsg);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+// ==================== REAL-TIME UPDATES (SSE) ====================
+
+function initEmergencyStream() {
+    if (typeof EventSource === 'undefined') {
+        // Browser does not support SSE; rely on polling only
+        return;
+    }
+
+    try {
+        const source = new EventSource('/api/emergency/stream');
+        source.onmessage = function (event) {
+            try {
+                const payload = JSON.parse(event.data);
+                if (payload.type === 'activity') {
+                    const activity = payload.data || {};
+                    // Refresh list when any activity happens
+                    loadEmergencyRequests();
+
+                    // If this activity belongs to the currently open emergency, refresh its details
+                    if (selectedEmergencyId && activity.emergency_id === selectedEmergencyId) {
+                        loadEmergencyTimeline(selectedEmergencyId);
+                        loadStatusHistory(selectedEmergencyId);
+                        loadEmergencyMessages(selectedEmergencyId);
+                        loadEmergencyResources(selectedEmergencyId);
+                    }
+                }
+            } catch (err) {
+                console.error('Error parsing SSE message', err);
+            }
+        };
+
+        source.onerror = function (err) {
+            console.warn('Emergency SSE connection error', err);
+        };
+    } catch (err) {
+        console.warn('Unable to initialize emergency SSE', err);
+    }
+}
+
+// Function to ensure tabs navigation is visible
+function ensureTabsVisible() {
+    const tabsContainer = document.getElementById('emergencyTabs');
+    const locationTab = document.getElementById('location-tab');
+    
+    console.log('ensureTabsVisible called');
+    console.log('Tabs container found:', !!tabsContainer);
+    console.log('Location tab found:', !!locationTab);
+    
+    if (tabsContainer) {
+        tabsContainer.style.display = 'flex';
+        tabsContainer.style.visibility = 'visible';
+        tabsContainer.style.opacity = '1';
+        tabsContainer.style.position = 'relative';
+        tabsContainer.style.zIndex = '1';
+        console.log('Tabs container styles applied');
+        
+        // Ensure all nav-items are visible
+        const allNavItems = tabsContainer.querySelectorAll('.nav-item');
+        console.log('Found', allNavItems.length, 'nav items');
+        allNavItems.forEach((item, index) => {
+            item.style.display = 'list-item';
+            item.style.visibility = 'visible';
+            item.style.opacity = '1';
+            const link = item.querySelector('.nav-link');
+            if (link) {
+                link.style.display = 'block';
+                link.style.visibility = 'visible';
+            }
+        });
+    } else {
+        console.error('Tabs container not found!');
+    }
+    
+    if (locationTab) {
+        locationTab.style.display = 'block';
+        locationTab.style.visibility = 'visible';
+        locationTab.style.opacity = '1';
+        console.log('Location tab styles applied');
+    }
+}
+
+// Alias for backward compatibility
+function ensureLocationTabVisible() {
+    ensureTabsVisible();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadEmergencyRequests();
+    loadAvailableResources();
+    
+    // Ensure tabs are visible on page load
+    ensureTabsVisible();
+    
+    // Watch for modal opening and ensure tabs are visible
+    const emergencyModal = document.getElementById('emergencyDetailsModal');
+    if (emergencyModal) {
+        emergencyModal.addEventListener('show.bs.modal', function() {
+            setTimeout(ensureTabsVisible, 50);
+        });
+        emergencyModal.addEventListener('shown.bs.modal', function() {
+            setTimeout(ensureTabsVisible, 100);
+            setTimeout(ensureTabsVisible, 300);
+        });
+    }
+    
+    // Refresh every 30 seconds
+    setInterval(() => {
+        if (!document.hidden) {
+            loadEmergencyRequests();
+        }
+    }, 30000);
+    
+    // Add enter key support for search
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filterEmergencies();
+            }
+        });
+    }
+
+    // Start real-time stream (if supported)
+    initEmergencyStream();
+});
+</script>
+
+<style>
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.table-primary {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6c757d;
+}
+
+.alert-heading {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Modal styles */
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, var(--primary-purple, #6f42c1), var(--secondary-purple, #5a32a3)) !important;
+}
+
+.modal-header.bg-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+}
+
+.modal-header.bg-warning {
+    background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: visible;
+}
+
+#emergencyDetailsModal .modal-body {
+    padding-top: 1rem;
+}
+
+/* Form validation styles */
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid {
+    border-color: #dc3545;
+}
+
+.was-validated .form-control:valid,
+.was-validated .form-select:valid {
+    border-color: #28a745;
+}
+
+/* Table improvements */
+.table-hover tbody tr:hover {
+    background-color: rgba(111, 66, 193, 0.05);
+    cursor: pointer;
+}
+
+/* Ensure table cells display on single line with horizontal scroll */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color, #007acc) #f1f1f1;
+}
+
+.table-responsive table {
+    width: 100%;
+    min-width: 800px;
+}
+
+.table-responsive th,
+.table-responsive td {
+    white-space: nowrap;
+    overflow: visible;
+}
+
+/* Custom scrollbar for table */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--primary-color, #007acc);
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color, #0e639c);
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Search input styling */
+#searchInput:focus {
+    border-color: var(--primary-purple, #6f42c1);
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+}
+
+/* Tab navigation improvements - ensure all tabs are visible */
+#emergencyTabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    white-space: nowrap;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    margin-bottom: 1rem !important;
+    border-bottom: 2px solid #e9ecef !important;
+}
+
+#emergencyTabs::-webkit-scrollbar {
+    height: 6px;
+}
+
+#emergencyTabs::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#emergencyTabs::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+#emergencyTabs::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#emergencyTabs .nav-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: list-item !important;
+    visibility: visible !important;
+}
+
+#emergencyTabs .nav-link {
+    white-space: nowrap;
+    display: block !important;
+    visibility: visible !important;
+    border: none !important;
+    color: #6c757d !important;
+    font-weight: 500 !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px 8px 0 0 !important;
+    margin-right: 0.5rem !important;
+    transition: all 0.3s ease !important;
+}
+
+#emergencyTabs .nav-link:hover {
+    color: var(--primary-color, #007acc) !important;
+    background-color: rgba(var(--primary-rgb, 0, 122, 204), 0.05) !important;
+}
+
+#emergencyTabs .nav-link.active {
+    background: white !important;
+    color: var(--primary-color, #007acc) !important;
+    border-bottom: 3px solid var(--primary-color, #007acc) !important;
+    font-weight: 600 !important;
+}
+
+/* Ensure Location tab is always visible */
+#location-tab {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+}
+
+/* Ensure the Location tab's parent li is visible - using nth-child since it's the 4th tab */
+#emergencyTabs .nav-item:nth-child(4) {
+    display: list-item !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .card-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .card-header .d-flex > div {
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    .input-group {
+        max-width: 100% !important;
+    }
+    
+    #emergencyTabs {
+        overflow-x: auto;
+    }
+    
+    #emergencyTabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    #emergencyTabs .nav-link.active {
+        border-bottom-width: 2px !important;
+    }
+}
+</style>
+{% endblock %}

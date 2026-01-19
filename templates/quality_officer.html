@@ -1,0 +1,800 @@
+{% extends "base.html" %}
+
+{% block title %}Quality Officer Dashboard - Marine Service Center{% endblock %}
+
+{% block content %}
+{% if current_user_profile.profile_pic_url %}
+<div class="text-center mb-4">
+    <img src="{{ current_user_profile.profile_pic_url }}" 
+         class="rounded-circle shadow" 
+         style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #007bff;"
+         alt="Profile Picture">
+    <h4 class="mt-3">{{ current_user_profile.full_name }}</h4>
+    <p class="text-muted">{{ current_user_profile.rank }} • {{ current_user_profile.role|replace('_', ' ')|title }}</p>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-clipboard-check fa-3x" style="color: #28a745;"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-1">Quality Officer Dashboard</h1>
+                        <p class="lead mb-0">Conduct service quality evaluations and monitor performance metrics</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quality Officer Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-primary">
+            <div class="card-body text-center">
+                <div class="metric-value" id="myEvaluations">--</div>
+                <div class="metric-label">My Evaluations</div>
+                <small class="text-muted">Total evaluations conducted</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-success">
+            <div class="card-body text-center">
+                <div class="metric-value" id="avgSqi">--</div>
+                <div class="metric-label">Avg SQI</div>
+                <small class="text-muted">Average Service Quality</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-info">
+            <div class="card-body text-center">
+                <div class="metric-value" id="daysRemaining">--</div>
+                <div class="metric-label">Days Remaining</div>
+                <small class="text-muted">Survey access period</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-warning">
+            <div class="card-body text-center">
+                <button class="btn btn-warning w-100 py-3" onclick="showAccessRequestModal()">
+                    <i class="fas fa-clock-history me-2"></i> Request Access Extension
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Role Interactions -->
+<div class="row mb-4" id="roleInteractionsSection">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-bell me-2"></i> Important Notices & Actions</h5>
+                    <span class="badge bg-warning" id="actionCount">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row" id="roleInteractions">
+                    <div class="col-12 text-center py-3">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Checking for notices...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('evaluate') }}" class="btn btn-primary w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    <span>New Service Evaluation</span>
+                </a>
+                <a href="{{ url_for('monitor') }}" class="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-chart-line me-2"></i>
+                    <span>View Performance</span>
+                </a>
+                <a href="{{ url_for('profile') }}" class="btn btn-success w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-user-circle me-2"></i>
+                    <span>My Profile</span>
+                </a>
+                <button class="btn btn-warning w-100 d-flex align-items-center justify-content-center" onclick="showAccessRequestModal()">
+                    <i class="fas fa-clock me-2"></i>
+                    <span>Request Access Extension</span>
+                </button>
+                
+                <hr class="my-3">
+                
+                <!-- Daily Target -->
+                <div class="mt-3">
+                    <h6><i class="fas fa-bullseye me-2"></i> Daily Target</h6>
+                    <div class="progress mb-2" style="height: 20px;">
+                        <div class="progress-bar bg-success" id="dailyProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Evaluations Today</small>
+                        <small><span id="todayCount">0</span>/5</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Survey Status -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i> Survey Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="surveyStatus">
+                    <div class="text-center py-2">
+                        <div class="spinner-border spinner-border-sm text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <small class="text-muted ms-2">Loading survey status...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column -->
+    <div class="col-lg-8">
+        <!-- Recent Evaluations -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i> My Recent Evaluations</h5>
+                    <div>
+                        <a href="{{ url_for('evaluate') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> New
+                        </a>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadMyEvaluations()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vessel</th>
+                                <th>SQI</th>
+                                <th>Rating</th>
+                                <th>Priority</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myEvaluationsTable">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading recent evaluations...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Chart -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> SQI Trend (Last 7 Evaluations)</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="sqiChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Evaluation Tips -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i> Evaluation Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-check-circle me-2"></i> Best Practices</h6>
+                            <ul class="mb-0 small">
+                                <li>Document all service parameters accurately</li>
+                                <li>Take photos of critical components</li>
+                                <li>Note any safety concerns immediately</li>
+                                <li>Verify parts availability before evaluation</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i> Reminders</h6>
+                            <ul class="mb-0 small">
+                                <li>Complete at least 5 evaluations daily</li>
+                                <li>Report emergencies within 15 minutes</li>
+                                <li>Update incomplete evaluations within 24 hours</li>
+                                <li>Maintain survey period compliance</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Access Request Modal -->
+<div class="modal fade" id="accessRequestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Access Extension</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Your request will be sent to the port engineer for approval.
+                </div>
+                
+                <form id="accessRequestForm">
+                    <div class="mb-3">
+                        <label class="form-label">Additional Days Required *</label>
+                        <input type="number" class="form-control" id="additionalDays" min="1" max="90" value="30" required>
+                        <small class="form-text text-muted">Maximum extension: 90 days</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Extension *</label>
+                        <textarea class="form-control" id="extensionReason" rows="3" 
+                                  placeholder="Explain why you need additional access time..." required></textarea>
+                        <small class="form-text text-muted">Provide specific reasons such as ongoing projects or additional surveys needed.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Expected Completion Date *</label>
+                        <input type="date" class="form-control" id="expectedCompletion" required>
+                        <small class="form-text text-muted">When do you expect to complete your surveys?</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Supporting Documents</label>
+                        <input type="file" class="form-control" id="supportingDocs" multiple 
+                               accept=".pdf,.doc,.docx,.jpg,.png">
+                        <small class="form-text text-muted">Upload any supporting documents (max 100MB total)</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAccessRequest()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Details Modal -->
+<div class="modal fade" id="evaluationDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Evaluation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="evaluationDetailsContent">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let sqiChart = null;
+let qualityData = null;
+
+// Load quality officer data
+function loadQualityOfficerData() {
+    fetch('/api/dashboard-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                qualityData = data.data;
+                
+                // Update stats
+                document.getElementById('myEvaluations').textContent = data.data.my_evaluations || 0;
+                document.getElementById('avgSqi').textContent = data.data.avg_sqi || '0.0';
+                document.getElementById('todayCount').textContent = data.data.today_evaluations || 0;
+                
+                // Update daily progress
+                const progress = Math.min(100, (data.data.today_evaluations || 0) * 20);
+                document.getElementById('dailyProgress').style.width = progress + '%';
+                
+                // Calculate days remaining
+                if (data.data.survey_end_date) {
+                    const endDate = new Date(data.data.survey_end_date);
+                    const today = new Date();
+                    const diffTime = endDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    document.getElementById('daysRemaining').textContent = diffDays > 0 ? diffDays : 0;
+                    
+                    // Update survey status
+                    updateSurveyStatus(data.data.survey_end_date, diffDays);
+                }
+                
+                // Load my evaluations
+                loadMyEvaluations();
+                
+                // Load role interactions
+                loadRoleInteractions();
+                
+                // Update expected completion date in modal
+                if (data.data.survey_end_date) {
+                    const endDate = new Date(data.data.survey_end_date);
+                    endDate.setDate(endDate.getDate() + 30); // Default 30-day extension
+                    document.getElementById('expectedCompletion').valueAsDate = endDate;
+                }
+            }
+        });
+}
+
+function updateSurveyStatus(surveyEndDate, daysRemaining) {
+    let statusHtml = '';
+    
+    if (daysRemaining > 7) {
+        statusHtml = `
+            <div class="alert alert-success">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">Survey Period Active</h6>
+                        <p class="mb-0">Valid until: <strong>${surveyEndDate}</strong></p>
+                        <p class="mb-0">Days remaining: <strong class="text-success">${daysRemaining}</strong></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="progress mb-2" style="height: 10px;">
+                <div class="progress-bar bg-success" style="width: ${Math.min(100, (90 - daysRemaining) / 90 * 100)}%"></div>
+            </div>
+            <small class="text-muted">Time used: ${90 - daysRemaining} of 90 days</small>
+        `;
+    } else if (daysRemaining > 0) {
+        statusHtml = `
+            <div class="alert alert-warning">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">Survey Period Expiring Soon</h6>
+                        <p class="mb-0">Survey ends on: <strong>${surveyEndDate}</strong></p>
+                        <p class="mb-0">Only <strong class="text-warning">${daysRemaining}</strong> days remaining</p>
+                        <button class="btn btn-sm btn-warning mt-2" onclick="showAccessRequestModal()">
+                            <i class="fas fa-clock me-1"></i> Request Extension
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        statusHtml = `
+            <div class="alert alert-danger">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-times-circle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">Survey Period Expired</h6>
+                        <p class="mb-0">Your survey period ended on <strong>${surveyEndDate}</strong></p>
+                        <p class="mb-2">You cannot conduct new evaluations until access is extended.</p>
+                        <button class="btn btn-sm btn-danger" onclick="showAccessRequestModal()">
+                            <i class="fas fa-clock-history me-1"></i> Request Access Extension
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('surveyStatus').innerHTML = statusHtml;
+}
+
+function loadMyEvaluations() {
+    fetch('/api/my-evaluations')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateEvaluationsTable(data.evaluations);
+                updateSQIChart(data.evaluations.slice(0, 7).map(e => e.sqi_score));
+            } else {
+                // Fallback to sample data
+                loadSampleEvaluations();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading evaluations:', error);
+            loadSampleEvaluations();
+        });
+}
+
+function updateEvaluationsTable(evaluations) {
+    let html = '';
+    
+    if (evaluations.length === 0) {
+        html = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No evaluations found</p>
+                    <a href="{{ url_for('evaluate') }}" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-plus me-1"></i> Start Your First Evaluation
+                    </a>
+                </td>
+            </tr>
+        `;
+    } else {
+        evaluations.forEach(eval => {
+            const ratingClass = eval.sqi_rating === 'EXCELLENT' ? 'success' :
+                              eval.sqi_rating === 'GOOD' ? 'primary' :
+                              eval.sqi_rating === 'AVERAGE' ? 'warning' :
+                              eval.sqi_rating === 'POOR' ? 'danger' : 'dark';
+            
+            const priorityBadge = eval.priority === 'EMERGENCY' ? 'danger' :
+                                eval.priority === 'HIGH' ? 'warning' :
+                                eval.priority === 'MEDIUM' ? 'info' : 'success';
+            
+            const sqiClass = eval.sqi_score >= 85 ? 'text-success' :
+                            eval.sqi_score >= 70 ? 'text-primary' :
+                            eval.sqi_score >= 55 ? 'text-warning' :
+                            eval.sqi_score >= 40 ? 'text-danger' : 'text-dark';
+            
+            const date = new Date(eval.timestamp);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            html += `
+                <tr>
+                    <td><small class="text-muted">${formattedDate}</small></td>
+                    <td>${eval.vessel_name}</td>
+                    <td><strong class="${sqiClass}">${eval.sqi_score}</strong></td>
+                    <td><span class="badge bg-${ratingClass}">${eval.sqi_rating}</span></td>
+                    <td><span class="badge bg-${priorityBadge}">${eval.priority}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewEvaluationDetails('${eval.request_id || eval.evaluation_id}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-outline-success ms-1" onclick="editEvaluation('${eval.request_id || eval.evaluation_id}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    document.getElementById('myEvaluationsTable').innerHTML = html;
+}
+
+function loadSampleEvaluations() {
+    // Sample evaluation data
+    const evaluations = [
+        { evaluation_id: 'EVAL-20240125-143021', timestamp: '2024-01-25 14:30:00', vessel_name: 'MV Ocean Carrier', sqi_score: 82.5, sqi_rating: 'EXCELLENT', priority: 'LOW' },
+        { evaluation_id: 'EVAL-20240124-111521', timestamp: '2024-01-24 11:15:00', vessel_name: 'SS Sea Voyager', sqi_score: 65.2, sqi_rating: 'AVERAGE', priority: 'HIGH' },
+        { evaluation_id: 'EVAL-20240123-094523', timestamp: '2024-01-23 09:45:00', vessel_name: 'MV Maritime', sqi_score: 91.3, sqi_rating: 'EXCELLENT', priority: 'LOW' },
+        { evaluation_id: 'EVAL-20240122-162312', timestamp: '2024-01-22 16:23:00', vessel_name: 'MV Coastal', sqi_score: 45.8, sqi_rating: 'CRITICAL', priority: 'EMERGENCY' },
+        { evaluation_id: 'EVAL-20240121-093421', timestamp: '2024-01-21 09:34:00', vessel_name: 'MV Horizon', sqi_score: 73.4, sqi_rating: 'GOOD', priority: 'MEDIUM' }
+    ];
+    
+    let html = '';
+    evaluations.forEach(eval => {
+        const ratingClass = eval.sqi_rating === 'EXCELLENT' ? 'success' :
+                          eval.sqi_rating === 'GOOD' ? 'primary' :
+                          eval.sqi_rating === 'AVERAGE' ? 'warning' :
+                          eval.sqi_rating === 'POOR' ? 'danger' : 'dark';
+        
+        const priorityBadge = eval.priority === 'EMERGENCY' ? 'danger' :
+                            eval.priority === 'HIGH' ? 'warning' :
+                            eval.priority === 'MEDIUM' ? 'info' : 'success';
+        
+        const sqiClass = eval.sqi_score >= 85 ? 'text-success' :
+                        eval.sqi_score >= 70 ? 'text-primary' :
+                        eval.sqi_score >= 55 ? 'text-warning' :
+                        eval.sqi_score >= 40 ? 'text-danger' : 'text-dark';
+        
+        html += `
+            <tr>
+                <td><small class="text-muted">${eval.timestamp}</small></td>
+                <td>${eval.vessel_name}</td>
+                <td><strong class="${sqiClass}">${eval.sqi_score}</strong></td>
+                <td><span class="badge bg-${ratingClass}">${eval.sqi_rating}</span></td>
+                <td><span class="badge bg-${priorityBadge}">${eval.priority}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewEvaluationDetails('${eval.evaluation_id}')">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-sm btn-outline-success ms-1" onclick="editEvaluation('${eval.evaluation_id}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    document.getElementById('myEvaluationsTable').innerHTML = html;
+    updateSQIChart(evaluations.map(e => e.sqi_score));
+}
+
+function updateSQIChart(sqiValues) {
+    // Destroy existing chart
+    if (sqiChart) {
+        sqiChart.destroy();
+    }
+    
+    const ctx = document.getElementById('sqiChart').getContext('2d');
+    const labels = sqiValues.map((_, index) => `Evaluation ${index + 1}`);
+    
+    sqiChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'SQI Score',
+                data: sqiValues,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#28a745',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = 'SQI: ' + context.parsed.y;
+                            if (context.parsed.y >= 85) label += ' (EXCELLENT)';
+                            else if (context.parsed.y >= 70) label += ' (GOOD)';
+                            else if (context.parsed.y >= 55) label += ' (AVERAGE)';
+                            else if (context.parsed.y >= 40) label += ' (POOR)';
+                            else label += ' (CRITICAL)';
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 0,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'SQI Score',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + '/100';
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function loadRoleInteractions() {
+    fetch('/api/inter-role-actions')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const container = document.getElementById('roleInteractions');
+                const section = document.getElementById('roleInteractionsSection');
+                const count = document.getElementById('actionCount');
+                
+                if (data.actions.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center py-3">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <p class="text-muted">No pending notices</p>
+                            <small class="text-muted">You're all caught up!</small>
+                        </div>
+                    `;
+                    count.textContent = '0';
+                } else {
+                    count.textContent = data.actions.length;
+                    
+                    let html = '';
+                    data.actions.forEach(action => {
+                        html += `
+                            <div class="col-12 mb-2">
+                                <div class="alert alert-${action.badge_color}">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-${action.icon} me-3" style="font-size: 1.5rem;"></i>
+                                        <div class="flex-grow-1">
+                                            <h6 class="alert-heading mb-1">${action.title}</h6>
+                                            <p class="mb-0 small">${action.description}</p>
+                                        </div>
+                                        <span class="badge bg-white text-${action.badge_color}">${action.count}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                }
+            }
+        });
+}
+
+function showAccessRequestModal() {
+    const modal = new bootstrap.Modal(document.getElementById('accessRequestModal'));
+    modal.show();
+}
+
+function submitAccessRequest() {
+    const additionalDays = document.getElementById('additionalDays').value;
+    const reason = document.getElementById('extensionReason').value;
+    const expectedCompletion = document.getElementById('expectedCompletion').value;
+    
+    if (!additionalDays || !reason || !expectedCompletion) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    const data = {
+        reason: reason,
+        additional_days: parseInt(additionalDays),
+        expected_completion: expectedCompletion
+    };
+    
+    fetch('/api/quality-officer/request-access', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Access extension request submitted successfully!');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('accessRequestModal'));
+            modal.hide();
+            
+            // Clear form
+            document.getElementById('accessRequestForm').reset();
+            
+            // Reload data
+            setTimeout(() => {
+                loadQualityOfficerData();
+            }, 1000);
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+function viewEvaluationDetails(evaluationId) {
+    fetch(`/api/evaluation-details/${evaluationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const evaluation = data.evaluation;
+                
+                let html = `
+                    <h6>Evaluation Details</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Evaluation ID:</strong><br>
+                            <code>${evaluation.evaluation_id}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Date:</strong><br>
+                            ${new Date(evaluation.timestamp).toLocaleString()}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Vessel:</strong><br>
+                            ${evaluation.vessel_name}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Category:</strong><br>
+                            ${evaluation.part_category}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-${evaluation.sqi_rating === 'EXCELLENT' ? 'success' : evaluation.sqi_rating === 'GOOD' ? 'info' : evaluation.sqi_rating === 'AVERAGE' ? 'warning' : 'danger'}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h3>SQI: ${evaluation.sqi_score}/100</h3>
+                                <h4>Rating: ${evaluation.sqi_rating}</h4>
+                            </div>
+                            <div class="col-md-6 text-center">
+                                <div class="display-1 fw-bold">${evaluation.sqi_score}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('evaluationDetailsContent').innerHTML = html;
+                const modal = new bootstrap.Modal(document.getElementById('evaluationDetailsModal'));
+                modal.show();
+            }
+        });
+}
+
+function editEvaluation(evaluationId) {
+    // Redirect to evaluate page with evaluation ID for editing
+    window.location.href = `/evaluate?edit=${evaluationId}`;
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadQualityOfficerData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadQualityOfficerData, 30000);
+});
+
+// Chart container styling
+const style = document.createElement('style');
+style.textContent = `
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

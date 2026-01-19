@@ -1,0 +1,2089 @@
+{% extends "base.html" %}
+
+{% block title %}Service Quality Evaluation - Marine Service Center{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.css" rel="stylesheet">
+<style>
+    :root {
+        --primary-color: #007acc;
+        --secondary-color: #0e639c;
+        --accent-color: #007fd4;
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .metric-card {
+        border-left: 4px solid;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color, #5a4fcf);
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    
+    .chart-container-large {
+        position: relative;
+        height: 350px;
+        margin: 1rem 0;
+    }
+
+    /* Evaluation Parameter Slider Styles */
+    .evaluation-card {
+        border: none;
+        box-shadow: var(--shadow-md);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .evaluation-body {
+        padding: 2rem;
+        background: #f8f9fa;
+    }
+
+    .evaluation-parameter {
+        background: white;
+        border-radius: 10px;
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .evaluation-parameter:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateX(4px);
+    }
+
+    .param-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .param-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+        letter-spacing: 0.3px;
+    }
+
+    .param-badge {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 8px rgba(0, 122, 204, 0.25);
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .param-slider-container {
+        margin-bottom: 1rem;
+    }
+
+    .param-slider {
+        width: 100%;
+        height: 8px;
+        border-radius: 5px;
+        background: linear-gradient(to right, 
+            #ef5350 0%, 
+            #ef5350 25%, 
+            #ff9800 25%, 
+            #ff9800 50%, 
+            #4caf50 50%, 
+            #4caf50 75%, 
+            #2196f3 75%, 
+            #2196f3 100%);
+        outline: none;
+        -webkit-appearance: none;
+        margin-bottom: 1.25rem;
+        cursor: pointer;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .param-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 122, 204, 0.4);
+        border: 3px solid var(--primary-color);
+        transition: all 0.2s ease;
+    }
+
+    .param-slider::-webkit-slider-thumb:hover {
+        width: 26px;
+        height: 26px;
+        box-shadow: 0 4px 12px rgba(0, 122, 204, 0.5);
+    }
+
+    .param-slider::-webkit-slider-thumb:active {
+        transform: scale(0.95);
+    }
+
+    .param-slider::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 122, 204, 0.4);
+        border: 3px solid var(--primary-color);
+        transition: all 0.2s ease;
+    }
+
+    .param-slider::-moz-range-thumb:hover {
+        width: 26px;
+        height: 26px;
+        box-shadow: 0 4px 12px rgba(0, 122, 204, 0.5);
+    }
+
+    .slider-indicators {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .indicator {
+        font-size: 0.8rem;
+        color: #666;
+        font-weight: 500;
+        padding: 0.5rem 0.75rem;
+        background: rgba(0, 122, 204, 0.08);
+        border-radius: 6px;
+        flex: 1;
+        text-align: center;
+        border-left: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .indicator:first-child {
+        border-left-color: #ef5350;
+    }
+
+    .indicator:nth-child(2) {
+        border-left-color: #ff9800;
+    }
+
+    .indicator:nth-child(3) {
+        border-left-color: #4caf50;
+    }
+
+    .indicator:nth-child(4) {
+        border-left-color: #2196f3;
+    }
+
+    .param-feedback {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: rgba(0, 122, 204, 0.08);
+        border-radius: 6px;
+        border-left: 4px solid var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .param-feedback.text-success {
+        background: rgba(76, 175, 80, 0.08);
+        border-left-color: #4caf50;
+        color: #4caf50;
+    }
+
+    .param-feedback.text-warning {
+        background: rgba(255, 152, 0, 0.08);
+        border-left-color: #ff9800;
+        color: #ff9800;
+    }
+
+    .param-feedback.text-danger {
+        background: rgba(239, 83, 80, 0.08);
+        border-left-color: #ef5350;
+        color: #ef5350;
+    }
+
+    .param-feedback.text-primary {
+        background: rgba(0, 122, 204, 0.08);
+        border-left-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .evaluation-parameter {
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .param-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .param-badge {
+            width: 100%;
+            text-align: center;
+        }
+
+        .slider-indicators {
+            flex-wrap: wrap;
+        }
+
+        .indicator {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.5rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .evaluation-body {
+            padding: 1rem;
+        }
+
+        .evaluation-parameter {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .param-title {
+            font-size: 1rem;
+        }
+
+        .param-badge {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .slider-indicators {
+            gap: 0.25rem;
+        }
+
+        .indicator {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.4rem;
+        }
+    }
+
+    /* Additional Layout Styles */
+    .parameters-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .parameters-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .request-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background: rgba(0, 122, 204, 0.05);
+        border-radius: 6px;
+        font-size: 0.95rem;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #666;
+    }
+
+    .detail-value {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .signature-box {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 576px) {
+        .button-group {
+            flex-direction: column;
+        }
+
+        .button-group .btn {
+            width: 100%;
+        }
+    }
+
+    /* Scroll to form helper */
+    @keyframes smoothScroll {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .evaluation-parameter {
+        animation: smoothScroll 0.3s ease-out;
+    }
+
+    /* Responsive Layout Adjustments */
+    @media (max-width: 1200px) {
+        .parameters-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 992px) {
+        #evaluationSection {
+            flex-direction: column-reverse;
+        }
+
+        #evaluationSection .col-lg-9 {
+            max-width: 100%;
+        }
+
+        #evaluationSection .col-lg-3 {
+            max-width: 100%;
+        }
+    }
+
+{% block content %}
+<!-- Main Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important; color: white !important; border-radius: 12px 12px 0 0;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-clipboard-check me-3 fa-2x text-white"></i>
+                        <div>
+                            <h2 class="mb-0 text-white">Service Quality Evaluation</h2>
+                            <p class="mb-0 text-white-50">Evaluate maintenance services using fuzzy logic expert system</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-light" onclick="scrollToForm()" title="Jump to Form">
+                        <i class="fas fa-arrow-down me-2"></i> Start Evaluation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="row mb-5">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card border-start border-5 border-primary">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="metric-value" id="totalEvaluations">0</div>
+                        <div class="metric-label">Total Evaluations</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-clipboard-list fa-2x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card border-start border-5 border-success">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="metric-value text-success" id="avgSQI">0.0</div>
+                        <div class="metric-label">Average SQI Score</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-star fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card border-start border-5 border-warning">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="metric-value text-warning" id="pendingEvaluations">0</div>
+                        <div class="metric-label">Pending Evaluations</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-clock fa-2x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card border-start border-5 border-info">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="metric-value text-info" id="excellentRate">0%</div>
+                        <div class="metric-label">Excellent Rate</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-trophy fa-2x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Evaluation Section -->
+<div class="row mb-5" id="evaluationSection">
+    <!-- Service Request Selection -->
+    <div class="col-lg-3 mb-4">
+        <div class="card evaluation-card">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white;">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i> Request Selection</h5>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Find Request</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchRequest" placeholder="Request ID">
+                        <button class="btn btn-primary" onclick="searchRequest()" title="Search Request">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Available Requests</label>
+                    <select class="form-select" id="requestSelect" onchange="loadRequestDetails()">
+                        <option value="">-- Select Request --</option>
+                        <option value="MR-20240115-143021">MR-20240115-143021 - MV Ocean Carrier</option>
+                        <option value="MR-20240114-092315">MR-20240114-092315 - SS Sea Voyager</option>
+                        <option value="MR-20240113-164522">MR-20240113-164522 - MV Maritime</option>
+                        <option value="MR-20240112-112045">MR-20240112-112045 - MV Coastal</option>
+                    </select>
+                </div>
+
+                <!-- Request Details Panel -->
+                <div id="requestInfo" style="display: none;">
+                    <hr class="my-3">
+                    <div class="request-details">
+                        <div class="detail-item">
+                            <span class="detail-label"><i class="fas fa-ship me-1"></i> Ship</span>
+                            <span class="detail-value" id="infoShip">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label"><i class="fas fa-tools me-1"></i> Type</span>
+                            <span class="detail-value" id="infoType">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label"><i class="fas fa-exclamation-circle me-1"></i> Priority</span>
+                            <span class="detail-value" id="infoCriticality">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label"><i class="fas fa-calendar me-1"></i> Date</span>
+                            <span class="detail-value" id="infoDate">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Templates -->
+                <hr class="my-3">
+                <label class="form-label fw-bold mb-2">Quick Templates</label>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-success" onclick="loadTemplate('excellent')">
+                        <i class="fas fa-star me-1"></i> Excellent
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="loadTemplate('average')">
+                        <i class="fas fa-chart-line me-1"></i> Average
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="loadTemplate('poor')">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Poor
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evaluation Summary Box -->
+        <div class="card mt-3 evaluation-card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Summary</h6>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                <div id="evaluationSummary">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                        <p class="small">Select a request to begin</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Evaluation Form -->
+    <div class="col-lg-9" id="formSection">
+        <div class="card evaluation-card">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white;">
+                <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i> Evaluation Parameters</h5>
+            </div>
+            <div class="card-body evaluation-body">
+                <form id="evaluationForm">
+                    <!-- Parameters Grid -->
+                    <div class="parameters-grid">
+                        <!-- Response Time -->
+                        <div class="evaluation-parameter">
+                            <div class="param-header">
+                                <label class="param-title"><i class="fas fa-clock me-2"></i>Response Time (MTTR)</label>
+                                <span class="param-badge" id="responseTimeValue">180 min</span>
+                            </div>
+                            <div class="param-slider-container">
+                                <input type="range" class="param-slider" id="responseTime" min="0" max="720" value="180" step="5"
+                                       oninput="updateSlider('responseTime', this.value)">
+                                <div class="slider-indicators">
+                                    <span class="indicator">Immediate</span>
+                                    <span class="indicator">Excellent</span>
+                                    <span class="indicator">Good</span>
+                                    <span class="indicator">Poor</span>
+                                </div>
+                            </div>
+                            <small class="param-feedback" id="responseTimeFeedback">Moderate response time</small>
+                        </div>
+                        
+                        <!-- Parts Availability -->
+                        <div class="evaluation-parameter">
+                            <div class="param-header">
+                                <label class="param-title"><i class="fas fa-boxes me-2"></i>Parts Availability</label>
+                                <span class="param-badge" id="partsAvailabilityValue">70%</span>
+                            </div>
+                            <div class="param-slider-container">
+                                <input type="range" class="param-slider" id="partsAvailability" min="0" max="100" value="70" step="1"
+                                       oninput="updateSlider('partsAvailability', this.value)">
+                                <div class="slider-indicators">
+                                    <span class="indicator">None</span>
+                                    <span class="indicator">Low</span>
+                                    <span class="indicator">Good</span>
+                                    <span class="indicator">Excellent</span>
+                                </div>
+                            </div>
+                            <small class="param-feedback" id="partsAvailabilityFeedback">Good parts availability</small>
+                        </div>
+                        
+                        <!-- Technical Expertise -->
+                        <div class="evaluation-parameter">
+                            <div class="param-header">
+                                <label class="param-title"><i class="fas fa-graduation-cap me-2"></i>Technical Expertise</label>
+                                <span class="param-badge" id="technicalExpertiseValue">6.0/10</span>
+                            </div>
+                            <div class="param-slider-container">
+                                <input type="range" class="param-slider" id="technicalExpertise" min="1" max="10" value="6" step="0.1"
+                                       oninput="updateSlider('technicalExpertise', this.value)">
+                                <div class="slider-indicators">
+                                    <span class="indicator">Poor</span>
+                                    <span class="indicator">Basic</span>
+                                    <span class="indicator">Proficient</span>
+                                    <span class="indicator">Expert</span>
+                                </div>
+                            </div>
+                            <small class="param-feedback" id="technicalExpertiseFeedback">Average technical expertise</small>
+                        </div>
+                        
+                        <!-- Documentation Quality -->
+                        <div class="evaluation-parameter">
+                            <div class="param-header">
+                                <label class="param-title"><i class="fas fa-file-alt me-2"></i>Documentation Quality</label>
+                                <span class="param-badge" id="documentationValue">75%</span>
+                            </div>
+                            <div class="param-slider-container">
+                                <input type="range" class="param-slider" id="documentation" min="0" max="100" value="75" step="1"
+                                       oninput="updateSlider('documentation', this.value)">
+                                <div class="slider-indicators">
+                                    <span class="indicator">None</span>
+                                    <span class="indicator">Basic</span>
+                                    <span class="indicator">Good</span>
+                                    <span class="indicator">Complete</span>
+                                </div>
+                            </div>
+                            <small class="param-feedback" id="documentationFeedback">Good documentation quality</small>
+                        </div>
+                        
+                        <!-- Emergency Support -->
+                        <div class="evaluation-parameter">
+                            <div class="param-header">
+                                <label class="param-title"><i class="fas fa-headset me-2"></i>Emergency Support</label>
+                                <span class="param-badge" id="emergencySupportValue">5.0/10</span>
+                            </div>
+                            <div class="param-slider-container">
+                                <input type="range" class="param-slider" id="emergencySupport" min="1" max="10" value="5" step="0.1"
+                                       oninput="updateSlider('emergencySupport', this.value)">
+                                <div class="slider-indicators">
+                                    <span class="indicator">None</span>
+                                    <span class="indicator">Limited</span>
+                                    <span class="indicator">Available</span>
+                                    <span class="indicator">24/7</span>
+                                </div>
+                            </div>
+                            <small class="param-feedback" id="emergencySupportFeedback">Average emergency support</small>
+                        </div>
+                        
+                        <!-- First-Time Fix Rate -->
+                        <div class="evaluation-parameter">
+                            <div class="param-header">
+                                <label class="param-title"><i class="fas fa-check-circle me-2"></i>First-Time Fix Rate</label>
+                                <span class="param-badge" id="firstTimeFixValue">70%</span>
+                            </div>
+                            <div class="param-slider-container">
+                                <input type="range" class="param-slider" id="firstTimeFix" min="0" max="100" value="70" step="1"
+                                       oninput="updateSlider('firstTimeFix', this.value)">
+                                <div class="slider-indicators">
+                                    <span class="indicator">Low</span>
+                                    <span class="indicator">Average</span>
+                                    <span class="indicator">Good</span>
+                                    <span class="indicator">Excellent</span>
+                                </div>
+                            </div>
+                            <small class="param-feedback" id="firstTimeFixFeedback">Good first-time fix rate</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes & Signature Section -->
+                    <div class="mt-4">
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-3">Additional Notes</label>
+                                <textarea class="form-control" id="additionalNotes" rows="5" 
+                                          placeholder="Enter observations and recommendations..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-3">Evaluator Signature</label>
+                                <div class="signature-box">
+                                    <div id="signaturePad" style="border: 1px dashed #ccc; height: 150px; cursor: crosshair; background: white;"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2 w-100" onclick="clearSignature()">
+                                        <i class="fas fa-eraser me-1"></i> Clear Signature
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="button-group mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="submitEvaluation()">
+                            <i class="fas fa-calculator me-2"></i> Calculate Service Quality Index
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-lg ms-2" onclick="resetForm()">
+                            <i class="fas fa-redo me-2"></i> Reset Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="card mt-4 evaluation-card" id="resultsCard" style="display: none;">
+            <div class="card-header" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white;">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Evaluation Results</h5>
+            </div>
+            <div class="card-body">
+                <div id="resultsContent">
+                    <!-- Results will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="fas fa-chart-bar me-2"></i> Analytics & Performance</h5>
+    </div>
+    <!-- SQI Performance Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card" style="box-shadow: var(--shadow-md); border-radius: 12px;">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">SQI Performance Trend</h5>
+                        <small class="text-muted">Service Quality Index over time</small>
+                    </div>
+                    <select class="form-select form-select-sm" style="width: auto;" id="sqiTimeRange" onchange="updateSQIChartTimeRange()">
+                        <option value="monthly">Monthly</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container-large">
+                    <canvas id="sqiPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rating Distribution Chart -->
+    <div class="col-lg-4 mb-4">
+        <div class="card" style="box-shadow: var(--shadow-md); border-radius: 12px;">
+            <div class="card-header">
+                <h5 class="mb-0">Rating Distribution</h5>
+                <small class="text-muted">Overall ratings breakdown</small>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="ratingDistributionChart"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <div class="metric-value" id="totalRatings">0</div>
+                    <div class="metric-label">Total Ratings</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Performance Chart -->
+    <div class="col-lg-7 mb-4">
+        <div class="card" style="box-shadow: var(--shadow-md); border-radius: 12px;">
+            <div class="card-header">
+                <h5 class="mb-0">Category Performance</h5>
+                <small class="text-muted">Average scores by evaluation category</small>
+            </div>
+            <div class="card-body">
+                <div class="chart-container-large">
+                    <canvas id="categoryPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Evaluations Table -->
+    <div class="col-lg-5 mb-4">
+        <div class="card" style="box-shadow: var(--shadow-md); border-radius: 12px;">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Top Evaluations</h5>
+                        <small class="text-muted">Best rated services</small>
+                    </div>
+                    <a href="#" class="btn btn-sm btn-outline-primary">See All</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 350px;">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Vessel</th>
+                                <th>SQI</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topEvaluationsTable">
+                            <tr>
+                                <td colspan="4" class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                    <p class="mt-2 mb-0 text-muted small">Loading...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Evaluations History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="box-shadow: var(--shadow-md); border-radius: 12px;">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i> Recent Evaluations History</h5>
+                <small class="text-muted">Latest evaluation records</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Evaluation ID</th>
+                                <th>Vessel</th>
+                                <th>Evaluator</th>
+                                <th>SQI Score</th>
+                                <th>Rating</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentEvaluations">
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading evaluation records...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Signature Pad Library -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+<script>
+let signaturePad;
+let selectedRequestId = null;
+
+// Helper function to scroll to form
+function scrollToForm() {
+    const formSection = document.getElementById('evaluationSection');
+    if (formSection) {
+        formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Initialize Signature Pad and Charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts
+    initializeCharts();
+    loadDashboardData();
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 150;
+    canvas.style.width = '100%';
+    canvas.style.height = '150px';
+    canvas.style.backgroundColor = 'white';
+    
+    document.getElementById('signaturePad').appendChild(canvas);
+    
+    signaturePad = new SignaturePad(canvas, {
+        backgroundColor: 'white',
+        penColor: 'rgb(0, 122, 204)'
+    });
+    
+    // Load recent evaluations
+    loadRecentEvaluations();
+});
+
+function clearSignature() {
+    signaturePad.clear();
+}
+
+function updateSlider(type, value) {
+    const elementId = type + 'Value';
+    const feedbackId = type + 'Feedback';
+    
+    // Update value display
+    if (type === 'responseTime') {
+        document.getElementById(elementId).textContent = value + ' minutes';
+        updateResponseTimeFeedback(value);
+    } else if (type === 'technicalExpertise' || type === 'emergencySupport') {
+        document.getElementById(elementId).textContent = parseFloat(value).toFixed(1) + '/10';
+        if (type === 'technicalExpertise') updateTechnicalExpertiseFeedback(value);
+        else updateEmergencySupportFeedback(value);
+    } else {
+        document.getElementById(elementId).textContent = value + '%';
+        if (type === 'partsAvailability') updatePartsAvailabilityFeedback(value);
+        else if (type === 'documentation') updateDocumentationFeedback(value);
+        else if (type === 'firstTimeFix') updateFirstTimeFixFeedback(value);
+    }
+    
+    // Update evaluation summary in real-time
+    updateEvaluationSummaryOnChange();
+}
+
+function updateResponseTimeFeedback(value) {
+    const feedback = document.getElementById('responseTimeFeedback');
+    if (value <= 30) {
+        feedback.textContent = 'Excellent response time';
+        feedback.className = 'text-success';
+    } else if (value <= 60) {
+        feedback.textContent = 'Good response time';
+        feedback.className = 'text-primary';
+    } else if (value <= 120) {
+        feedback.textContent = 'Moderate response time';
+        feedback.className = 'text-warning';
+    } else if (value <= 240) {
+        feedback.textContent = 'Slow response time';
+        feedback.className = 'text-warning';
+    } else {
+        feedback.textContent = 'Very slow response time - needs improvement';
+        feedback.className = 'text-danger';
+    }
+}
+
+function updatePartsAvailabilityFeedback(value) {
+    const feedback = document.getElementById('partsAvailabilityFeedback');
+    if (value >= 95) {
+        feedback.textContent = 'Excellent parts availability';
+        feedback.className = 'text-success';
+    } else if (value >= 85) {
+        feedback.textContent = 'Very good parts availability';
+        feedback.className = 'text-primary';
+    } else if (value >= 70) {
+        feedback.textContent = 'Good parts availability';
+        feedback.className = 'text-primary';
+    } else if (value >= 50) {
+        feedback.textContent = 'Average parts availability';
+        feedback.className = 'text-warning';
+    } else if (value >= 30) {
+        feedback.textContent = 'Low parts availability';
+        feedback.className = 'text-warning';
+    } else {
+        feedback.textContent = 'Very low parts availability - critical issue';
+        feedback.className = 'text-danger';
+    }
+}
+
+function updateTechnicalExpertiseFeedback(value) {
+    const feedback = document.getElementById('technicalExpertiseFeedback');
+    if (value >= 9) {
+        feedback.textContent = 'Expert technical knowledge';
+        feedback.className = 'text-success';
+    } else if (value >= 8) {
+        feedback.textContent = 'Very good technical expertise';
+        feedback.className = 'text-primary';
+    } else if (value >= 7) {
+        feedback.textContent = 'Good technical expertise';
+        feedback.className = 'text-primary';
+    } else if (value >= 6) {
+        feedback.textContent = 'Average technical expertise';
+        feedback.className = 'text-warning';
+    } else if (value >= 4) {
+        feedback.textContent = 'Below average technical expertise';
+        feedback.className = 'text-warning';
+    } else {
+        feedback.textContent = 'Poor technical expertise - training needed';
+        feedback.className = 'text-danger';
+    }
+}
+
+function updateDocumentationFeedback(value) {
+    const feedback = document.getElementById('documentationFeedback');
+    if (value >= 95) {
+        feedback.textContent = 'Complete and excellent documentation';
+        feedback.className = 'text-success';
+    } else if (value >= 90) {
+        feedback.textContent = 'Very good documentation';
+        feedback.className = 'text-primary';
+    } else if (value >= 80) {
+        feedback.textContent = 'Good documentation';
+        feedback.className = 'text-primary';
+    } else if (value >= 70) {
+        feedback.textContent = 'Average documentation';
+        feedback.className = 'text-warning';
+    } else if (value >= 60) {
+        feedback.textContent = 'Below average documentation';
+        feedback.className = 'text-warning';
+    } else {
+        feedback.textContent = 'Poor documentation - needs improvement';
+        feedback.className = 'text-danger';
+    }
+}
+
+function updateEmergencySupportFeedback(value) {
+    const feedback = document.getElementById('emergencySupportFeedback');
+    if (value >= 9) {
+        feedback.textContent = '24/7 emergency support available';
+        feedback.className = 'text-success';
+    } else if (value >= 8) {
+        feedback.textContent = 'Excellent emergency support';
+        feedback.className = 'text-primary';
+    } else if (value >= 7) {
+        feedback.textContent = 'Very good emergency support';
+        feedback.className = 'text-primary';
+    } else if (value >= 6) {
+        feedback.textContent = 'Average emergency support';
+        feedback.className = 'text-warning';
+    } else if (value >= 4) {
+        feedback.textContent = 'Limited emergency support';
+        feedback.className = 'text-warning';
+    } else {
+        feedback.textContent = 'Poor emergency support - critical issue';
+        feedback.className = 'text-danger';
+    }
+}
+
+function updateFirstTimeFixFeedback(value) {
+    const feedback = document.getElementById('firstTimeFixFeedback');
+    if (value >= 95) {
+        feedback.textContent = 'Excellent first-time fix rate';
+        feedback.className = 'text-success';
+    } else if (value >= 90) {
+        feedback.textContent = 'Very good first-time fix rate';
+        feedback.className = 'text-primary';
+    } else if (value >= 80) {
+        feedback.textContent = 'Good first-time fix rate';
+        feedback.className = 'text-primary';
+    } else if (value >= 70) {
+        feedback.textContent = 'Average first-time fix rate';
+        feedback.className = 'text-warning';
+    } else if (value >= 60) {
+        feedback.textContent = 'Below average first-time fix rate';
+        feedback.className = 'text-warning';
+    } else {
+        feedback.textContent = 'Poor first-time fix rate - needs improvement';
+        feedback.className = 'text-danger';
+    }
+}
+
+function loadTemplate(template) {
+    if (template === 'excellent') {
+        document.getElementById('responseTime').value = 30;
+        document.getElementById('partsAvailability').value = 95;
+        document.getElementById('technicalExpertise').value = 9;
+        document.getElementById('documentation').value = 95;
+        document.getElementById('emergencySupport').value = 9;
+        document.getElementById('firstTimeFix').value = 90;
+    } else if (template === 'average') {
+        document.getElementById('responseTime').value = 120;
+        document.getElementById('partsAvailability').value = 75;
+        document.getElementById('technicalExpertise').value = 6;
+        document.getElementById('documentation').value = 80;
+        document.getElementById('emergencySupport').value = 6;
+        document.getElementById('firstTimeFix').value = 75;
+    } else if (template === 'poor') {
+        document.getElementById('responseTime').value = 480;
+        document.getElementById('partsAvailability').value = 30;
+        document.getElementById('technicalExpertise').value = 3;
+        document.getElementById('documentation').value = 50;
+        document.getElementById('emergencySupport').value = 3;
+        document.getElementById('firstTimeFix').value = 40;
+    }
+    
+    // Update all displays
+    updateSlider('responseTime', document.getElementById('responseTime').value);
+    updateSlider('partsAvailability', document.getElementById('partsAvailability').value);
+    updateSlider('technicalExpertise', document.getElementById('technicalExpertise').value);
+    updateSlider('documentation', document.getElementById('documentation').value);
+    updateSlider('emergencySupport', document.getElementById('emergencySupport').value);
+    updateSlider('firstTimeFix', document.getElementById('firstTimeFix').value);
+    
+    alert(`Loaded ${template} service template`);
+}
+
+// This function is now defined later in the file - see updated version below
+
+function updateEvaluationSummary(request) {
+    const summary = document.getElementById('evaluationSummary');
+    if (!request) {
+        summary.innerHTML = `
+            <div class="text-center text-muted py-3">
+                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                <p>Select a service request to begin evaluation</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Get current evaluation parameters
+    const responseTime = parseFloat(document.getElementById('responseTime').value) || 0;
+    const partsAvailability = parseFloat(document.getElementById('partsAvailability').value) || 0;
+    const technicalExpertise = parseFloat(document.getElementById('technicalExpertise').value) || 0;
+    const documentation = parseFloat(document.getElementById('documentation').value) || 0;
+    const emergencySupport = parseFloat(document.getElementById('emergencySupport').value) || 0;
+    const firstTimeFix = parseFloat(document.getElementById('firstTimeFix').value) || 0;
+    
+    // Calculate estimated SQI (simplified preview)
+    let rtScore = 0;
+    if (responseTime <= 60) rtScore = 30;
+    else if (responseTime <= 120) rtScore = 25;
+    else if (responseTime <= 240) rtScore = 15;
+    else if (responseTime <= 480) rtScore = 5;
+    else rtScore = 0;
+    
+    const paScore = partsAvailability * 0.25;
+    const teScore = technicalExpertise * 2;
+    const docScore = documentation * 0.15;
+    const esScore = emergencySupport * 1;
+    
+    let estimatedSQI = rtScore + paScore + teScore + docScore + esScore;
+    estimatedSQI = Math.min(100, Math.max(0, estimatedSQI));
+    
+    // Determine estimated rating
+    let estimatedRating, ratingColor;
+    if (estimatedSQI >= 85) {
+        estimatedRating = 'EXCELLENT';
+        ratingColor = 'success';
+    } else if (estimatedSQI >= 70) {
+        estimatedRating = 'GOOD';
+        ratingColor = 'primary';
+    } else if (estimatedSQI >= 55) {
+        estimatedRating = 'AVERAGE';
+        ratingColor = 'warning';
+    } else if (estimatedSQI >= 40) {
+        estimatedRating = 'POOR';
+        ratingColor = 'danger';
+    } else {
+        estimatedRating = 'CRITICAL';
+        ratingColor = 'dark';
+    }
+    
+    summary.innerHTML = `
+        <div class="alert alert-info">
+            <h6><i class="fas fa-ship me-2"></i> ${request.ship || 'N/A'}</h6>
+            <p class="mb-1"><strong>Request Type:</strong> ${request.type || 'N/A'}</p>
+            <p class="mb-1"><strong>Criticality:</strong> <span class="badge bg-${request.criticality === 'critical' || request.criticality === 'high' ? 'danger' : request.criticality === 'medium' ? 'warning' : 'info'}">${(request.criticality || 'N/A').toUpperCase()}</span></p>
+            <p class="mb-1"><strong>Date:</strong> ${request.date || 'N/A'}</p>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted">Estimated SQI:</small>
+                    <div class="h5 mb-0 text-${ratingColor}">${estimatedSQI.toFixed(1)}</div>
+                </div>
+                <div>
+                    <small class="text-muted">Rating:</small>
+                    <div><span class="badge bg-${ratingColor}">${estimatedRating}</span></div>
+                </div>
+            </div>
+            <hr class="my-2">
+            <p class="mb-0 small"><i class="fas fa-info-circle me-1"></i> Adjust parameters above and click "Calculate SQI" for accurate results.</p>
+        </div>
+    `;
+}
+
+// Update evaluation summary when sliders change
+function updateEvaluationSummaryOnChange() {
+    if (selectedRequestId) {
+        const req = {
+            ship: document.getElementById('infoShip').textContent,
+            type: document.getElementById('infoType').textContent,
+            criticality: document.getElementById('infoCriticality').textContent,
+            date: document.getElementById('infoDate').textContent
+        };
+        updateEvaluationSummary(req);
+    }
+}
+
+function submitEvaluation() {
+    // Allow calculation without request ID - only required for saving
+    // Show warning if no request selected but allow calculation
+    if (!selectedRequestId) {
+        const proceed = confirm('No service request selected. You can calculate the SQI, but you will need to select a request to save the evaluation. Continue?');
+        if (!proceed) {
+            return;
+        }
+    }
+    
+    // Collect data
+    const evaluationData = {
+        request_id: selectedRequestId || null,
+        response_time: parseFloat(document.getElementById('responseTime').value),
+        parts_availability: parseFloat(document.getElementById('partsAvailability').value),
+        technical_expertise: parseFloat(document.getElementById('technicalExpertise').value),
+        documentation: parseFloat(document.getElementById('documentation').value),
+        emergency_support: parseFloat(document.getElementById('emergencySupport').value),
+        first_time_fix: parseFloat(document.getElementById('firstTimeFix').value),
+        additional_notes: document.getElementById('additionalNotes').value,
+        signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL()
+    };
+    
+    // Validate that all required fields have values
+    if (isNaN(evaluationData.response_time) || 
+        isNaN(evaluationData.parts_availability) || 
+        isNaN(evaluationData.technical_expertise) || 
+        isNaN(evaluationData.documentation) || 
+        isNaN(evaluationData.emergency_support) || 
+        isNaN(evaluationData.first_time_fix)) {
+        alert('Please ensure all evaluation parameters have valid values.');
+        return;
+    }
+    
+    // Show loading
+    const resultsContent = document.getElementById('resultsContent');
+    resultsContent.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Calculating...</span>
+            </div>
+            <h4 class="mt-3">Calculating Service Quality Index</h4>
+            <p class="text-muted">Analyzing parameters using fuzzy logic system...</p>
+        </div>
+    `;
+    
+    document.getElementById('resultsCard').style.display = 'block';
+    
+    // Calculate immediately (no delay needed)
+    setTimeout(() => {
+        calculateSQI(evaluationData);
+    }, 500);
+}
+
+function calculateSQI(data) {
+    // Fuzzy logic calculation
+    const rt = data.response_time;
+    const pa = data.parts_availability;
+    const te = data.technical_expertise;
+    const doc = data.documentation;
+    const es = data.emergency_support;
+    const ftf = data.first_time_fix;
+    
+    // Calculate SQI (simplified fuzzy logic)
+    let rtScore = 0;
+    if (rt <= 60) rtScore = 30;
+    else if (rt <= 120) rtScore = 25;
+    else if (rt <= 240) rtScore = 15;
+    else if (rt <= 480) rtScore = 5;
+    else rtScore = 0;
+    
+    const paScore = pa * 0.25;
+    const teScore = te * 2;
+    const docScore = doc * 0.15;
+    const esScore = es * 1;
+    
+    let sqi = rtScore + paScore + teScore + docScore + esScore;
+    sqi = Math.min(100, Math.max(0, sqi));
+    
+    // Determine rating
+    let rating, ratingColor, priority;
+    if (sqi >= 85) {
+        rating = 'EXCELLENT';
+        ratingColor = 'success';
+        priority = 'LOW';
+    } else if (sqi >= 70) {
+        rating = 'GOOD';
+        ratingColor = 'primary';
+        priority = 'MEDIUM';
+    } else if (sqi >= 55) {
+        rating = 'AVERAGE';
+        ratingColor = 'warning';
+        priority = 'HIGH';
+    } else if (sqi >= 40) {
+        rating = 'POOR';
+        ratingColor = 'danger';
+        priority = 'HIGH';
+    } else {
+        rating = 'CRITICAL';
+        ratingColor = 'dark';
+        priority = 'EMERGENCY';
+    }
+    
+    // Generate recommendations
+    const recommendations = [];
+    if (rt > 240) recommendations.push('Reduce response time - consider regional warehouses');
+    if (pa < 60) recommendations.push('Low parts availability - order emergency stock');
+    if (te < 6) recommendations.push('Technical training needed');
+    if (doc < 70) recommendations.push('Improve documentation accuracy');
+    if (es < 5) recommendations.push('Enhance emergency support capabilities');
+    if (ftf < 70) recommendations.push('Improve first-time fix rate');
+    if (recommendations.length === 0) recommendations.push('All parameters are optimal');
+    
+    // Display results
+    const resultsContent = document.getElementById('resultsContent');
+    resultsContent.innerHTML = `
+        <div class="alert alert-${ratingColor}">
+            <div class="row">
+                <div class="col-md-8">
+                    <h3>Service Quality Index: ${sqi.toFixed(1)}/100</h3>
+                    <h4>Rating: ${rating}</h4>
+                    <p>Priority: <span class="badge bg-${priority === 'EMERGENCY' ? 'danger' : priority === 'HIGH' ? 'warning' : 'info'}">${priority}</span></p>
+                    <p>Time: ${new Date().toLocaleString()}</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="display-1 fw-bold text-${ratingColor}">${sqi.toFixed(1)}</div>
+                    <div class="badge bg-${ratingColor} fs-6">/100</div>
+                </div>
+            </div>
+        </div>
+        
+        <h5 class="mt-4">Parameter Breakdown:</h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <div class="h4 text-primary">${rt} min</div>
+                        <small class="text-muted">Response Time</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <div class="h4 text-success">${pa}%</div>
+                        <small class="text-muted">Parts Availability</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <div class="h4 text-info">${ftf}%</div>
+                        <small class="text-muted">First-Time Fix</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h5>Recommendations:</h5>
+        <div class="list-group">
+            ${recommendations.map(rec => `
+                <div class="list-group-item ${rec.includes('🚨') || rec.includes('🆘') ? 'list-group-item-danger' : 'list-group-item-warning'}">
+                    <i class="fas ${rec.includes('🚨') || rec.includes('🆘') ? 'fa-exclamation-triangle' : 'fa-info-circle'} me-2"></i>
+                    ${rec}
+                </div>
+            `).join('')}
+        </div>
+        
+        <div class="mt-4">
+            <h6>Next Steps:</h6>
+            ${data.request_id ? `
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="btn btn-primary w-100 mb-2" onclick="saveEvaluation('${data.request_id}', ${sqi}, '${rating}')">
+                        <i class="fas fa-save me-2"></i> Save Evaluation
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-outline-secondary w-100 mb-2" onclick="resetForm()">
+                        <i class="fas fa-plus-circle me-2"></i> New Evaluation
+                    </button>
+                </div>
+            </div>
+            ` : `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>No Request Selected:</strong> To save this evaluation, please select a service request first.
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="btn btn-outline-primary w-100 mb-2" onclick="document.getElementById('searchRequest').focus(); document.getElementById('searchRequest').scrollIntoView({behavior: 'smooth'});">
+                        <i class="fas fa-search me-2"></i> Select Request to Save
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-outline-secondary w-100 mb-2" onclick="resetForm()">
+                        <i class="fas fa-plus-circle me-2"></i> New Evaluation
+                    </button>
+                </div>
+            </div>
+            `}
+            ${priority === 'EMERGENCY' ? `
+            <div class="alert alert-danger mt-3">
+                <i class="fas fa-exclamation-octagon me-2"></i>
+                <strong>Emergency Alert:</strong> This evaluation has been flagged as critical. 
+                The port engineer has been notified and emergency protocols have been activated.
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    // Scroll to results
+    document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+function saveEvaluation(requestId, sqi, rating) {
+    if (!requestId) {
+        showAlert('warning', 'Please select a service request first before saving.');
+        // Focus on search input
+        document.getElementById('searchRequest').focus();
+        document.getElementById('searchRequest').scrollIntoView({behavior: 'smooth'});
+        return;
+    }
+    
+    const evaluationData = {
+        request_id: requestId,
+        sqi_score: sqi,
+        rating: rating,
+        response_time: parseFloat(document.getElementById('responseTime').value),
+        parts_availability: parseFloat(document.getElementById('partsAvailability').value),
+        technical_expertise: parseFloat(document.getElementById('technicalExpertise').value),
+        documentation: parseFloat(document.getElementById('documentation').value),
+        emergency_support: parseFloat(document.getElementById('emergencySupport').value),
+        first_time_fix: parseFloat(document.getElementById('firstTimeFix').value),
+        additional_notes: document.getElementById('additionalNotes').value,
+        signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL()
+    };
+    
+    // Show loading
+    const saveBtn = event?.target || document.querySelector('button[onclick*="saveEvaluation"]');
+    if (saveBtn) {
+        const originalText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+        
+        fetch('/api/save-evaluation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(evaluationData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', `Evaluation for ${requestId} saved successfully!\nSQI: ${sqi}\nRating: ${rating}`);
+                loadRecentEvaluations();
+                loadDashboardData(); // Reload dashboard to update charts and KPIs
+                loadTopEvaluations(); // Reload top evaluations table
+                
+                // Update the save button to show it can be saved again if needed
+                setTimeout(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                }, 2000);
+            } else {
+                showAlert('danger', 'Error: ' + (data.error || 'Failed to save evaluation'));
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            showAlert('warning', 'Error saving evaluation: ' + error.message);
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        });
+    } else {
+        // Fallback if button not found
+        fetch('/api/save-evaluation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(evaluationData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', `Evaluation for ${requestId} saved successfully!\nSQI: ${sqi}\nRating: ${rating}`);
+                loadRecentEvaluations();
+                loadDashboardData();
+                loadTopEvaluations();
+            } else {
+                showAlert('danger', 'Error: ' + (data.error || 'Failed to save evaluation'));
+            }
+        })
+        .catch(error => {
+            showAlert('warning', 'Error saving evaluation: ' + error.message);
+        });
+    }
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            <div>${message.replace(/\n/g, '<br>')}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function resetForm() {
+    document.getElementById('evaluationForm').reset();
+    signaturePad.clear();
+    document.getElementById('resultsCard').style.display = 'none';
+    document.getElementById('requestInfo').style.display = 'none';
+    selectedRequestId = null;
+    
+    // Reset sliders to default
+    document.getElementById('responseTime').value = 180;
+    document.getElementById('partsAvailability').value = 70;
+    document.getElementById('technicalExpertise').value = 6;
+    document.getElementById('documentation').value = 75;
+    document.getElementById('emergencySupport').value = 5;
+    document.getElementById('firstTimeFix').value = 70;
+    
+    // Update displays
+    updateSlider('responseTime', 180);
+    updateSlider('partsAvailability', 70);
+    updateSlider('technicalExpertise', 6);
+    updateSlider('documentation', 75);
+    updateSlider('emergencySupport', 5);
+    updateSlider('firstTimeFix', 70);
+    
+    // Reset summary
+    document.getElementById('evaluationSummary').innerHTML = `
+        <div class="text-center text-muted py-3">
+            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+            <p>Select a service request to begin evaluation</p>
+        </div>
+    `;
+}
+
+function loadRecentEvaluations() {
+    // Simulated data
+    const evaluations = [
+        {
+            id: 'EVAL-20240115-001',
+            vessel: 'MV Ocean Carrier',
+            evaluator: 'David Chen',
+            sqi: 88.5,
+            rating: 'EXCELLENT',
+            date: '2024-01-15'
+        },
+        {
+            id: 'EVAL-20240114-002',
+            vessel: 'SS Sea Voyager',
+            evaluator: 'Maria Garcia',
+            sqi: 72.3,
+            rating: 'GOOD',
+            date: '2024-01-14'
+        },
+        {
+            id: 'EVAL-20240113-003',
+            vessel: 'MV Maritime',
+            evaluator: 'David Chen',
+            sqi: 95.2,
+            rating: 'EXCELLENT',
+            date: '2024-01-13'
+        },
+        {
+            id: 'EVAL-20240112-004',
+            vessel: 'MV Coastal',
+            evaluator: 'John Smith',
+            sqi: 38.7,
+            rating: 'CRITICAL',
+            date: '2024-01-12'
+        }
+    ];
+    
+    let html = '';
+    evaluations.forEach(eval => {
+        const ratingClass = eval.rating === 'EXCELLENT' ? 'success' :
+                          eval.rating === 'GOOD' ? 'primary' :
+                          eval.rating === 'AVERAGE' ? 'warning' :
+                          eval.rating === 'POOR' ? 'danger' : 'dark';
+        
+        html += `
+            <tr>
+                <td><code>${eval.id}</code></td>
+                <td>${eval.vessel}</td>
+                <td>${eval.evaluator}</td>
+                <td>
+                    <span class="badge bg-${ratingClass}">
+                        ${eval.sqi.toFixed(1)}
+                    </span>
+                </td>
+                <td><span class="badge bg-${ratingClass}">${eval.rating}</span></td>
+                <td>${eval.date}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewEvaluationDetails('${eval.id}')">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning ms-1" onclick="editEvaluation('${eval.id}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    document.getElementById('recentEvaluations').innerHTML = html;
+}
+
+function viewEvaluationDetails(evalId) {
+    alert(`Viewing evaluation details for: ${evalId}`);
+    // In real system: window.location.href = `/evaluation-details/${evalId}`;
+}
+
+function editEvaluation(evalId) {
+    alert(`Editing evaluation: ${evalId}`);
+    // In real system: Load evaluation data into form for editing
+}
+
+// ==================== CHARTS INITIALIZATION ====================
+let sqiPerformanceChart, ratingDistributionChart, categoryPerformanceChart;
+
+// Initialize all charts
+function initializeCharts() {
+    // SQI Performance Line Chart
+    const sqiCtx = document.getElementById('sqiPerformanceChart');
+    if (sqiCtx) {
+        sqiPerformanceChart = new Chart(sqiCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: '2025',
+                    data: [],
+                    borderColor: 'rgb(20, 184, 166)',
+                    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: '2024',
+                    data: [],
+                    borderColor: 'rgb(90, 79, 207)',
+                    backgroundColor: 'rgba(90, 79, 207, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 50,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + ' SQI';
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+    
+    // Rating Distribution Donut Chart
+    const ratingCtx = document.getElementById('ratingDistributionChart');
+    if (ratingCtx) {
+        ratingDistributionChart = new Chart(ratingCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Excellent', 'Good', 'Average', 'Poor', 'Critical'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(127, 29, 29, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(16, 185, 129)',
+                        'rgb(59, 130, 246)',
+                        'rgb(245, 158, 11)',
+                        'rgb(239, 68, 68)',
+                        'rgb(127, 29, 29)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                label += context.parsed + ' (' + percentage + '%)';
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Category Performance Bar Chart
+    const categoryCtx = document.getElementById('categoryPerformanceChart');
+    if (categoryCtx) {
+        categoryPerformanceChart = new Chart(categoryCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Response Time', 'Parts Availability', 'Technical Expertise', 'Documentation', 'Emergency Support', 'First Time Fix'],
+                datasets: [{
+                    label: 'Average Score',
+                    data: [],
+                    backgroundColor: [
+                        'rgba(90, 79, 207, 0.8)',
+                        'rgba(107, 93, 216, 0.8)',
+                        'rgba(139, 126, 240, 0.8)',
+                        'rgba(90, 79, 207, 0.8)',
+                        'rgba(107, 93, 216, 0.8)',
+                        'rgba(139, 126, 240, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(90, 79, 207)',
+                        'rgb(107, 93, 216)',
+                        'rgb(139, 126, 240)',
+                        'rgb(90, 79, 207)',
+                        'rgb(107, 93, 216)',
+                        'rgb(139, 126, 240)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Score: ' + context.parsed.y + '/100';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Load dashboard data from API
+function loadDashboardData() {
+    fetch('/api/evaluation-dashboard')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const dashboard = data.data;
+                
+                // Update KPI cards
+                document.getElementById('totalEvaluations').textContent = dashboard.kpis.total_evaluations.toLocaleString();
+                document.getElementById('avgSQI').textContent = dashboard.kpis.avg_sqi.toFixed(1);
+                document.getElementById('pendingEvaluations').textContent = dashboard.kpis.pending_evaluations;
+                document.getElementById('excellentRate').textContent = dashboard.kpis.excellent_rate.toFixed(1) + '%';
+                document.getElementById('totalRatings').textContent = dashboard.kpis.total_ratings.toLocaleString();
+                
+                // Update SQI Performance Chart
+                if (sqiPerformanceChart && dashboard.sqi_chart.labels.length > 0) {
+                    sqiPerformanceChart.data.labels = dashboard.sqi_chart.labels;
+                    if (dashboard.sqi_chart.datasets.length >= 2) {
+                        sqiPerformanceChart.data.datasets[0].data = dashboard.sqi_chart.datasets[0].data;
+                        sqiPerformanceChart.data.datasets[1].data = dashboard.sqi_chart.datasets[1].data;
+                    }
+                    sqiPerformanceChart.update();
+                }
+                
+                // Update Rating Distribution Chart
+                if (ratingDistributionChart) {
+                    const ratingData = dashboard.rating_distribution;
+                    ratingDistributionChart.data.datasets[0].data = [
+                        ratingData.Excellent || 0,
+                        ratingData.Good || 0,
+                        ratingData.Average || 0,
+                        ratingData.Poor || 0,
+                        ratingData.Critical || 0
+                    ];
+                    ratingDistributionChart.update();
+                }
+                
+                // Update Category Performance Chart
+                if (categoryPerformanceChart && Object.keys(dashboard.category_performance).length > 0) {
+                    const catData = dashboard.category_performance;
+                    categoryPerformanceChart.data.datasets[0].data = [
+                        catData['Response Time'] || 0,
+                        catData['Parts Availability'] || 0,
+                        catData['Technical Expertise'] || 0,
+                        catData['Documentation'] || 0,
+                        catData['Emergency Support'] || 0,
+                        catData['First Time Fix'] || 0
+                    ];
+                    categoryPerformanceChart.update();
+                }
+                
+                // Load top evaluations
+                loadTopEvaluations();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
+        });
+}
+
+// Load top evaluations
+function loadTopEvaluations() {
+    fetch('/api/evaluations/top')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let tableHTML = '';
+                if (data.evaluations.length === 0) {
+                    tableHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">No evaluations yet</td></tr>';
+                } else {
+                    data.evaluations.forEach(eval => {
+                        const ratingClass = eval.rating === 'EXCELLENT' ? 'success' : 
+                                          eval.rating === 'GOOD' ? 'primary' : 
+                                          eval.rating === 'AVERAGE' ? 'warning' : 
+                                          eval.rating === 'POOR' ? 'danger' : 'dark';
+                        tableHTML += `
+                            <tr>
+                                <td><code>${eval.request_id}</code></td>
+                                <td>${eval.vessel}</td>
+                                <td><span class="badge bg-${ratingClass}">${eval.sqi}</span></td>
+                                <td><span class="badge bg-${ratingClass}">${eval.rating}</span></td>
+                            </tr>
+                        `;
+                    });
+                }
+                document.getElementById('topEvaluationsTable').innerHTML = tableHTML;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading top evaluations:', error);
+        });
+}
+
+// Load maintenance requests for dropdown
+function loadMaintenanceRequests() {
+    fetch('/api/evaluation-maintenance-requests')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('requestSelect');
+                select.innerHTML = '<option value="">Select a service request...</option>';
+                
+                data.requests.forEach(req => {
+                    const option = document.createElement('option');
+                    option.value = req.request_id;
+                    option.textContent = `${req.request_id} - ${req.ship_name}`;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading maintenance requests:', error);
+        });
+}
+
+// Update searchRequest function to use API
+function searchRequest() {
+    const requestId = document.getElementById('searchRequest').value.trim();
+    if (!requestId) {
+        alert('Please enter a request ID');
+        return;
+    }
+    
+    fetch(`/api/evaluation-details/${requestId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const req = data.request;
+                selectedRequestId = req.request_id;
+                
+                document.getElementById('infoShip').textContent = req.ship_name || 'N/A';
+                document.getElementById('infoType').textContent = req.maintenance_type || 'N/A';
+                document.getElementById('infoCriticality').textContent = req.priority || 'N/A';
+                document.getElementById('infoDate').textContent = req.created_at ? req.created_at.split(' ')[0] : 'N/A';
+                document.getElementById('requestInfo').style.display = 'block';
+                
+                // Update select dropdown
+                document.getElementById('requestSelect').value = requestId;
+                
+                updateEvaluationSummary({
+                    ship: req.ship_name,
+                    type: req.maintenance_type,
+                    criticality: req.priority,
+                    date: req.created_at ? req.created_at.split(' ')[0] : 'N/A'
+                });
+            } else {
+                alert('Request ID not found: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error searching request:', error);
+            alert('Error searching for request: ' + error.message);
+        });
+}
+
+// Update loadRequestDetails to use searchRequest
+function loadRequestDetails() {
+    const select = document.getElementById('requestSelect');
+    const requestId = select.value;
+    if (requestId) {
+        document.getElementById('searchRequest').value = requestId;
+        searchRequest();
+    }
+}
+
+// Update loadRecentEvaluations to use API
+function loadRecentEvaluations() {
+    fetch('/api/evaluations/recent')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '';
+                if (data.evaluations.length === 0) {
+                    html = `
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                                <p>No evaluations yet</p>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    data.evaluations.forEach(eval => {
+                        const ratingClass = eval.rating === 'EXCELLENT' ? 'success' :
+                                          eval.rating === 'GOOD' ? 'primary' :
+                                          eval.rating === 'AVERAGE' ? 'warning' :
+                                          eval.rating === 'POOR' ? 'danger' : 'dark';
+                        
+                        html += `
+                            <tr>
+                                <td><code>${eval.evaluation_id}</code></td>
+                                <td>${eval.vessel}</td>
+                                <td>${eval.evaluator}</td>
+                                <td>
+                                    <span class="badge bg-${ratingClass}">
+                                        ${eval.sqi}
+                                    </span>
+                                </td>
+                                <td><span class="badge bg-${ratingClass}">${eval.rating}</span></td>
+                                <td>${eval.date}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewEvaluationDetails('${eval.evaluation_id}')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                document.getElementById('recentEvaluations').innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading recent evaluations:', error);
+            document.getElementById('recentEvaluations').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading evaluations
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// Update charts when time range changes
+document.addEventListener('DOMContentLoaded', function() {
+    const timeRangeSelect = document.getElementById('sqiTimeRange');
+    if (timeRangeSelect) {
+        timeRangeSelect.addEventListener('change', function() {
+            // Reload dashboard data when time range changes
+            loadDashboardData();
+        });
+    }
+    
+    // Load maintenance requests on page load
+    loadMaintenanceRequests();
+    
+    // Check for request_id in URL query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get('request_id');
+    if (requestId) {
+        document.getElementById('searchRequest').value = requestId;
+        setTimeout(() => searchRequest(), 500);
+    }
+});
+</script>
+
+<style>
+.form-range::-webkit-slider-thumb {
+    background: var(--primary-blue);
+}
+
+.form-range::-moz-range-thumb {
+    background: var(--primary-blue);
+}
+
+.form-range::-ms-thumb {
+    background: var(--primary-blue);
+}
+</style>
+{% endblock %}
+
+{% endblock %}

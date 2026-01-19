@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white text-center">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-user-plus me-3 fa-2x"></i>
+                        <div>
+                            <h3 class="mb-1">Create New Account</h3>
+                            <p class="mb-0 small">Join the Marine Service System</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }} me-2"></i>
+                                        <div>{{ message }}</div>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('register') }}" onsubmit="return validateForm()">
+                        <!-- Personal Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-user me-2"></i> Personal Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">First Name *</label>
+                                            <input type="text" class="form-control" name="first_name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Last Name *</label>
+                                            <input type="text" class="form-control" name="last_name" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Email Address *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                        <input type="email" class="form-control" name="email" required>
+                                    </div>
+                                    <small class="form-text text-muted">This will be your login username</small>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Password *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                                <input type="password" class="form-control" name="password" required 
+                                                       minlength="8" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}">
+                                            </div>
+                                            <small class="form-text text-muted">Minimum 8 characters with uppercase, lowercase, and number</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Confirm Password *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                                <input type="password" class="form-control" name="confirm_password" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Phone Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                        <input type="tel" class="form-control" name="phone" 
+                                               pattern="[0-9+\-\s()]{10,}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Professional Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i> Professional Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Rank/Position *</label>
+                                    <input type="text" class="form-control" name="rank" required 
+                                           placeholder="e.g., Senior Engineer, Quality Officer">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Department</label>
+                                            <input type="text" class="form-control" name="department" 
+                                                   placeholder="e.g., Maintenance, Quality Assurance">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Location</label>
+                                            <input type="text" class="form-control" name="location" 
+                                                   placeholder="e.g., Port Singapore, HQ London">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Role *</label>
+                                    <select class="form-select" name="role" required onchange="toggleSurveyDays()">
+                                        <option value="">Select Role</option>
+                                        <option value="chief_engineer">Chief Engineer</option>
+                                        <option value="captain">Captain</option>
+                                        <option value="harbour_master">Harbour Master</option>
+                                        <option value="quality_officer">Quality Officer</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3" id="surveyDaysSection" style="display: none;">
+                                    <label class="form-label">Survey Period (Days) *</label>
+                                    <input type="number" class="form-control" name="survey_days" min="1" max="365" value="90">
+                                    <small class="form-text text-muted">For how long will you conduct quality surveys?</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
+                        <div class="alert alert-info">
+                            <div class="d-flex">
+                                <i class="fas fa-info-circle me-3 fa-2x"></i>
+                                <div>
+                                    <strong>Note:</strong> All new accounts require approval from the port engineer. 
+                                    You will be notified via email once your account is approved.<br>
+                                    <small>By registering, you agree to our Terms of Service and Privacy Policy.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Password Strength Indicator -->
+                        <div class="mb-3" id="passwordStrength" style="display: none;">
+                            <label class="form-label">Password Strength:</label>
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar" id="strengthBar" style="width: 0%"></div>
+                            </div>
+                            <small id="strengthText" class="text-muted"></small>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check-circle me-2"></i> Register Account
+                            </button>
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i> Back to Login
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Role Information -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tools fa-3x text-warning mb-3"></i>
+                            <h5>Harbour Master</h5>
+                            <p class="small">Manage maintenance requests, inventory, and service evaluations</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clipboard-check fa-3x text-success mb-3"></i>
+                            <h5>Quality Officer</h5>
+                            <p class="small">Conduct service quality evaluations and performance monitoring</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSurveyDays() {
+    const roleSelect = document.querySelector('select[name="role"]');
+    const surveySection = document.getElementById('surveyDaysSection');
+    
+    if (roleSelect.value === 'quality_officer') {
+        surveySection.style.display = 'block';
+    } else {
+        surveySection.style.display = 'none';
+    }
+}
+
+function validateForm() {
+    const password = document.querySelector('input[name="password"]').value;
+    const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    // Password strength validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+        alert('Password must contain uppercase, lowercase letters and numbers!');
+        return false;
+    }
+    
+    return true;
+}
+
+// Password strength indicator
+document.querySelector('input[name="password"]').addEventListener('input', function(e) {
+    const password = e.target.value;
+    const strengthDiv = document.getElementById('passwordStrength');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    
+    if (password.length === 0) {
+        strengthDiv.style.display = 'none';
+        return;
+    }
+    
+    strengthDiv.style.display = 'block';
+    
+    let score = 0;
+    if (password.length >= 8) score += 25;
+    if (/[A-Z]/.test(password)) score += 25;
+    if (/[a-z]/.test(password)) score += 25;
+    if (/\d/.test(password)) score += 15;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 10;
+    
+    strengthBar.style.width = score + '%';
+    
+    if (score < 50) {
+        strengthBar.className = 'progress-bar bg-danger';
+        strengthText.textContent = 'Weak password';
+    } else if (score < 75) {
+        strengthBar.className = 'progress-bar bg-warning';
+        strengthText.textContent = 'Moderate password';
+    } else {
+        strengthBar.className = 'progress-bar bg-success';
+        strengthText.textContent = 'Strong password';
+    }
+});
+</script>
+{% endblock %}

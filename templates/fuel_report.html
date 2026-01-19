@@ -1,0 +1,701 @@
+{% extends "base.html" %}
+
+{% block title %}Bunker Delivery Note (BDN) & Fuel Report - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-gas-pump fa-2x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">Bunker Delivery Note (BDN) & Fuel Report</h2>
+                            <p class="mb-0">MARPOL Annex VI - Sulfur Content Compliance & Fuel Quality Documentation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MARPOL Annex VI Compliance Alert -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-success border-2 border-success">
+                <h6 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>MARPOL Annex VI Bunker Delivery Note (BDN) Compliance</h6>
+                <ul class="mb-0 small">
+                    <li><strong>Mandatory Document:</strong> BDN is a legal document provided by fuel supplier. Must be signed by supplier's representative certifying fuel meets Annex VI requirements</li>
+                    <li><strong>Sulfur Content Limits:</strong> Maximum 0.10% m/m in Emission Control Areas (ECAs), 0.50% m/m globally. Exceeding limits without ECA exception constitutes a violation</li>
+                    <li><strong>Supplier Declaration:</strong> Fuel supplier's representative must declare and affirm that fuel meets all Annex VI specifications by signature</li>
+                    <li><strong>Fuel Quality Data:</strong> Document density (at 15°C in kg/m³), sulfur content (%m/m), and product name. Verify against ISO/ASTM specifications</li>
+                    <li><strong>Representative Sample:</strong> Sealed fuel sample must be kept on board for minimum 12 months. Label all sample containers with vessel name, date, and storage location</li>
+                    <li><strong>Non-Compliant Fuel Exception:</strong> Ships operating in ECAs require certified compliant fuel or valid alternative compliance method (SOx scrubber, IMO waivers)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <form id="fuelReportForm">
+                <!-- Vessel Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-ship me-2"></i> Vessel Identification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vessel Name *</label>
+                                <input type="text" class="form-control" name="vessel_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IMO Number *</label>
+                                <input type="text" class="form-control" name="imo_number" placeholder="IMO1234567" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bunker Delivery Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Bunker Delivery Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Delivery Date *</label>
+                                <input type="date" class="form-control" name="delivery_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Port of Delivery *</label>
+                                <input type="text" class="form-control" name="port_of_delivery" placeholder="e.g., Singapore, Rotterdam" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fuel Product Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-droplet me-2"></i> Fuel Product Details & Specifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Product Name *</label>
+                                <select class="form-select" name="fuel_type" required>
+                                    <option value="">-- Select Fuel Type --</option>
+                                    <option value="VLSFO">VLSFO (Very Low Sulfur Fuel Oil)</option>
+                                    <option value="ULSFO">ULSFO (Ultra Low Sulfur Fuel Oil)</option>
+                                    <option value="LSMGO">LSMGO (Low Sulfur Marine Gas Oil)</option>
+                                    <option value="MGO">MGO (Marine Gas Oil)</option>
+                                    <option value="MDO">MDO (Marine Diesel Oil)</option>
+                                    <option value="HFO">HFO (Heavy Fuel Oil)</option>
+                                    <option value="IFO180">IFO 180</option>
+                                    <option value="IFO380">IFO 380</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Quantity Delivered (Metric Tonnes) *</label>
+                                <input type="number" class="form-control" name="quantity_received" min="0" step="0.01" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Density at 15°C (kg/m³) *</label>
+                                <input type="number" class="form-control" name="fuel_density" min="0" step="0.01" placeholder="e.g., 860.00" required>
+                                <small class="text-muted">Per ASTM D287 or ISO 3675. Critical for volume/mass conversion</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fuel Temperature at Delivery (°C)</label>
+                                <input type="number" class="form-control" name="fuel_temperature" step="0.1" placeholder="e.g., 25.0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supplier Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-building me-2"></i> Fuel Supplier Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Supplier Name *</label>
+                                <input type="text" class="form-control" name="supplier_name" placeholder="Bunker Supplier Company" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Supplier Contact Email *</label>
+                                <input type="email" class="form-control" name="supplier_email" placeholder="contact@supplier.com" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Supplier Contact Phone</label>
+                                <input type="tel" class="form-control" name="supplier_phone" placeholder="+1 (555) 123-4567">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Supplier Representative Name *</label>
+                                <input type="text" class="form-control" name="supplier_representative" placeholder="Representative Name" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sulfur Content & MARPOL Compliance (KEY FIELD) -->
+                <div class="card mb-4 border-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i> SULFUR CONTENT & MARPOL ANNEX VI COMPLIANCE (MANDATORY)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>CRITICAL REQUIREMENT:</strong> Sulfur content is the KEY value in BDN. Exceeding the limit for the area of consumption constitutes a major MARPOL violation. ECA limit: 0.10% m/m | Global limit: 0.50% m/m
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sulfur Content (% m/m) *</label>
+                                <input type="number" class="form-control" name="sulfur_content" min="0" max="5" step="0.01" placeholder="e.g., 0.50" required>
+                                <small class="text-muted">From BDN. Maximum 0.10% in ECAs, 0.50% globally per MARPOL Annex VI</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Intended Consumption Area *</label>
+                                <select class="form-select" name="consumption_area" required>
+                                    <option value="">-- Select Area --</option>
+                                    <option value="eca">ECA (Emission Control Area) - Max 0.10%</option>
+                                    <option value="global">Global Waters - Max 0.50%</option>
+                                    <option value="both">Both ECA and Global Waters</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Supplier's Declaration of Fuel Specification *</label>
+                                <select class="form-select" name="supplier_declaration" required>
+                                    <option value="">-- Supplier's Declaration --</option>
+                                    <option value="meets_annex_vi">Fuel meets all MARPOL Annex VI requirements for global use</option>
+                                    <option value="meets_eca">Fuel meets MARPOL Annex VI requirements for ECA only (0.10%)</option>
+                                    <option value="exceeds_limit">Fuel EXCEEDS sulfur limit - FOR EXCEPTION USE ONLY</option>
+                                </select>
+                                <small class="text-muted">This declaration must be signed by the fuel supplier's representative</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Representative Fuel Oil Sample Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-flask me-2"></i> Representative Fuel Oil Sample (12-Month Retention Required)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> A sealed representative fuel oil sample must be retained on board for at least 12 months. This sample serves as evidence of fuel quality at time of delivery.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sample Collection Date *</label>
+                                <input type="date" class="form-control" name="sample_collection_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sample Quantity (litres) *</label>
+                                <input type="number" class="form-control" name="sample_quantity" min="0.1" step="0.1" placeholder="e.g., 1.0" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sealing Method *</label>
+                                <select class="form-select" name="sealing_method" required>
+                                    <option value="">-- Select Sealing Method --</option>
+                                    <option value="sealed_glass">Sealed Glass Container with Cap</option>
+                                    <option value="sealed_plastic">Sealed Plastic Container (approved for fuel)</option>
+                                    <option value="sealed_metal">Sealed Metal Container</option>
+                                    <option value="tamper_evident">Tamper-Evident Sealed Bag</option>
+                                    <option value="sealed_certified">Certified Sealed Sample Kit</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Container Label Information *</label>
+                                <input type="text" class="form-control" name="sample_label" placeholder="e.g., Vessel Name, Date, Fuel Type" required>
+                                <small class="text-muted">Must clearly identify vessel, delivery date, fuel type, and BDN number</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Storage Location On Board *</label>
+                                <input type="text" class="form-control" name="sample_storage_location" placeholder="e.g., Chief Engineer's Office Safe, Locker #3, etc." required>
+                                <small class="text-muted">Must be secure, identifiable location accessible for PSC inspection</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Sample Custody Notes</label>
+                            <textarea class="form-control" name="sample_notes" rows="2" placeholder="Any relevant information about sample handling, security measures, or observation notes"></textarea>
+                    </div>
+                </div>
+
+                <!-- Sequential BDN Filing Record -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-list-check me-2"></i> Sequential BDN Filing Record</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> All BDNs must be filed sequentially in the ship's bunker log. This BDN entry must be recorded with sequential numbering for regulatory audit trail.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">BDN Serial Number / Reference *</label>
+                                <input type="text" class="form-control" name="bdn_reference_number" placeholder="e.g., BDN-2024-001, SGP-20240115-1234" required>
+                                <small class="text-muted">Must be unique and identifiable for audit purposes</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Previous BDN Reference (if any)</label>
+                                <input type="text" class="form-control" name="previous_bdn_reference" placeholder="Reference to prior bunker delivery">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes on Sequential Filing</label>
+                            <textarea class="form-control" name="bdn_filing_notes" rows="2" placeholder="Confirm sequential filing, any gaps in numbering, filing location in bunker logbook, or chain of custody notes"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fuel Oil Tank Soundings (Before & After) -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-ruler me-2"></i> Fuel Oil Tank Soundings Record</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Accurate tank soundings before and after delivery are critical for volume verification and reconciliation against BDN quantity.</p>
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-arrow-right me-2"></i> BEFORE Delivery</h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Sounding Date (Before) *</label>
+                                    <input type="date" class="form-control" name="sounding_before_date" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Sounding Time (Before) *</label>
+                                    <input type="time" class="form-control" name="sounding_before_time" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Tank Level (Depth in cm) *</label>
+                                    <input type="number" class="form-control" name="tank_depth_before" min="0" step="0.1" placeholder="e.g., 245.5 cm" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tank Volume (m³) *</label>
+                                    <input type="number" class="form-control" name="tank_volume_before" min="0" step="0.01" placeholder="e.g., 125.75 m³" required>
+                                    <small class="text-muted">From calibration tables based on depth/ullage</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tank Temperature (°C) (Before)</label>
+                                    <input type="number" class="form-control" name="tank_temp_before" step="0.1" placeholder="e.g., 22.5">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-arrow-right me-2"></i> AFTER Delivery</h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Sounding Date (After) *</label>
+                                    <input type="date" class="form-control" name="sounding_after_date" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Sounding Time (After) *</label>
+                                    <input type="time" class="form-control" name="sounding_after_time" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Tank Level (Depth in cm) *</label>
+                                    <input type="number" class="form-control" name="tank_depth_after" min="0" step="0.1" placeholder="e.g., 385.2 cm" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tank Volume (m³) *</label>
+                                    <input type="number" class="form-control" name="tank_volume_after" min="0" step="0.01" placeholder="e.g., 195.30 m³" required>
+                                    <small class="text-muted">From calibration tables based on depth/ullage</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tank Temperature (°C) (After)</label>
+                                    <input type="number" class="form-control" name="tank_temp_after" step="0.1" placeholder="e.g., 28.3">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 p-2 bg-warning bg-opacity-25 rounded">
+                            <small><strong>Volume Reconciliation:</strong> Expected increase = Quantity delivered (BDN) = Tank Volume After - Tank Volume Before (adjusted for temperature)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fuel Oil Sample Analysis Results -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-flask-vial me-2"></i> Fuel Oil Sample Analysis Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> In-house or external fuel oil sample analysis results. Record key parameters for quality assurance and regulatory compliance.</p>
+                        
+                        <div class="alert alert-info small mb-3">
+                            <i class="fas fa-info-circle me-1"></i>Analysis can be performed in-house (if equipped) or by external lab. Record date of analysis and source.
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Analysis Type *</label>
+                                <select class="form-select" name="analysis_type" required>
+                                    <option value="">-- Select Analysis Type --</option>
+                                    <option value="in_house">In-House (Ship's Lab)</option>
+                                    <option value="external_lab">External Laboratory</option>
+                                    <option value="none_pending">No Analysis / Pending Results</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Analysis Date</label>
+                                <input type="date" class="form-control" name="analysis_date">
+                            </div>
+                        </div>
+
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-microscope me-2"></i> Analysis Results</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Sulfur Content (% m/m)</label>
+                                    <input type="number" class="form-control" name="analysis_sulfur" min="0" max="5" step="0.01" placeholder="e.g., 0.48">
+                                    <small class="text-muted">Compare with BDN declaration (should match)</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Kinematic Viscosity (cSt @ 40°C)</label>
+                                    <input type="number" class="form-control" name="analysis_viscosity" min="0" step="0.01" placeholder="e.g., 180.5">
+                                    <small class="text-muted">Typical range: 11-380 cSt depending on fuel type</small>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Density @ 15°C (kg/m³)</label>
+                                    <input type="number" class="form-control" name="analysis_density" min="0" step="0.01" placeholder="e.g., 867.2">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Flash Point (°C)</label>
+                                    <input type="number" class="form-control" name="analysis_flash_point" step="0.1" placeholder="e.g., 74.5">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Water Content (% v/v)</label>
+                                    <input type="number" class="form-control" name="analysis_water_content" min="0" max="100" step="0.01" placeholder="e.g., 0.15">
+                                    <small class="text-muted">Should be minimal (typically <0.5%)</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Total Sediment (% m/m)</label>
+                                    <input type="number" class="form-control" name="analysis_sediment" min="0" step="0.01" placeholder="e.g., 0.05">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Catalytic Fines (mg/kg)</label>
+                                    <input type="number" class="form-control" name="analysis_cat_fines" min="0" step="1" placeholder="e.g., 45">
+                                    <small class="text-muted">Cat fines from cracking catalysts (max 50 mg/kg typical)</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Vanadium Content (mg/kg)</label>
+                                    <input type="number" class="form-control" name="analysis_vanadium" min="0" step="1" placeholder="e.g., 120">
+                                    <small class="text-muted">Important for boiler/engine corrosion concerns</small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Analysis Remarks / Lab Notes</label>
+                                <textarea class="form-control" name="analysis_remarks" rows="2" placeholder="Any abnormal findings, out-of-specification parameters, lab recommendations, or actions taken"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fuel Changeover Log -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-arrows-rotate me-2"></i> Fuel Changeover Log (ECA Entry/Exit)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Detailed record when switching between different fuel types, especially when entering or exiting Emission Control Areas (ECAs). Critical for MARPOL compliance.</p>
+                        
+                        <div class="alert alert-warning small mb-3">
+                            <i class="fas fa-warning me-1"></i>ECA Rules: Ships must switch to compliant fuel (≤0.10% S) before entering ECA. Changeover documentation is mandatory for Port State Control inspection.
+                        </div>
+
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-exchange me-2"></i> Fuel Changeover Details</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Changeover Reason *</label>
+                                    <select class="form-select" name="changeover_reason" required>
+                                        <option value="">-- Select Reason --</option>
+                                        <option value="entering_eca">Entering Emission Control Area (ECA)</option>
+                                        <option value="exiting_eca">Exiting Emission Control Area (ECA)</option>
+                                        <option value="fuel_depletion">Current Fuel Type Depleted</option>
+                                        <option value="supply_change">Change in Fuel Supply</option>
+                                        <option value="operational">Operational Decision</option>
+                                        <option value="emergency">Emergency Changeover</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Changeover Date *</label>
+                                    <input type="date" class="form-control" name="changeover_date" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Changeover Start Time (UTC) *</label>
+                                    <input type="time" class="form-control" name="changeover_start_time" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Changeover Complete Time (UTC) *</label>
+                                    <input type="time" class="form-control" name="changeover_complete_time" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Duration (minutes)</label>
+                                    <input type="number" class="form-control" name="changeover_duration" min="0" step="1" placeholder="Auto-calculated">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Ship's Position at Changeover *</label>
+                                    <input type="text" class="form-control" name="changeover_position" placeholder="Latitude/Longitude, e.g., 40°45'30&quot;N, 070°15'45&quot;W" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Distance to ECA Boundary (nautical miles)</label>
+                                    <input type="number" class="form-control" name="changeover_distance_eca" step="0.1" placeholder="e.g., 12.5">
+                                </div>
+                            </div>
+
+                            <div class="border-top pt-3">
+                                <h6 class="mb-3">FROM Fuel Type (Before Changeover)</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">FROM Fuel Type *</label>
+                                        <select class="form-select" name="changeover_from_fuel_type" required>
+                                            <option value="">-- Select Fuel Type --</option>
+                                            <option value="VLSFO">VLSFO</option>
+                                            <option value="ULSFO">ULSFO</option>
+                                            <option value="LSMGO">LSMGO</option>
+                                            <option value="MGO">MGO</option>
+                                            <option value="MDO">MDO</option>
+                                            <option value="HFO">HFO</option>
+                                            <option value="IFO180">IFO 180</option>
+                                            <option value="IFO380">IFO 380</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">FROM Fuel Sulfur Content (% m/m) *</label>
+                                        <input type="number" class="form-control" name="changeover_from_sulfur" min="0" max="5" step="0.01" placeholder="e.g., 0.50" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Service Tank Level Before Changeover (m³)</label>
+                                        <input type="number" class="form-control" name="changeover_from_tank_level" min="0" step="0.01" placeholder="e.g., 25.50">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Service Tank Level After Changeover (m³)</label>
+                                        <input type="number" class="form-control" name="changeover_from_tank_final" min="0" step="0.01" placeholder="e.g., 2.30">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border-top pt-3">
+                                <h6 class="mb-3">TO Fuel Type (After Changeover)</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">TO Fuel Type *</label>
+                                        <select class="form-select" name="changeover_to_fuel_type" required>
+                                            <option value="">-- Select Fuel Type --</option>
+                                            <option value="VLSFO">VLSFO</option>
+                                            <option value="ULSFO">ULSFO</option>
+                                            <option value="LSMGO">LSMGO</option>
+                                            <option value="MGO">MGO</option>
+                                            <option value="MDO">MDO</option>
+                                            <option value="HFO">HFO</option>
+                                            <option value="IFO180">IFO 180</option>
+                                            <option value="IFO380">IFO 380</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">TO Fuel Sulfur Content (% m/m) *</label>
+                                        <input type="number" class="form-control" name="changeover_to_sulfur" min="0" max="5" step="0.01" placeholder="e.g., 0.10" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Service Tank Level After Switch (m³)</label>
+                                        <input type="number" class="form-control" name="changeover_to_tank_level" min="0" step="0.01" placeholder="e.g., 45.75">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Volume of New Fuel in Service Tank (m³)</label>
+                                        <input type="number" class="form-control" name="changeover_new_fuel_volume" min="0" step="0.01" placeholder="Auto-calculated">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <label class="form-label">Changeover Notes & Observations</label>
+                                <textarea class="form-control" name="changeover_notes" rows="3" placeholder="Detailed record of changeover process, any issues encountered, system purging, filter changes, engine performance observations, weather conditions during changeover"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ship's Receiving Officer & Fuel Report -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i> Ship's Receiving Officer</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Receiving Officer Name (Auto-filled)</label>
+                                <input type="text" class="form-control" id="officer_name" readonly value="{{ current_user.first_name }} {{ current_user.last_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Officer Rank/Position *</label>
+                                <input type="text" class="form-control" name="officer_rank" placeholder="Chief Engineer / Captain" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">General Remarks</label>
+                            <textarea class="form-control" name="remarks" rows="2" placeholder="Observations about fuel quality, delivery process, condition of fuel, any discrepancies"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" name="additional_notes" rows="2" placeholder="Any other relevant information for BDN documentation"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signature & Declaration -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-pen-fancy me-2"></i> Ship's Officer Signature & MARPOL Declaration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="border rounded p-3" style="background-color: #f8f9fa; min-height: 150px;">
+                            <canvas id="signatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
+                        </div>
+                        <div class="mt-2 mb-3">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="clearSignature()">Clear Signature</button>
+                        </div>
+                        <div class="alert alert-success small mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Declaration:</strong> I hereby certify that the fuel oil delivered on the above date and location meets the MARPOL Annex VI requirements as stated in the Bunker Delivery Note. The representative fuel oil sample has been collected, sealed, and stored on board in accordance with international regulations. This BDN is the legal document provided by the fuel supplier and is essential for Port State Control (PSC) and Flag State verification.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-check me-2"></i> Submit Bunker Delivery Note (BDN) & Fuel Report
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Signature Canvas Setup
+let signatureCanvas = document.getElementById('signatureCanvas');
+let canvasContext = signatureCanvas.getContext('2d');
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+
+function resizeCanvas() {
+    signatureCanvas.width = signatureCanvas.offsetWidth;
+    signatureCanvas.height = 150;
+    canvasContext.strokeStyle = '#000';
+    canvasContext.lineWidth = 2;
+    canvasContext.lineCap = 'round';
+    canvasContext.lineJoin = 'round';
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+signatureCanvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    canvasContext.beginPath();
+    canvasContext.moveTo(lastX, lastY);
+    canvasContext.lineTo(e.offsetX, e.offsetY);
+    canvasContext.stroke();
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
+signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+function clearSignature() {
+    canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+}
+
+// Form Submission
+document.getElementById('fuelReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    data.signature_data = signatureCanvas.toDataURL();
+    
+    fetch('/api/fuel-report', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', `Bunker Delivery Note ${result.report_id} submitted successfully!`);
+            setTimeout(() => window.location.href = '/fuel-reports_list', 2000);
+        } else {
+            showAlert('danger', result.error || 'Failed to submit report');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error.message);
+    });
+});
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+document.querySelector('input[name="delivery_date"]').valueAsDate = new Date();
+document.querySelector('input[name="sample_collection_date"]').valueAsDate = new Date();
+</script>
+{% endblock %}

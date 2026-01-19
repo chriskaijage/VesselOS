@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}Captain Dashboard - Marine Service Center{% endblock %}
+
+{% block content %}
+{% if current_user_profile.profile_pic_url %}
+<div class="text-center mb-4">
+    <img src="{{ current_user_profile.profile_pic_url }}" 
+         class="rounded-circle shadow" 
+         style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #007bff;"
+         alt="Profile Picture">
+    <h4 class="mt-3">{{ current_user_profile.full_name }}</h4>
+    <p class="text-muted">{{ current_user_profile.rank }} • {{ current_user_profile.role|replace('_', ' ')|title }}</p>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-anchor fa-3x" style="color: #007bff;"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-1">Captain Dashboard</h1>
+                        <p class="lead mb-0">Review and approve maintenance requests from your vessel before submission to port authorities</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Captain Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-warning">
+            <div class="card-body text-center">
+                <div class="metric-value" id="pendingApproval">--</div>
+                <div class="metric-label">Pending Approval</div>
+                <small class="text-muted">Awaiting your review</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-info">
+            <div class="card-body text-center">
+                <div class="metric-value" id="approved">--</div>
+                <div class="metric-label">Approved</div>
+                <small class="text-muted">Submitted to port</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-primary">
+            <div class="card-body text-center">
+                <div class="metric-value" id="inProgress">--</div>
+                <div class="metric-label">In Progress</div>
+                <small class="text-muted">Being serviced</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-success">
+            <div class="card-body text-center">
+                <div class="metric-value" id="completed">--</div>
+                <div class="metric-label">Completed</div>
+                <small class="text-muted">Resolved requests</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-lg-8">
+        <!-- Pending Approval Requests -->
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-check me-2"></i> Requests Awaiting Your Approval</h5>
+                    <span class="badge bg-danger" id="pendingCount">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="pendingApprovalList">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading pending requests...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- All Vessel Requests -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-ship me-2"></i> All Vessel Requests</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadVesselRequests()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Type</th>
+                                <th>Criticality</th>
+                                <th>Status</th>
+                                <th>Requested By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vesselRequestsTable">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading requests...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-warning w-100 mb-3" onclick="reviewPendingRequests()">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    Review Pending Requests
+                </button>
+                <a href="/profile" class="btn btn-primary w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-user-circle me-2"></i>
+                    <span>My Profile</span>
+                </a>
+                <a href="/reports" class="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Approval Guidelines -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Approval Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>Review all technical details</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>Verify criticality assessment</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>Add operational comments if needed</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>Approved requests are sent to Harbour Master</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div id="recentActivity">
+                    <div class="text-center py-2">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <small class="text-muted ms-2">Loading activity...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Review and Approve Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="approvalContent">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="rejectRequest()">Reject</button>
+                <button type="button" class="btn btn-success" onclick="approveRequest()">Approve & Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let captainData = null;
+let currentRequestId = null;
+
+// Load captain dashboard data
+function loadCaptainData() {
+    fetch('/api/captain/dashboard-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                captainData = data.data;
+                
+                // Update stats
+                document.getElementById('pendingApproval').textContent = data.data.pending_approval || 0;
+                document.getElementById('approved').textContent = data.data.approved || 0;
+                document.getElementById('inProgress').textContent = data.data.in_progress || 0;
+                document.getElementById('completed').textContent = data.data.completed || 0;
+                
+                // Load requests
+                loadPendingApproval();
+                loadVesselRequests();
+                loadRecentActivity();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
+            loadSampleData();
+        });
+}
+
+function loadPendingApproval() {
+    fetch('/api/captain/pending-approval')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updatePendingApprovalList(data.requests);
+            } else {
+                loadSamplePendingRequests();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading pending requests:', error);
+            loadSamplePendingRequests();
+        });
+}
+
+function updatePendingApprovalList(requests) {
+    const container = document.getElementById('pendingApprovalList');
+    const count = document.getElementById('pendingCount');
+    
+    if (requests.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">No pending approval requests</p>
+            </div>
+        `;
+        count.textContent = '0';
+    } else {
+        count.textContent = requests.length;
+        let html = '';
+        requests.forEach(req => {
+            const criticalityBadge = req.criticality === 'emergency' ? 'danger' :
+                                   req.criticality === 'urgent' ? 'warning' :
+                                   req.criticality === 'high' ? 'info' : 'secondary';
+            
+            html += `
+                <div class="alert alert-warning mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="alert-heading">${req.ship_name || 'Vessel'}</h6>
+                            <p class="mb-1"><strong>Type:</strong> ${req.request_type || req.maintenance_type || 'Maintenance Request'}</p>
+                            <p class="mb-1"><strong>Criticality:</strong> <span class="badge bg-${criticalityBadge}">${req.criticality ? req.criticality.toUpperCase() : 'MEDIUM'}</span></p>
+                            <p class="mb-1 small"><strong>Request ID:</strong> <code>${req.request_id}</code></p>
+                            <p class="mb-0 small text-muted">Requested by: ${req.requested_by_name || 'Chief Engineer'}</p>
+                        </div>
+                        <div class="ms-3">
+                            <button class="btn btn-sm btn-warning" onclick="reviewRequest('${req.request_id}')">
+                                <i class="fas fa-eye me-1"></i> Review
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+}
+
+function loadVesselRequests() {
+    fetch('/api/captain/vessel-requests')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateVesselRequestsTable(data.requests);
+            } else {
+                loadSampleVesselRequests();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading vessel requests:', error);
+            loadSampleVesselRequests();
+        });
+}
+
+function updateVesselRequestsTable(requests) {
+    const table = document.getElementById('vesselRequestsTable');
+    
+    if (requests.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <i class="fas fa-ship fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No requests found for your vessel</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        let html = '';
+        requests.forEach(req => {
+            const criticalityBadge = req.criticality === 'emergency' ? 'danger' :
+                                   req.criticality === 'urgent' ? 'warning' :
+                                   req.criticality === 'high' ? 'info' : 'secondary';
+            
+            const statusBadge = req.status === 'completed' ? 'success' :
+                              req.status === 'in_progress' ? 'primary' :
+                              req.status === 'approved' ? 'info' :
+                              req.status === 'pending_captain' ? 'warning' : 'secondary';
+            
+            const statusText = req.status === 'completed' ? 'Completed' :
+                             req.status === 'in_progress' ? 'In Progress' :
+                             req.status === 'approved' ? 'Approved' :
+                             req.status === 'pending_captain' ? 'Pending Approval' : 'Pending';
+            
+            html += `
+                <tr>
+                    <td><code>${req.request_id}</code></td>
+                    <td>${req.request_type || req.maintenance_type || 'N/A'}</td>
+                    <td><span class="badge bg-${criticalityBadge}">${req.criticality ? req.criticality.toUpperCase() : 'MEDIUM'}</span></td>
+                    <td><span class="badge bg-${statusBadge}">${statusText}</span></td>
+                    <td>${req.requested_by_name || 'Chief Engineer'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewRequestDetails('${req.request_id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <a href="/view-request/${req.request_id}" class="btn btn-sm btn-outline-info ms-1" title="Full View" target="_blank">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+            `;
+        });
+        table.innerHTML = html;
+    }
+}
+
+function loadRecentActivity() {
+    fetch('/api/captain/recent-activity')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '';
+                data.activities.forEach(activity => {
+                    html += `
+                        <div class="border-bottom pb-2 mb-2">
+                            <small class="text-muted">${activity.timestamp}</small>
+                            <p class="mb-0 small">${activity.description}</p>
+                        </div>
+                    `;
+                });
+                document.getElementById('recentActivity').innerHTML = html || '<p class="text-muted small">No recent activity</p>';
+            }
+        });
+}
+
+function reviewRequest(requestId) {
+    currentRequestId = requestId;
+    fetch(`/api/maintenance-requests/${requestId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const req = data.request;
+                let html = `
+                    <h6>Request Details</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Request ID:</strong><br>
+                            <code>${req.request_id}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Vessel:</strong><br>
+                            ${req.ship_name}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Type:</strong><br>
+                            ${req.request_type || req.maintenance_type || 'N/A'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Criticality:</strong><br>
+                            <span class="badge bg-${req.criticality === 'emergency' ? 'danger' : req.criticality === 'urgent' ? 'warning' : 'info'}">
+                                ${req.criticality ? req.criticality.toUpperCase() : 'MEDIUM'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Description:</strong><br>
+                        <p>${req.description || 'No description provided'}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Captain Comments (Optional)</label>
+                        <textarea class="form-control" id="captainComments" rows="3" placeholder="Add any operational comments or notes..."></textarea>
+                    </div>
+                `;
+                
+                document.getElementById('approvalContent').innerHTML = html;
+                const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+                modal.show();
+            }
+        });
+}
+
+function approveRequest() {
+    if (!currentRequestId) return;
+    
+    const comments = document.getElementById('captainComments')?.value || '';
+    
+    fetch(`/api/captain/approve-request/${currentRequestId}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({comments: comments})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Request approved and submitted to Harbour Master successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('approvalModal')).hide();
+            loadCaptainData();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to approve request'));
+        }
+    });
+}
+
+function rejectRequest() {
+    if (!currentRequestId) return;
+    
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason === null || !reason.trim()) {
+        return;
+    }
+    
+    fetch(`/api/captain/reject-request/${currentRequestId}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({rejection_reason: reason})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Request rejected successfully.');
+            bootstrap.Modal.getInstance(document.getElementById('approvalModal')).hide();
+            loadCaptainData();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to reject request'));
+        }
+    });
+}
+
+function viewRequestDetails(requestId) {
+    window.open(`/view-request/${requestId}`, '_blank');
+}
+
+function reviewPendingRequests() {
+    document.getElementById('pendingApprovalSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+function loadSampleData() {
+    document.getElementById('pendingApproval').textContent = '3';
+    document.getElementById('approved').textContent = '8';
+    document.getElementById('inProgress').textContent = '5';
+    document.getElementById('completed').textContent = '12';
+    loadSamplePendingRequests();
+    loadSampleVesselRequests();
+}
+
+function loadSamplePendingRequests() {
+    const requests = [
+        { request_id: 'MR-20240125-001', ship_name: 'MV Ocean Carrier', request_type: 'Maintenance', criticality: 'high', requested_by_name: 'Chief Engineer' },
+        { request_id: 'MR-20240124-002', ship_name: 'MV Ocean Carrier', request_type: 'Part Replacement', criticality: 'urgent', requested_by_name: 'Chief Engineer' }
+    ];
+    updatePendingApprovalList(requests);
+}
+
+function loadSampleVesselRequests() {
+    const requests = [
+        { request_id: 'MR-20240125-001', request_type: 'Maintenance', criticality: 'high', status: 'pending_captain', requested_by_name: 'Chief Engineer' },
+        { request_id: 'MR-20240124-002', request_type: 'Part Replacement', criticality: 'urgent', status: 'approved', requested_by_name: 'Chief Engineer' },
+        { request_id: 'MR-20240123-003', request_type: 'Inspection', criticality: 'medium', status: 'completed', requested_by_name: 'Chief Engineer' }
+    ];
+    updateVesselRequestsTable(requests);
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCaptainData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadCaptainData, 30000);
+});
+</script>
+{% endblock %}

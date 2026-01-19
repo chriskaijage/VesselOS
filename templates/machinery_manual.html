@@ -1,0 +1,785 @@
+{% extends "base.html" %}
+
+{% block title %}Machinery Manual - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-book me-3 fa-2x text-white"></i>
+                    <div>
+                        <h2 class="mb-0">Machinery Manual Management</h2>
+                        <p class="mb-0">Ship machinery documentation and manuals</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Actions Sidebar -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> Actions</h5>
+            </div>
+            <div class="card-body">
+                {% if user_role == 'harbour_master' %}
+                <button class="btn btn-primary w-100 mb-3" onclick="uploadMachineryFolder()">
+                    <i class="fas fa-cloud-upload-alt me-2"></i> Upload Machinery Folder
+                </button>
+                {% endif %}
+                
+                <button class="btn btn-info w-100 mb-3" onclick="refreshFolderList()">
+                    <i class="fas fa-sync-alt me-2"></i> Refresh
+                </button>
+                
+                {% if user_role in ['chief_engineer', 'captain'] %}
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle me-1"></i> You can view, open and download machinery manuals for all ships.</small>
+                </div>
+                {% elif user_role == 'harbour_master' %}
+                <div class="alert alert-success">
+                    <small><i class="fas fa-check-circle me-1"></i> You can upload, edit and delete machinery manual folders.</small>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <small><i class="fas fa-lock me-1"></i> You have limited access to machinery manuals.</small>
+                </div>
+                {% endif %}
+                
+                <hr class="my-3">
+                
+                <!-- Ship Filter -->
+                <h6 class="mb-3"><i class="fas fa-filter me-2"></i> Filter by Ship</h6>
+                <select class="form-select form-select-sm" id="shipFilter" onchange="filterByShip()">
+                    <option value="">-- All Ships --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Machinery Folders Display -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-folder-open me-2"></i> Machinery Manual Folders</h5>
+            </div>
+            <div class="card-body">
+                <div id="machineryFoldersContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading machinery manuals...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Machinery Folder Modal -->
+<div class="modal fade" id="uploadMachineryModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-cloud-upload-alt me-2"></i> Upload Machinery Manual Folder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="machineryUploadForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Ship Name *</label>
+                            <input type="text" class="form-control" id="shipNameInput" name="ship_name" required placeholder="e.g., MV Oceanic">
+                            <small class="text-muted">Enter the exact ship name</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Folder Name *</label>
+                            <input type="text" class="form-control" id="folderNameInput" name="folder_name" required placeholder="e.g., Main Engine Documentation">
+                            <small class="text-muted">Give this manual folder a descriptive name</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="2" placeholder="Optional description of this manual folder"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Upload Documents *</label>
+                        <input type="file" class="form-control" id="machineryFilesInput" name="files" multiple required accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.xls,.xlsx">
+                        <small class="text-muted">Allowed: PDF, DOC, DOCX, TXT, JPG, PNG, XLS, XLSX</small>
+                    </div>
+                    
+                    <div id="fileList" class="mb-3" style="display: none;">
+                        <label class="form-label">Selected Files:</label>
+                        <div id="selectedFilesList" class="small border p-2 rounded" style="max-height: 200px; overflow-y: auto;">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i> Upload Instructions</h6>
+                        <ul class="small mb-0">
+                            <li>Select multiple files at once using Ctrl+Click or Shift+Click</li>
+                            <li>Upload PDF manuals, technical documents, or images</li>
+                            <li>All files will be organized under the ship name</li>
+                            <li>Maximum file size: 100 MB total</li>
+                        </ul>
+                    </div>
+                </form>
+                
+                <div id="uploadProgress" style="display: none;">
+                    <h6>Upload Progress:</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" id="uploadProgressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p id="uploadStatus" class="small text-muted">Uploading...</p>
+                </div>
+                
+                <div id="uploadResult" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="uploadMachineryBtn" onclick="submitMachineryUpload()">
+                    <i class="fas fa-upload me-1"></i> Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Folder Details Modal -->
+<div class="modal fade" id="folderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="folderDetailsTitle"><i class="fas fa-folder me-2"></i> Folder Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="folderDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ===== THEME & COLOR VARIABLES ===== */
+:root {
+    --primary-color: #007acc;
+    --secondary-color: #0e639c;
+    --accent-color: #1a8cd8;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --light-bg: #f8f9fa;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+/* ===== CARD STYLING ===== */
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    border: none;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: white;
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* ===== BADGE & LABEL STYLING ===== */
+.badge {
+    font-size: 0.75em;
+    padding: 0.5em 0.85em;
+    border-radius: 4px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.badge-primary { background-color: var(--primary-color); }
+.badge-success { background-color: var(--success-color); }
+.badge-warning { background-color: var(--warning-color); color: #212529; }
+.badge-danger { background-color: var(--danger-color); }
+.badge-info { background-color: var(--info-color); }
+
+/* ===== MACHINERY FOLDER CARDS ===== */
+.machinery-folder-card {
+    border: none;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.machinery-folder-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--accent-color);
+}
+
+/* ===== FILE ITEM STYLING ===== */
+.machinery-file-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.machinery-file-item:hover {
+    background-color: rgba(0, 122, 204, 0.05);
+    padding-left: 20px;
+}
+
+.machinery-file-item:last-child {
+    border-bottom: none;
+}
+
+/* ===== FILE TYPE BADGES ===== */
+.file-type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.file-type-pdf { background-color: #f8d7da; color: #721c24; }
+.file-type-doc { background-color: #cce5ff; color: #004085; }
+.file-type-image { background-color: #d1ecf1; color: #0c5460; }
+.file-type-other { background-color: #e2e3e5; color: #383d41; }
+
+/* ===== FORM STYLING ===== */
+.form-control, .form-select {
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    padding: 0.625rem 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+    color: #212529;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+/* ===== MODAL STYLING ===== */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px 12px 0 0;
+    padding: 1.5rem;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.modal-backdrop {
+    backdrop-filter: blur(3px);
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* ===== ALERT STYLING ===== */
+.alert {
+    border: none;
+    border-radius: 8px;
+    border-left: 4px solid;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.alert-success { border-left-color: var(--success-color); }
+.alert-danger { border-left-color: var(--danger-color); }
+.alert-warning { border-left-color: var(--warning-color); }
+.alert-info { border-left-color: var(--info-color); }
+
+/* ===== BUTTON STYLING ===== */
+.btn-group-machinery .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-group-machinery .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===== PROGRESS BAR STYLING ===== */
+.progress {
+    background-color: var(--light-bg);
+    border-radius: 6px;
+    height: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#uploadResult, #uploadMachineryBtn {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 768px) {
+    .btn-group-machinery {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .btn-group-machinery .btn {
+        flex: 1;
+        min-width: 45px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.875rem 1rem;
+    }
+    
+    .machinery-file-item {
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+    
+    .machinery-file-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+</style>
+
+<script>
+// Global variables
+let allMachineryFolders = [];
+let currentSelectedFolderId = null;
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadMachineryFolders();
+    
+    // Track selected files
+    document.getElementById('machineryFilesInput').addEventListener('change', function() {
+        updateFileList();
+    });
+});
+
+// Upload functionality
+function uploadMachineryFolder() {
+    // Clear previous state
+    document.getElementById('machineryUploadForm').reset();
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('uploadResult').innerHTML = '';
+    document.getElementById('uploadMachineryBtn').disabled = false;
+    document.getElementById('fileList').style.display = 'none';
+    
+    const modal = new bootstrap.Modal(document.getElementById('uploadMachineryModal'));
+    modal.show();
+}
+
+function updateFileList() {
+    const files = document.getElementById('machineryFilesInput').files;
+    if (files.length === 0) {
+        document.getElementById('fileList').style.display = 'none';
+        return;
+    }
+    
+    let html = '';
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        html += `<div class="d-flex justify-content-between align-items-center"><span>${file.name}</span><small class="text-muted">${(file.size / 1024).toFixed(2)} KB</small></div>`;
+    }
+    
+    document.getElementById('selectedFilesList').innerHTML = html;
+    document.getElementById('fileList').style.display = 'block';
+}
+
+function submitMachineryUpload() {
+    const shipName = document.getElementById('shipNameInput').value.trim();
+    const folderName = document.getElementById('folderNameInput').value.trim();
+    const files = document.getElementById('machineryFilesInput').files;
+    
+    if (!shipName || !folderName || files.length === 0) {
+        alert('Please fill in all required fields and select files');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('ship_name', shipName);
+    formData.append('folder_name', folderName);
+    formData.append('description', document.querySelector('textarea[name="description"]').value);
+    
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+    
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('uploadMachineryBtn').disabled = true;
+    
+    fetch('/api/machinery-manuals/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showUploadSuccess(data);
+        } else {
+            showUploadError(data.error || 'Upload failed');
+        }
+    })
+    .catch(error => {
+        showUploadError('Upload error: ' + error.message);
+    })
+    .finally(() => {
+        document.getElementById('uploadMachineryBtn').disabled = false;
+    });
+}
+
+function showUploadSuccess(data) {
+    const resultDiv = document.getElementById('uploadResult');
+    resultDiv.innerHTML = `
+        <div class="alert alert-success alert-dismissible fade show">
+            <h6 class="alert-heading"><i class="fas fa-check-circle me-2"></i> Upload Successful</h6>
+            <p>Uploaded <strong>${data.data.file_count}</strong> files to folder <strong>${data.data.folder_name}</strong> for ship <strong>${data.data.ship_name}</strong>.</p>
+            <button type="button" class="btn btn-sm btn-success" onclick="closeAndRefreshMachinery()">
+                Done - Close and Refresh
+            </button>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function showUploadError(errorMsg) {
+    const resultDiv = document.getElementById('uploadResult');
+    resultDiv.innerHTML = `
+        <div class="alert alert-danger alert-dismissible fade show">
+            <h6 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i> Error</h6>
+            <p>${errorMsg}</p>
+            <button type="button" class="btn btn-sm btn-danger mt-2" data-bs-dismiss="alert">
+                Try Again
+            </button>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function closeAndRefreshMachinery() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('uploadMachineryModal'));
+    modal.hide();
+    setTimeout(() => {
+        loadMachineryFolders();
+    }, 300);
+}
+
+// Load and display machinery folders
+function loadMachineryFolders() {
+    fetch('/api/machinery-manuals', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data && data.data.length > 0) {
+            allMachineryFolders = data.data;
+            populateShipFilter();
+            displayMachineryFolders(data.data);
+        } else {
+            document.getElementById('machineryFoldersContainer').innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3" style="display: block;"></i>
+                    <p class="text-muted"><strong>No machinery manuals available yet</strong></p>
+                    <p class="text-muted small">Contact harbour master to upload machinery documentation.</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading machinery folders:', error);
+        document.getElementById('machineryFoldersContainer').innerHTML = `<div class="alert alert-danger">Error loading machinery folders</div>`;
+    });
+}
+
+function populateShipFilter() {
+    const ships = [...new Set(allMachineryFolders.map(f => f.ship_name))];
+    let filterHtml = '<option value="">-- All Ships --</option>';
+    ships.forEach(ship => {
+        filterHtml += `<option value="${ship}">${ship}</option>`;
+    });
+    document.getElementById('shipFilter').innerHTML = filterHtml;
+}
+
+function filterByShip() {
+    const selectedShip = document.getElementById('shipFilter').value;
+    if (!selectedShip) {
+        displayMachineryFolders(allMachineryFolders);
+    } else {
+        const filtered = allMachineryFolders.filter(f => f.ship_name === selectedShip);
+        displayMachineryFolders(filtered);
+    }
+}
+
+function displayMachineryFolders(folders) {
+    let html = '<div class="row">';
+    
+    folders.forEach(folder => {
+        const createdDate = new Date(folder.created_at).toLocaleDateString();
+        const createdTime = new Date(folder.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        html += `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card machinery-folder-card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate" title="${folder.folder_name}">
+                            <i class="fas fa-ship me-2 text-primary"></i> ${folder.ship_name}
+                        </h6>
+                        <p class="card-subtitle text-muted small mb-2" title="${folder.folder_name}">
+                            ${folder.folder_name}
+                        </p>
+                        ${folder.description ? `<p class="small text-muted">${folder.description.substring(0, 50)}${folder.description.length > 50 ? '...' : ''}</p>` : ''}
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="badge bg-info badge-machinery">
+                                <i class="fas fa-file me-1"></i> ${folder.file_count} files
+                            </span>
+                            <small class="text-muted">${createdDate}</small>
+                        </div>
+                        <div class="btn-group-machinery mt-3 d-flex flex-wrap gap-1">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewFolderDetails('${folder.folder_id}', '${folder.ship_name}', '${folder.folder_name}')" title="View files">
+                                <i class="fas fa-list-ul"></i> View
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="downloadFolderZip('${folder.folder_id}', '${folder.ship_name}')" title="Download as ZIP">
+                                <i class="fas fa-download"></i> ZIP
+                            </button>
+                            {% if user_role == 'harbour_master' %}
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteMachineryFolder('${folder.folder_id}', '${folder.folder_name}')" title="Delete folder">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    document.getElementById('machineryFoldersContainer').innerHTML = html;
+}
+
+function viewFolderDetails(folderId, shipName, folderName) {
+    currentSelectedFolderId = folderId;
+    document.getElementById('folderDetailsTitle').textContent = `${shipName} - ${folderName}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('folderDetailsModal'));
+    modal.show();
+    
+    // Load files
+    fetch(`/api/machinery-manuals/${folderId}/files`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data && data.data.length > 0) {
+            displayFolderFiles(data.data);
+        } else {
+            document.getElementById('folderDetailsContent').innerHTML = '<div class="alert alert-info">No files in this folder</div>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('folderDetailsContent').innerHTML = `<div class="alert alert-danger">Error loading files: ${error.message}</div>`;
+    });
+}
+
+function displayFolderFiles(files) {
+    let html = '<div class="list-group">';
+    
+    files.forEach(file => {
+        const uploadDate = new Date(file.uploaded_at).toLocaleDateString();
+        const fileSizeKB = (file.file_size / 1024).toFixed(2);
+        const fileIcon = getFileIcon(file.file_type);
+        const fileBadgeClass = getFileTypeBadgeClass(file.file_type);
+        
+        html += `
+            <div class="machinery-file-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="${fileIcon} fa-lg" style="color: #0d6efd;"></i>
+                            <div>
+                                <h6 class="mb-1" title="${file.file_name}">${file.file_name}</h6>
+                                <small class="text-muted">
+                                    ${file.machinery_type} • ${fileSizeKB} KB • Uploaded: ${uploadDate}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-success" onclick="downloadMachineryFile('${currentSelectedFolderId}', '${file.file_id}', '${file.file_name}')" title="Download">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        {% if user_role == 'harbour_master' %}
+                        <button class="btn btn-outline-danger" onclick="deleteMachineryFile('${currentSelectedFolderId}', '${file.file_id}', '${file.file_name}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    document.getElementById('folderDetailsContent').innerHTML = html;
+}
+
+function getFileIcon(fileType) {
+    const typeMap = {
+        'pdf': 'fas fa-file-pdf',
+        'doc': 'fas fa-file-word',
+        'docx': 'fas fa-file-word',
+        'txt': 'fas fa-file-alt',
+        'jpg': 'fas fa-file-image',
+        'jpeg': 'fas fa-file-image',
+        'png': 'fas fa-file-image',
+        'xls': 'fas fa-file-excel',
+        'xlsx': 'fas fa-file-excel'
+    };
+    return typeMap[fileType] || 'fas fa-file';
+}
+
+function getFileTypeBadgeClass(fileType) {
+    if (['pdf'].includes(fileType)) return 'file-type-pdf';
+    if (['doc', 'docx'].includes(fileType)) return 'file-type-doc';
+    if (['jpg', 'jpeg', 'png'].includes(fileType)) return 'file-type-image';
+    return 'file-type-other';
+}
+
+function downloadMachineryFile(folderId, fileId, fileName) {
+    window.location.href = `/api/machinery-manuals/${folderId}/files/${fileId}/download`;
+}
+
+function downloadFolderZip(folderId, shipName) {
+    window.location.href = `/api/machinery-manuals/${folderId}/download-zip`;
+}
+
+function deleteMachineryFile(folderId, fileId, fileName) {
+    if (!confirm(`Delete file "${fileName}"?`)) {
+        return;
+    }
+    
+    fetch(`/api/machinery-manuals/${folderId}/files/${fileId}/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            viewFolderDetails(folderId, '', ''); // Reload folder
+        } else {
+            alert('Error: ' + (data.error || 'Could not delete file'));
+        }
+    })
+    .catch(error => alert('Error: ' + error.message));
+}
+
+function deleteMachineryFolder(folderId, folderName) {
+    if (!confirm(`Delete machinery folder "${folderName}" and all its files? This action cannot be undone.`)) {
+        return;
+    }
+    
+    fetch(`/api/machinery-manuals/${folderId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Folder deleted successfully');
+            loadMachineryFolders();
+        } else {
+            alert('Error: ' + (data.error || 'Could not delete folder'));
+        }
+    })
+    .catch(error => alert('Error: ' + error.message));
+}
+
+function refreshFolderList() {
+    loadMachineryFolders();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}Chief Engineer Dashboard - Marine Service Center{% endblock %}
+
+{% block content %}
+{% if current_user_profile.profile_pic_url %}
+<div class="text-center mb-4">
+    <img src="{{ current_user_profile.profile_pic_url }}" 
+         class="rounded-circle shadow" 
+         style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #28a745;"
+         alt="Profile Picture">
+    <h4 class="mt-3">{{ current_user_profile.full_name }}</h4>
+    <p class="text-muted">{{ current_user_profile.rank }} • {{ current_user_profile.role|replace('_', ' ')|title }}</p>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-cog fa-3x" style="color: #28a745;"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-1">Chief Engineer Dashboard</h1>
+                        <p class="lead mb-0">Initiate maintenance requests, track service status, and manage vessel maintenance</p>
+                    </div>
+                    <div class="ms-auto">
+                        <a href="/maintenance-request" class="btn btn-success">
+                            <i class="fas fa-plus-circle me-2"></i> New Maintenance Request
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chief Engineer Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-primary">
+            <div class="card-body text-center">
+                <div class="metric-value" id="totalRequests">--</div>
+                <div class="metric-label">My Requests</div>
+                <small class="text-muted">Total submitted</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-warning">
+            <div class="card-body text-center">
+                <div class="metric-value" id="pendingApproval">--</div>
+                <div class="metric-label">Pending Approval</div>
+                <small class="text-muted">Awaiting captain</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-info">
+            <div class="card-body text-center">
+                <div class="metric-value" id="inProgress">--</div>
+                <div class="metric-label">In Progress</div>
+                <small class="text-muted">Being serviced</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-success">
+            <div class="card-body text-center">
+                <div class="metric-value" id="completed">--</div>
+                <div class="metric-label">Completed</div>
+                <small class="text-muted">Resolved requests</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-lg-8">
+        <!-- My Maintenance Requests -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> My Maintenance Requests</h5>
+                    <div>
+                        <a href="/maintenance-request" class="btn btn-sm btn-success">
+                            <i class="fas fa-plus me-1"></i> New Request
+                        </a>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadMyRequests()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Vessel</th>
+                                <th>Type</th>
+                                <th>Criticality</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myRequestsTable">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading requests...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Captain Approval -->
+        <div class="card mt-4 border-warning" id="pendingApprovalSection" style="display: none;">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-user-check me-2"></i> Requests Awaiting Captain Approval</h5>
+            </div>
+            <div class="card-body">
+                <div id="pendingApprovalList">
+                    <!-- Pending requests will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="/maintenance-request" class="btn btn-success w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    <span>New Maintenance Request</span>
+                </a>
+                <a href="/profile" class="btn btn-primary w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-user-circle me-2"></i>
+                    <span>My Profile</span>
+                </a>
+                <a href="/reports" class="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    <span>Reports</span>
+                </a>
+                <button class="btn btn-secondary w-100 mb-3" onclick="viewVesselRequests()">
+                    <i class="fas fa-ship me-2"></i>
+                    View All Vessel Requests
+                </button>
+            </div>
+        </div>
+        
+        <!-- Request Guidelines -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Request Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>Provide detailed technical descriptions</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>Upload photos/videos when available</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>Select appropriate criticality level</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small>All requests require captain approval</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div id="recentActivity">
+                    <div class="text-center py-2">
+                        <div class="spinner-border spinner-border-sm text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <small class="text-muted ms-2">Loading activity...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Details Modal -->
+<div class="modal fade" id="requestDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="requestDetailsContent">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let chiefEngineerData = null;
+
+// Load chief engineer dashboard data
+function loadChiefEngineerData() {
+    fetch('/api/chief-engineer/dashboard-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                chiefEngineerData = data.data;
+                
+                // Update stats
+                document.getElementById('totalRequests').textContent = data.data.total_requests || 0;
+                document.getElementById('pendingApproval').textContent = data.data.pending_approval || 0;
+                document.getElementById('inProgress').textContent = data.data.in_progress || 0;
+                document.getElementById('completed').textContent = data.data.completed || 0;
+                
+                // Load requests
+                loadMyRequests();
+                loadPendingApproval();
+                loadRecentActivity();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
+            // Load with sample data
+            loadSampleData();
+        });
+}
+
+function loadMyRequests() {
+    fetch('/api/chief-engineer/my-requests')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRequestsTable(data.requests);
+            } else {
+                loadSampleRequests();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading requests:', error);
+            loadSampleRequests();
+        });
+}
+
+function updateRequestsTable(requests) {
+    const table = document.getElementById('myRequestsTable');
+    
+    if (requests.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No maintenance requests found</p>
+                    <a href="/maintenance-request" class="btn btn-sm btn-success mt-2">
+                        <i class="fas fa-plus me-1"></i> Create New Request
+                    </a>
+                </td>
+            </tr>
+        `;
+    } else {
+        let html = '';
+        requests.forEach(req => {
+            const criticalityBadge = req.criticality === 'emergency' ? 'danger' :
+                                   req.criticality === 'urgent' ? 'warning' :
+                                   req.criticality === 'high' ? 'info' : 'secondary';
+            
+            const statusBadge = req.status === 'completed' ? 'success' :
+                              req.status === 'in_progress' ? 'primary' :
+                              req.status === 'approved' ? 'info' :
+                              req.status === 'pending_captain' ? 'warning' : 'secondary';
+            
+            const statusText = req.status === 'completed' ? 'Completed' :
+                             req.status === 'in_progress' ? 'In Progress' :
+                             req.status === 'approved' ? 'Approved' :
+                             req.status === 'pending_captain' ? 'Pending Captain' : 'Pending';
+            
+            html += `
+                <tr>
+                    <td><code>${req.request_id}</code></td>
+                    <td><strong>${req.ship_name}</strong></td>
+                    <td>${req.request_type || req.maintenance_type || 'N/A'}</td>
+                    <td><span class="badge bg-${criticalityBadge}">${req.criticality ? req.criticality.toUpperCase() : 'MEDIUM'}</span></td>
+                    <td><span class="badge bg-${statusBadge}">${statusText}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewRequestDetails('${req.request_id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <a href="/view-request/${req.request_id}" class="btn btn-sm btn-outline-info ms-1" title="Full View" target="_blank">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        table.innerHTML = html;
+    }
+}
+
+function loadPendingApproval() {
+    fetch('/api/chief-engineer/pending-approval')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.requests.length > 0) {
+                document.getElementById('pendingApprovalSection').style.display = 'block';
+                let html = '';
+                data.requests.forEach(req => {
+                    html += `
+                        <div class="alert alert-warning">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="alert-heading">${req.ship_name}</h6>
+                                    <p class="mb-1">${req.request_type || req.maintenance_type || 'Maintenance Request'}</p>
+                                    <small class="text-muted">Request ID: ${req.request_id}</small>
+                                </div>
+                                <button class="btn btn-sm btn-warning" onclick="viewRequestDetails('${req.request_id}')">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('pendingApprovalList').innerHTML = html;
+            } else {
+                document.getElementById('pendingApprovalSection').style.display = 'none';
+            }
+        });
+}
+
+function loadRecentActivity() {
+    fetch('/api/chief-engineer/recent-activity')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '';
+                data.activities.forEach(activity => {
+                    html += `
+                        <div class="border-bottom pb-2 mb-2">
+                            <small class="text-muted">${activity.timestamp}</small>
+                            <p class="mb-0 small">${activity.description}</p>
+                        </div>
+                    `;
+                });
+                document.getElementById('recentActivity').innerHTML = html || '<p class="text-muted small">No recent activity</p>';
+            }
+        });
+}
+
+function viewRequestDetails(requestId) {
+    fetch(`/api/maintenance-requests/${requestId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const req = data.request;
+                let html = `
+                    <h6>Request Details</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Request ID:</strong><br>
+                            <code>${req.request_id}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong><br>
+                            <span class="badge bg-${req.status === 'completed' ? 'success' : req.status === 'in_progress' ? 'primary' : 'warning'}">
+                                ${req.status}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Vessel:</strong><br>
+                            ${req.ship_name}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Type:</strong><br>
+                            ${req.request_type || req.maintenance_type || 'N/A'}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Description:</strong><br>
+                        <p>${req.description || 'No description provided'}</p>
+                    </div>
+                `;
+                
+                document.getElementById('requestDetailsContent').innerHTML = html;
+                const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+                modal.show();
+            }
+        });
+}
+
+function viewVesselRequests() {
+    // Reload and scroll to requests table
+    loadMyRequests();
+    setTimeout(() => {
+        const table = document.getElementById('myRequestsTable');
+        if (table) {
+            table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 500);
+}
+
+function loadSampleData() {
+    document.getElementById('totalRequests').textContent = '12';
+    document.getElementById('pendingApproval').textContent = '3';
+    document.getElementById('inProgress').textContent = '5';
+    document.getElementById('completed').textContent = '4';
+    loadSampleRequests();
+}
+
+function loadSampleRequests() {
+    const requests = [
+        { request_id: 'MR-20240125-001', ship_name: 'MV Ocean Carrier', request_type: 'Maintenance', criticality: 'high', status: 'in_progress' },
+        { request_id: 'MR-20240124-002', ship_name: 'MV Ocean Carrier', request_type: 'Part Replacement', criticality: 'urgent', status: 'pending_captain' },
+        { request_id: 'MR-20240123-003', ship_name: 'MV Ocean Carrier', request_type: 'Inspection', criticality: 'medium', status: 'completed' }
+    ];
+    updateRequestsTable(requests);
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    loadChiefEngineerData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadChiefEngineerData, 30000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1261 @@
+{% extends "base.html" %}
+
+{% block title %}View Maintenance Request - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-clipboard-list me-3 fa-2x"></i>
+                    <div>
+                        <h2 class="mb-0">Maintenance Request Details</h2>
+                        <p class="mb-0">View and manage maintenance service requests</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Request Summary -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Request Information</h5>
+                    <div>
+                        <span class="badge bg-danger me-2" id="requestPriority">HIGH</span>
+                        <span class="badge bg-warning me-2" id="requestStatus">PENDING</span>
+                        <span class="badge" id="severityBadge">MINOR</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="loadingIndicator" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading request details...</p>
+                </div>
+                <div id="requestContent" style="display: none;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                                <tr><th>Request ID:</th><td id="requestId">{{ request_id or 'Loading...' }}</td></tr>
+                                <tr><th>Vessel Name:</th><td id="vesselName">Loading...</td></tr>
+                                <tr><th>Location:</th><td id="location">Loading...</td></tr>
+                                <tr><th>Requested By:</th><td id="requestedBy">Loading...</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                                <tr><th>Request Type:</th><td id="requestType">Loading...</td></tr>
+                                <tr><th>Priority:</th><td id="criticality">Loading...</td></tr>
+                                <tr><th>Created:</th><td id="createdDate">Loading...</td></tr>
+                                <tr><th>Last Updated:</th><td id="updatedDate">Loading...</td></tr>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Request Description -->
+                <div class="mt-4">
+                    <h6>Request Description:</h6>
+                    <div class="alert alert-light">
+                        <p id="requestDescription">
+                            Engine overheating detected during voyage. Temperature reached 95°C, 
+                            exceeding normal operating range. Requires immediate inspection and 
+                            possible replacement of cooling system components.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Part Details -->
+                <div class="mt-4" id="partDetailsSection">
+                    <h6>Part Information:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Part Number</th>
+                                    <th>Part Name</th>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Manufacturer</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partDetails">
+                                <tr>
+                                    <td>ENG-001-2024</td>
+                                    <td>Cylinder Liner</td>
+                                    <td>Engine Parts</td>
+                                    <td>2</td>
+                                    <td>MAN Diesel & Turbo</td>
+                                </tr>
+                                <tr>
+                                    <td>ENG-002-2024</td>
+                                    <td>Piston Ring Set</td>
+                                    <td>Engine Parts</td>
+                                    <td>1</td>
+                                    <td>Wärtsilä</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Location & Contact -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-map-marker-alt me-2"></i> Location Information</h6>
+                        <div class="alert alert-info">
+                            <p class="mb-1"><strong>Current Location:</strong> Port of Singapore</p>
+                            <p class="mb-1"><strong>ETA at Port:</strong> 2024-01-16 08:00</p>
+                            <p class="mb-0"><strong>Berth:</strong> Terminal 4, Berth 12</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-address-card me-2"></i> Contact Information</h6>
+                        <div class="alert alert-secondary">
+                            <p class="mb-1"><strong>Contact Person:</strong> Captain John Davis</p>
+                            <p class="mb-1"><strong>Email:</strong> captain.davis@oceancarrier.com</p>
+                            <p class="mb-1"><strong>Phone:</strong> +65 9876 5432</p>
+                            <p class="mb-0"><strong>Emergency Contact:</strong> +65 9876 5433 (24/7)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attachments -->
+                <div class="mt-4">
+                    <h6><i class="fas fa-paperclip me-2"></i> Attachments</h6>
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                    Engine_Temperature_Log.pdf
+                                </div>
+                                <div>
+                                    <small class="text-muted me-3">2.5 MB</small>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file-image text-success me-2"></i>
+                                    Engine_Compartment_Photos.zip
+                                </div>
+                                <div>
+                                    <small class="text-muted me-3">15.8 MB</small>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Service History -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i> Service History</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6>Request Created</h6>
+                            <p class="mb-1">Maintenance request submitted by Captain John Davis</p>
+                            <small class="text-muted">2024-01-15 14:30:21</small>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6>Assigned to Maintenance</h6>
+                            <p class="mb-1">Request assigned to Maria Garcia (Harbour Master)</p>
+                            <small class="text-muted">2024-01-15 14:45:00</small>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6>Initial Assessment</h6>
+                            <p class="mb-1">Technician dispatched for initial assessment</p>
+                            <small class="text-muted">2024-01-15 15:30:00</small>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6>Parts Ordered</h6>
+                            <p class="mb-1">Required parts ordered from supplier</p>
+                            <small class="text-muted">2024-01-15 16:15:00</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Panel -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Service Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="assignToMe()">
+                        <i class="fas fa-user-check me-2"></i> Assign to Me
+                    </button>
+                    <button class="btn btn-warning" onclick="updateStatus()">
+                        <i class="fas fa-edit me-2"></i> Update Status
+                    </button>
+                    <button class="btn btn-info" onclick="addNotes()">
+                        <i class="fas fa-sticky-note me-2"></i> Add Notes
+                    </button>
+                    <button class="btn btn-success" onclick="startService()">
+                        <i class="fas fa-play-circle me-2"></i> Start Service
+                    </button>
+                    <button class="btn btn-danger" onclick="declareEmergency()">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Declare Emergency
+                    </button>
+                </div>
+                
+                <hr>
+                
+                <!-- Quick Information -->
+                <div class="mt-3">
+                    <h6><i class="fas fa-info-circle me-2"></i> Quick Info</h6>
+                    <div class="alert alert-light">
+                        <p class="mb-1"><strong>Assigned To:</strong> <span id="assignedTo">Not Assigned</span></p>
+                        <p class="mb-1"><strong>Estimated Cost:</strong> <span id="estimatedCost">$4,500 - $6,000</span></p>
+                        <p class="mb-1"><strong>Time Estimate:</strong> <span id="timeEstimate">2-3 days</span></p>
+                        <p class="mb-0"><strong>Required Skills:</strong> Engine Specialist, Hydraulics</p>
+                    </div>
+                </div>
+
+                <!-- Workflow Status -->
+                <div class="mt-3">
+                    <h6><i class="fas fa-stream me-2"></i> Workflow Status</h6>
+                    <div class="alert alert-light">
+                        <p class="mb-2"><strong>Current Status:</strong> <span id="workflowStatus" class="badge bg-secondary">submitted</span></p>
+                        <p class="mb-2"><strong>Severity Assessment:</strong> <span id="assessmentDetails" class="text-muted">Loading...</span></p>
+                        <div id="workflowTimeline" class="mt-3">
+                            <!-- Timeline will be loaded here -->
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-info w-100" onclick="loadWorkflowHistory()">
+                        <i class="fas fa-history me-1"></i> View Full History
+                    </button>
+                </div>
+
+                <!-- Workflow Actions -->
+                <div class="mt-3" id="workflowActionsDiv" style="display:none;">
+                    <h6><i class="fas fa-cog me-2"></i> Workflow Actions</h6>
+                    <div id="workflowActions" class="d-grid gap-2">
+                        <!-- Action buttons will be populated based on workflow status -->
+                    </div>
+                </div>
+                
+                <!-- Status Update -->
+                <div class="mt-3">
+                    <h6><i class="fas fa-sync-alt me-2"></i> Update Status</h6>
+                    <select class="form-select mb-2" id="statusSelect">
+                        <option value="pending">Pending</option>
+                        <option value="assigned">Assigned</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="on_hold">On Hold</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary w-100" onclick="updateRequestStatus()">
+                        Update Status
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Evaluation Summary -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Service Evaluation</h5>
+            </div>
+            <div class="card-body">
+                <div id="evaluationSummary">
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-clipboard-check fa-2x mb-2"></i>
+                        <p>No evaluation yet</p>
+                        <button class="btn btn-sm btn-primary" onclick="evaluateService()">
+                            <i class="fas fa-star me-1"></i> Evaluate Service
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Requests -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-link me-2"></i> Related Requests</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">MR-20240110-092315</h6>
+                            <small class="text-success">Completed</small>
+                        </div>
+                        <p class="mb-1">Routine engine maintenance</p>
+                        <small>SQI: 88.5</small>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">MR-20231215-142045</h6>
+                            <small class="text-warning">In Progress</small>
+                        </div>
+                        <p class="mb-1">Cooling system upgrade</p>
+                        <small>Estimated: 5 days</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="printRequest()">
+                            <i class="fas fa-print"></i>
+                        </button>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <button class="btn btn-outline-success w-100" onclick="exportRequest()">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-info w-100" onclick="shareRequest()">
+                            <i class="fas fa-share"></i>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-warning w-100" onclick="cloneRequest()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Request Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="statusForm">
+                    <div class="mb-3">
+                        <label class="form-label">Status *</label>
+                        <select class="form-select" name="status" required>
+                            <option value="">Select Status</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="on_hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Progress Percentage</label>
+                        <input type="range" class="form-range" name="progress" min="0" max="100" value="0">
+                        <div class="text-center">
+                            <span id="progressValue">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes/Comments</label>
+                        <textarea class="form-control" name="notes" rows="3" 
+                                  placeholder="Add update notes..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Next Action</label>
+                        <input type="text" class="form-control" name="next_action" 
+                               placeholder="What needs to happen next?">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveStatusUpdate()">Save Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load request details from API
+function loadRequestDetails() {
+    // Get request ID from URL path
+    const pathParts = window.location.pathname.split('/');
+    let requestId = pathParts[pathParts.length - 1];
+    
+    // If no valid ID in URL, try from template variable or element
+    if (!requestId || requestId === 'view-request' || requestId === '') {
+        requestId = '{{ request_id }}' || document.getElementById('requestId')?.textContent;
+    }
+    
+    // Remove default placeholder value
+    if (requestId === 'MR-20240115-143021' || requestId === 'Loading...') {
+        requestId = null;
+    }
+    
+    if (requestId && requestId !== 'view-request' && requestId !== 'Loading...') {
+        fetchRequestDetails(requestId);
+    } else {
+        // Show error if no valid request ID
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const requestContent = document.getElementById('requestContent');
+        if (loadingIndicator) {
+            loadingIndicator.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error:</strong> No request ID provided. Please navigate to a valid maintenance request.
+                </div>
+            `;
+        }
+    }
+}
+
+function fetchRequestDetails(requestId) {
+    if (!requestId) {
+        showAlert('danger', 'Invalid request ID');
+        return;
+    }
+    
+    // Show loading state
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const requestContent = document.getElementById('requestContent');
+    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    if (requestContent) requestContent.style.display = 'none';
+    
+    fetch(`/api/maintenance-requests/${encodeURIComponent(requestId)}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            if (!response.ok) {
+                // Check if it's a redirect (401/403)
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Authentication required. Please log in.');
+                }
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                    }
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                updateRequestDisplay(data.request);
+            } else {
+                const errorMsg = data.error || 'Request not found';
+                showAlert('danger', 'Error loading request: ' + errorMsg);
+                if (loadingIndicator) {
+                    loadingIndicator.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error:</strong> ${errorMsg}
+                        </div>
+                    `;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading request details:', error);
+            const errorMsg = error.message || 'Network error occurred';
+            showAlert('danger', errorMsg);
+            if (loadingIndicator) {
+                loadingIndicator.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error:</strong> ${errorMsg}
+                        <br><small>Please check your connection and try again.</small>
+                    </div>
+                `;
+            }
+        });
+}
+
+function updateRequestDisplay(request) {
+    // Hide loading indicator and show content
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const requestContent = document.getElementById('requestContent');
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    if (requestContent) requestContent.style.display = 'block';
+    
+    // Update basic information
+    if (document.getElementById('requestId')) {
+        document.getElementById('requestId').textContent = request.request_id || 'N/A';
+    }
+    if (document.getElementById('vesselName')) {
+        document.getElementById('vesselName').textContent = request.ship_name || 'N/A';
+    }
+    if (document.getElementById('location')) {
+        document.getElementById('location').textContent = request.location || 'N/A';
+    }
+    if (document.getElementById('requestedBy')) {
+        document.getElementById('requestedBy').textContent = request.requester_name || request.requester_email || request.requested_by || 'Guest User';
+    }
+    if (document.getElementById('requestType')) {
+        document.getElementById('requestType').textContent = request.maintenance_type || 'N/A';
+    }
+    if (document.getElementById('criticality')) {
+        document.getElementById('criticality').textContent = request.criticality_display || (request.priority ? request.priority.toUpperCase() : 'N/A');
+    }
+    if (document.getElementById('requestDescription')) {
+        document.getElementById('requestDescription').textContent = request.description || 'No description provided';
+    }
+    if (document.getElementById('createdDate')) {
+        document.getElementById('createdDate').textContent = request.created_at ? 
+            new Date(request.created_at).toLocaleString() : 'N/A';
+    }
+    if (document.getElementById('updatedDate')) {
+        document.getElementById('updatedDate').textContent = request.updated_at ? 
+            new Date(request.updated_at).toLocaleString() : 
+            (request.created_at ? new Date(request.created_at).toLocaleString() : 'N/A');
+    }
+    
+    // Update status and priority badges
+    if (document.getElementById('requestStatus')) {
+        const status = request.status || 'pending';
+        const statusText = status.replace('_', ' ').toUpperCase();
+        let statusBadgeClass = 'bg-secondary';
+        switch(status) {
+            case 'pending': statusBadgeClass = 'bg-secondary'; break;
+            case 'approved': statusBadgeClass = 'bg-info'; break;
+            case 'assigned': statusBadgeClass = 'bg-primary'; break;
+            case 'in_progress': statusBadgeClass = 'bg-warning'; break;
+            case 'on_hold': statusBadgeClass = 'bg-info'; break;
+            case 'completed': statusBadgeClass = 'bg-success'; break;
+            case 'cancelled': statusBadgeClass = 'bg-danger'; break;
+            case 'rejected': statusBadgeClass = 'bg-danger'; break;
+        }
+        document.getElementById('requestStatus').textContent = statusText;
+        document.getElementById('requestStatus').className = `badge ${statusBadgeClass}`;
+    }
+    
+    if (document.getElementById('requestPriority')) {
+        const priority = request.priority || 'medium';
+        const priorityText = priority.toUpperCase();
+        let priorityBadgeClass = 'bg-secondary';
+        switch(priority) {
+            case 'critical': priorityBadgeClass = 'bg-danger'; break;
+            case 'high': priorityBadgeClass = 'bg-warning'; break;
+            case 'medium': priorityBadgeClass = 'bg-info'; break;
+            case 'low': priorityBadgeClass = 'bg-success'; break;
+        }
+        document.getElementById('requestPriority').textContent = priorityText;
+        document.getElementById('requestPriority').className = `badge ${priorityBadgeClass}`;
+    }
+    
+    // Update severity badge
+    if (document.getElementById('severityBadge')) {
+        const severity = request.severity || 'MINOR';
+        const severityClass = severity === 'CRITICAL' ? 'bg-danger' : 'bg-warning';
+        document.getElementById('severityBadge').textContent = severity;
+        document.getElementById('severityBadge').className = `badge ${severityClass}`;
+    }
+    
+    // Update workflow status
+    if (document.getElementById('workflowStatus')) {
+        const workflowStatus = request.workflow_status || 'submitted';
+        const statusMap = {
+            'submitted': 'bg-secondary',
+            'assessed': 'bg-info',
+            'routed': 'bg-primary',
+            'pm_approved': 'bg-info',
+            'hm_assigned': 'bg-primary',
+            'executing': 'bg-warning',
+            'resolved': 'bg-success'
+        };
+        const badgeClass = statusMap[workflowStatus] || 'bg-secondary';
+        document.getElementById('workflowStatus').textContent = workflowStatus.replace(/_/g, ' ').toUpperCase();
+        document.getElementById('workflowStatus').className = `badge ${badgeClass}`;
+    }
+    
+    // Update assessment details
+    if (document.getElementById('assessmentDetails')) {
+        const assessment = request.assessment_details || 'No assessment details available';
+        document.getElementById('assessmentDetails').textContent = assessment;
+    }
+    
+    // Load workflow history and actions
+    loadWorkflowHistory();
+    
+    // Update assigned to
+    if (document.getElementById('assignedTo')) {
+        if (request.assigned_to_name) {
+            document.getElementById('assignedTo').textContent = request.assigned_to_name;
+            document.getElementById('assignedTo').className = 'text-success';
+        } else {
+            document.getElementById('assignedTo').textContent = 'Not Assigned';
+            document.getElementById('assignedTo').className = 'text-muted';
+        }
+    }
+    
+    // Update approval status if exists
+    if (request.approved === 1 && request.approved_by_name) {
+        // Show approval info
+        const approvalInfo = document.createElement('div');
+        approvalInfo.className = 'alert alert-success mt-3';
+        approvalInfo.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Approved</strong> by ${request.approved_by_name} 
+            ${request.approved_at ? 'on ' + new Date(request.approved_at).toLocaleDateString() : ''}
+        `;
+        const cardBody = document.querySelector('.card-body');
+        if (cardBody && !document.getElementById('approvalInfo')) {
+            approvalInfo.id = 'approvalInfo';
+            cardBody.insertBefore(approvalInfo, cardBody.firstChild);
+        }
+    } else if (request.approved === 0 && request.rejection_reason) {
+        // Show rejection info
+        const rejectionInfo = document.createElement('div');
+        rejectionInfo.className = 'alert alert-danger mt-3';
+        rejectionInfo.innerHTML = `
+            <i class="fas fa-times-circle me-2"></i>
+            <strong>Rejected</strong>
+            ${request.approved_by_name ? 'by ' + request.approved_by_name : ''}
+            ${request.approved_at ? 'on ' + new Date(request.approved_at).toLocaleDateString() : ''}
+            <br><small>Reason: ${request.rejection_reason}</small>
+        `;
+        const cardBody = document.querySelector('.card-body');
+        if (cardBody && !document.getElementById('rejectionInfo')) {
+            rejectionInfo.id = 'rejectionInfo';
+            cardBody.insertBefore(rejectionInfo, cardBody.firstChild);
+        }
+    }
+}
+
+function assignToMe() {
+    if (confirm('Assign this request to yourself?')) {
+        const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+        
+        fetch(`/api/maintenance-requests/${requestId}/assign`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({assigned_to: '{{ current_user.id }}'})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('assignedTo').textContent = 'You ({{ current_user.get_full_name() }})';
+        document.getElementById('assignedTo').className = 'text-success';
+        document.getElementById('requestStatus').textContent = 'ASSIGNED';
+        document.getElementById('requestStatus').className = 'badge bg-primary';
+                showAlert('success', 'Request assigned to you successfully!');
+            } else {
+                showAlert('danger', 'Error: ' + (data.error || 'Failed to assign request'));
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Network error: ' + error.message);
+        });
+    }
+}
+
+function updateStatus() {
+    const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+    modal.show();
+}
+
+function addNotes() {
+    const notes = prompt('Add notes to this request:', '');
+    if (notes) {
+        const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+        
+        fetch(`/api/maintenance-requests/${requestId}/notes`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({notes: notes})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Notes added successfully!');
+            } else {
+                showAlert('danger', 'Error: ' + (data.error || 'Failed to add notes'));
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Network error: ' + error.message);
+        });
+    }
+}
+
+function startService() {
+    if (confirm('Start service for this request?')) {
+        const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+        
+        fetch(`/api/maintenance-requests/${requestId}/start`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+        document.getElementById('requestStatus').textContent = 'IN PROGRESS';
+        document.getElementById('requestStatus').className = 'badge bg-warning';
+                showAlert('success', 'Service started. Please update progress regularly.');
+            } else {
+                showAlert('danger', 'Error: ' + (data.error || 'Failed to start service'));
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Network error: ' + error.message);
+        });
+    }
+}
+
+function declareEmergency() {
+    if (confirm('Declare this as an emergency request?\n\nThis will:\n1. Notify all managers\n2. Prioritize resources\n3. Activate emergency protocols')) {
+        const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+        const shipName = document.querySelector('[data-ship-name]')?.textContent || 'Unknown Ship';
+        
+        fetch('/api/declare-emergency', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                request_id: requestId,
+                ship_name: shipName,
+                emergency_type: 'Maintenance Emergency',
+                severity_level: 'critical',
+                description: `Emergency declared from maintenance request ${requestId}`
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+        document.getElementById('requestPriority').textContent = 'EMERGENCY';
+        document.getElementById('requestPriority').className = 'badge bg-danger';
+                showAlert('success', 'Emergency declared! All relevant personnel have been notified.');
+            } else {
+                showAlert('danger', 'Error: ' + (data.error || 'Failed to declare emergency'));
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Network error: ' + error.message);
+        });
+    }
+}
+
+function updateRequestStatus() {
+    const status = document.getElementById('statusSelect').value;
+    const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+    
+    fetch(`/api/maintenance-requests/${requestId}/status`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status: status})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+    const statusText = status.replace('_', ' ').toUpperCase();
+    let badgeClass = 'bg-secondary';
+    switch(status) {
+        case 'pending': badgeClass = 'bg-secondary'; break;
+        case 'assigned': badgeClass = 'bg-primary'; break;
+        case 'in_progress': badgeClass = 'bg-warning'; break;
+        case 'on_hold': badgeClass = 'bg-info'; break;
+        case 'completed': badgeClass = 'bg-success'; break;
+        case 'cancelled': badgeClass = 'bg-danger'; break;
+    }
+    
+    document.getElementById('requestStatus').textContent = statusText;
+    document.getElementById('requestStatus').className = `badge ${badgeClass}`;
+            showAlert('success', `Status updated to: ${statusText}`);
+        } else {
+            showAlert('danger', 'Error: ' + (data.error || 'Failed to update status'));
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Network error: ' + error.message);
+    });
+}
+
+function evaluateService() {
+    // Redirect to evaluate page with this request pre-selected
+    window.location.href = '/evaluate?request_id=' + document.getElementById('requestId').textContent;
+}
+
+function printRequest() {
+    const printContent = document.querySelector('.col-lg-8 .card').outerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Maintenance Request - ${document.getElementById('requestId').textContent}</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                body { padding: 20px; }
+                .card { border: 1px solid #ddd; }
+                .badge { margin: 0 2px; }
+            </style>
+        </head>
+        <body>
+            <h2>Maintenance Request Details</h2>
+            <p>Printed: ${new Date().toLocaleString()}</p>
+            ${printContent}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function exportRequest() {
+    const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+    showAlert('info', 'Exporting request details...');
+    
+    fetch(`/api/maintenance-requests/${requestId}/export`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const blob = new Blob([JSON.stringify(data.data, null, 2)], {type: 'application/json'});
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `request_${requestId}_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                showAlert('success', 'Request exported successfully!');
+            } else {
+                showAlert('warning', 'Export feature coming soon');
+            }
+        })
+        .catch(error => {
+            showAlert('warning', 'Export feature coming soon');
+        });
+}
+
+function shareRequest() {
+    const email = prompt('Enter email address to share this request:', '');
+    if (email && email.includes('@')) {
+        const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+        
+        fetch('/api/maintenance-requests/share', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({request_id: requestId, email: email})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', `Request shared with ${email}`);
+            } else {
+                showAlert('info', `Request shared with ${email} (demo)`);
+            }
+        })
+        .catch(error => {
+            showAlert('info', `Request shared with ${email} (demo)`);
+        });
+    } else if (email) {
+        showAlert('warning', 'Please enter a valid email address');
+    }
+}
+
+function cloneRequest() {
+    if (confirm('Create a copy of this request?')) {
+        const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+        
+        fetch(`/api/maintenance-requests/${requestId}/clone`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.new_request_id) {
+                showAlert('success', 'Request cloned successfully!');
+                setTimeout(() => {
+                    window.location.href = `/view-request/${data.new_request_id}`;
+                }, 1500);
+            } else {
+                showAlert('info', 'Redirecting to new request form with pre-filled data...');
+                setTimeout(() => {
+                    window.location.href = '/maintenance-request?clone=' + requestId;
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            showAlert('info', 'Redirecting to new request form...');
+            setTimeout(() => {
+                window.location.href = '/maintenance-request?clone=' + requestId;
+            }, 1000);
+        });
+    }
+}
+
+function saveStatusUpdate() {
+    const form = document.getElementById('statusForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+    
+    fetch(`/api/maintenance-requests/${requestId}/update`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+    const statusText = data.status.replace('_', ' ').toUpperCase();
+    let badgeClass = 'bg-secondary';
+    switch(data.status) {
+        case 'assigned': badgeClass = 'bg-primary'; break;
+        case 'in_progress': badgeClass = 'bg-warning'; break;
+        case 'completed': badgeClass = 'bg-success'; break;
+                case 'on_hold': badgeClass = 'bg-info'; break;
+                case 'cancelled': badgeClass = 'bg-danger'; break;
+    }
+    
+    document.getElementById('requestStatus').textContent = statusText;
+    document.getElementById('requestStatus').className = `badge ${badgeClass}`;
+    
+    bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+            showAlert('success', 'Status updated successfully!');
+        } else {
+            showAlert('danger', 'Error: ' + (data.error || 'Failed to update status'));
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Network error: ' + error.message);
+    });
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Workflow-related functions
+function loadWorkflowHistory() {
+    const requestId = document.getElementById('requestId')?.textContent || window.location.pathname.split('/').pop();
+    
+    fetch(`/api/maintenance-requests/${requestId}/history`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to load history');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.actions) {
+            displayWorkflowHistory(data.actions);
+            displayWorkflowActions(data.request);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading workflow history:', error);
+        showAlert('danger', 'Failed to load workflow history');
+    });
+}
+
+function displayWorkflowHistory(actions) {
+    const timelineDiv = document.getElementById('workflowTimeline');
+    if (!timelineDiv) return;
+    
+    if (!actions || actions.length === 0) {
+        timelineDiv.innerHTML = '<p class="text-muted small">No workflow actions yet</p>';
+        return;
+    }
+    
+    let timelineHTML = '<div class="timeline">';
+    
+    actions.forEach(action => {
+        const date = new Date(action.created_at);
+        const timeStr = date.toLocaleString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Color code based on action type
+        let markerColor = '#6c757d';
+        if (action.action === 'submitted') markerColor = '#0d6efd';
+        else if (action.action === 'pm_approved') markerColor = '#198754';
+        else if (action.action === 'executing') markerColor = '#ffc107';
+        else if (action.action === 'resolved') markerColor = '#28a745';
+        
+        timelineHTML += `
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background-color: ${markerColor}; width: 14px; height: 14px; left: -32px; top: 4px;"></div>
+                <div class="timeline-content">
+                    <h6 class="mb-1">
+                        <span class="badge bg-info">${action.action.replace(/_/g, ' ').toUpperCase()}</span>
+                    </h6>
+                    <p class="mb-1 text-muted small">${action.actor_name} • ${timeStr}</p>
+                    <p class="mb-0 small">${action.details}</p>
+                </div>
+            </div>
+        `;
+    });
+    
+    timelineHTML += '</div>';
+    timelineDiv.innerHTML = timelineHTML;
+}
+
+function displayWorkflowActions(request) {
+    const workflowActionsDiv = document.getElementById('workflowActionsDiv');
+    const workflowActionsContent = document.getElementById('workflowActions');
+    
+    if (!workflowActionsDiv || !workflowActionsContent) return;
+    
+    const workflowStatus = request.workflow_status || 'submitted';
+    let actionsHTML = '';
+    
+    // Check user role (this would be passed from backend in a real system)
+    const userRole = document.body.dataset.userRole || 'guest';
+    
+    // Show different actions based on workflow status and user role
+    if (workflowStatus === 'submitted' && userRole === 'port_engineer') {
+        actionsHTML += `
+            <button class="btn btn-primary btn-sm" onclick="approveRequest('${request.request_id}')">
+                <i class="fas fa-check me-1"></i> Approve & Route
+            </button>
+        `;
+    }
+    
+    if ((workflowStatus === 'pm_approved' || workflowStatus === 'hm_assigned') && 
+        (userRole === 'harbour_master' || userRole === 'port_engineer')) {
+        actionsHTML += `
+            <button class="btn btn-warning btn-sm" onclick="executeRequest('${request.request_id}')">
+                <i class="fas fa-cogs me-1"></i> Start Execution
+            </button>
+        `;
+    }
+    
+    if (workflowStatus === 'executing' && (userRole === 'harbour_master' || userRole === 'port_engineer')) {
+        actionsHTML += `
+            <button class="btn btn-success btn-sm" onclick="resolveRequest('${request.request_id}')">
+                <i class="fas fa-check-double me-1"></i> Mark as Resolved
+            </button>
+        `;
+    }
+    
+    if (actionsHTML) {
+        workflowActionsDiv.style.display = 'block';
+        workflowActionsContent.innerHTML = actionsHTML;
+    } else {
+        workflowActionsDiv.style.display = 'none';
+    }
+}
+
+function approveRequest(requestId) {
+    if (!confirm('Approve this maintenance request for execution?')) return;
+    
+    fetch(`/api/maintenance-requests/${requestId}/approve`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || 'Request approved successfully');
+            setTimeout(() => loadRequestDetails(), 1500);
+        } else {
+            showAlert('danger', data.error || 'Failed to approve request');
+        }
+    })
+    .catch(error => showAlert('danger', 'Error: ' + error.message));
+}
+
+function executeRequest(requestId) {
+    if (!confirm('Start execution of this maintenance request?')) return;
+    
+    fetch(`/api/maintenance-requests/${requestId}/execute`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || 'Execution started');
+            setTimeout(() => loadRequestDetails(), 1500);
+        } else {
+            showAlert('danger', data.error || 'Failed to execute request');
+        }
+    })
+    .catch(error => showAlert('danger', 'Error: ' + error.message));
+}
+
+function resolveRequest(requestId) {
+    if (!confirm('Mark this maintenance request as resolved?')) return;
+    
+    fetch(`/api/maintenance-requests/${requestId}/resolve`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || 'Request marked as resolved');
+            setTimeout(() => loadRequestDetails(), 1500);
+        } else {
+            showAlert('danger', data.error || 'Failed to resolve request');
+        }
+    })
+    .catch(error => showAlert('danger', 'Error: ' + error.message));
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadRequestDetails();
+    
+    // Setup progress slider
+    const progressSlider = document.querySelector('input[name="progress"]');
+    const progressValue = document.getElementById('progressValue');
+    
+    if (progressSlider && progressValue) {
+        progressSlider.addEventListener('input', function() {
+            progressValue.textContent = this.value + '%';
+        });
+    }
+    
+    // Load evaluation summary if available
+    loadEvaluationSummary();
+});
+
+function loadEvaluationSummary() {
+    // Check if evaluation exists
+    const hasEvaluation = Math.random() > 0.5; // Simulated
+    
+    if (hasEvaluation) {
+        const summary = document.getElementById('evaluationSummary');
+        summary.innerHTML = `
+            <div class="text-center">
+                <div class="h2 text-success mb-2">92.5</div>
+                <div class="badge bg-success mb-3">EXCELLENT</div>
+                <p class="small mb-2">Evaluated by: David Chen</p>
+                <p class="small mb-3">Date: 2024-01-15</p>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewFullEvaluation()">
+                    <i class="fas fa-chart-bar me-1"></i> View Full Report
+                </button>
+            </div>
+        `;
+    }
+}
+
+function viewFullEvaluation() {
+    alert('Opening full evaluation report...');
+    // In a real system: window.location.href = `/evaluation-details/${evalId}`;
+}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #6c757d;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+}
+
+.timeline-content p {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

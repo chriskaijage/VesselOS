@@ -1,0 +1,1797 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-chart-bar me-3 fa-2x text-white"></i>
+                    <div>
+                        <h2 class="mb-0">Reports & Analytics</h2>
+                        <p class="mb-0">Generate comprehensive reports with statistics, charts, and recommendations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Report Generation -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> Generate Report</h5>
+            </div>
+            <div class="card-body">
+                <form id="reportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Report Type *</label>
+                        <select class="form-select" id="reportType" required>
+                            <option value="">Select Report Type</option>
+                            <option value="inventory">Inventory Report</option>
+                            <option value="maintenance">Maintenance Requests</option>
+                            <option value="performance">Service Performance</option>
+                            <option value="emergency">Emergency Requests</option>
+                            <option value="user">User Activity</option>
+                            <option value="financial">Financial Summary</option>
+                            <option value="comprehensive">Comprehensive Analysis</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="startDate">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="endDate">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Report Content *</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="includeStats" checked>
+                            <label class="form-check-label" for="includeStats">
+                                <i class="fas fa-chart-pie me-1 text-primary"></i> Summary Statistics
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="includeBreakdowns" checked>
+                            <label class="form-check-label" for="includeBreakdowns">
+                                <i class="fas fa-table me-1 text-info"></i> Detailed Breakdowns
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="includeCharts" checked>
+                            <label class="form-check-label" for="includeCharts">
+                                <i class="fas fa-chart-bar me-1 text-success"></i> Charts & Graphs
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="includeRecommendations" checked>
+                            <label class="form-check-label" for="includeRecommendations">
+                                <i class="fas fa-lightbulb me-1 text-warning"></i> Actionable Recommendations
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Format *</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="format" id="formatPDF" value="pdf">
+                            <label class="form-check-label" for="formatPDF">
+                                <i class="fas fa-file-pdf me-1 text-danger"></i> PDF (Recommended)
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="format" id="formatCSV" value="csv" checked>
+                            <label class="form-check-label" for="formatCSV">
+                                <i class="fas fa-file-csv me-1 text-success"></i> CSV/Excel
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="formatJSON" value="json">
+                            <label class="form-check-label" for="formatJSON">
+                                <i class="fas fa-file-code me-1 text-warning"></i> JSON
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Report Title</label>
+                        <input type="text" class="form-control" id="reportTitle" 
+                               placeholder="Custom report title (optional)">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="reportNotes" rows="2" placeholder="Any additional notes or comments"></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="generateReportBtn">
+                            <i class="fas fa-file-download me-2"></i> Generate Comprehensive Report
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4">
+                    <h6><i class="fas fa-bolt me-2"></i> Quick Reports</h6>
+                    <div class="list-group">
+                        <button class="list-group-item list-group-item-action" onclick="quickReport('inventory')">
+                            <i class="fas fa-boxes me-2 text-primary"></i>
+                            Inventory Analysis Report
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="quickReport('emergency')">
+                            <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                            Emergency Response Report
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="quickReport('performance')">
+                            <i class="fas fa-chart-line me-2 text-success"></i>
+                            Performance Analysis Report
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="quickReport('comprehensive')">
+                            <i class="fas fa-file-alt me-2 text-info"></i>
+                            Comprehensive System Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Generated Reports -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i> Generated Reports</h5>
+                    <div>
+                        <span class="badge bg-primary" id="reportCount">0 reports</span>
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="exportAllReports()" title="Export All">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Report ID</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Generated</th>
+                                <th>Content</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTable">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading reports...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-outline-primary" onclick="loadReports()">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh Reports
+                    </button>
+                    <button class="btn btn-outline-danger ms-2" onclick="clearAllReports()">
+                        <i class="fas fa-trash-alt me-1"></i> Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Report Preview -->
+        <div class="card mt-4" id="reportPreview" style="display: none;">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-eye me-2"></i> Report Preview</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('reportPreview').style.display = 'none'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="previewContent">
+                    <!-- Preview will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Templates -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i> Professional Report Templates</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="card template-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clipboard-check fa-3x text-primary mb-3"></i>
+                                <h6>Service Quality Report</h6>
+                                <small class="text-muted">Comprehensive service analysis with recommendations</small>
+                                <div class="mt-3">
+                                    <span class="badge bg-primary me-1">Stats</span>
+                                    <span class="badge bg-info me-1">Charts</span>
+                                    <span class="badge bg-success">Recommendations</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary mt-3 w-100" onclick="loadTemplate('service')">
+                                    Use This Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card template-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-invoice-dollar fa-3x text-success mb-3"></i>
+                                <h6>Financial Analysis</h6>
+                                <small class="text-muted">Cost analysis, budgeting, and financial recommendations</small>
+                                <div class="mt-3">
+                                    <span class="badge bg-primary me-1">Stats</span>
+                                    <span class="badge bg-info me-1">Breakdowns</span>
+                                    <span class="badge bg-success">Charts</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-success mt-3 w-100" onclick="loadTemplate('financial')">
+                                    Use This Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card template-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-check fa-3x text-info mb-3"></i>
+                                <h6>Performance Review</h6>
+                                <small class="text-muted">Staff and team performance with actionable insights</small>
+                                <div class="mt-3">
+                                    <span class="badge bg-primary me-1">Stats</span>
+                                    <span class="badge bg-info me-1">Breakdowns</span>
+                                    <span class="badge bg-warning">Recommendations</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-info mt-3 w-100" onclick="loadTemplate('performance')">
+                                    Use This Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card template-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-shield-alt fa-3x text-warning mb-3"></i>
+                                <h6>Safety & Compliance</h6>
+                                <small class="text-muted">Regulatory compliance and safety audit report</small>
+                                <div class="mt-3">
+                                    <span class="badge bg-primary me-1">Stats</span>
+                                    <span class="badge bg-danger me-1">Charts</span>
+                                    <span class="badge bg-warning">Recommendations</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-warning mt-3 w-100" onclick="loadTemplate('safety')">
+                                    Use This Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Dashboards -->
+<div class="row mt-4">
+    <!-- Emergency Analytics -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Emergency Analytics</h5>
+                    <small class="text-white-50">Last 7 days</small>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <div class="fw-bold" id="emgTotal">0</div>
+                        <small class="text-muted">Total</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-warning" id="emgOpen">0</div>
+                        <small class="text-muted">Open</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-success" id="emgResolved">0</div>
+                        <small class="text-muted">Resolved/Closed</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Avg. Resolution Time (hrs)</small>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1 progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar" id="emgResolutionBar"
+                                 style="width: 0%;" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <span class="ms-2 small fw-bold" id="emgResolutionValue">0</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="small text-muted mb-1">By Severity</h6>
+                        <ul class="list-unstyled small mb-0" id="emgBySeverity">
+                            <li class="text-muted">Loading...</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="small text-muted mb-1">By Type</h6>
+                        <ul class="list-unstyled small mb-0" id="emgByType">
+                            <li class="text-muted">Loading...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messaging Analytics -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-envelope-open-text me-2"></i> Messaging Analytics</h5>
+                    <small class="text-white-50">My activity</small>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <div class="fw-bold text-primary" id="msgSent">0</div>
+                        <small class="text-muted">Sent</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-info" id="msgReceived">0</div>
+                        <small class="text-muted">Received</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-danger" id="msgUnread">0</div>
+                        <small class="text-muted">Unread</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">By Type</small>
+                    <div id="msgByType" class="small">
+                        <span class="text-muted">Loading...</span>
+                    </div>
+                </div>
+                <div>
+                    <small class="text-muted d-block mb-1">7-Day Activity</small>
+                    <div class="small text-muted" id="msgTrend">
+                        <span>Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for generating comprehensive reports -->
+<div class="modal fade" id="reportDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportDetailsTitle">Report Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reportDetailsContent">
+                    <!-- Report details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="downloadComprehensiveReport">Download Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-color, #5a4fcf), var(--secondary-color, #764ba2)) !important;
+        color: white !important;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color, #5a4fcf), var(--secondary-color, #764ba2)) !important;
+        border: none;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, var(--secondary-color, #764ba2), var(--primary-color, #5a4fcf)) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(var(--primary-rgb, 90, 79, 207), 0.4);
+        color: white;
+    }
+    
+    .btn-success {
+        background: var(--success-green) !important;
+        border: none;
+        color: white;
+    }
+    
+    .btn-info {
+        background: var(--info-blue) !important;
+        border: none;
+        color: white;
+    }
+    
+    .btn-warning {
+        background: var(--warning-orange) !important;
+        border: none;
+        color: white;
+    }
+    
+    
+    i.fas {
+        color: var(--primary-color, #5a4fcf);
+    }
+    
+    /* Ensure icons in card headers are white */
+    .card-header i.fas,
+    .card-header i.fa,
+    .card-header .text-white {
+        color: white !important;
+    }
+    
+    .text-primary {
+        color: var(--primary-color, #5a4fcf) !important;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variable to store current reports
+let currentReports = [];
+let currentReportData = null;
+
+// Load existing reports from API
+function loadReports() {
+    const table = document.getElementById('reportsTable');
+    table.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading reports...</p>
+            </td>
+        </tr>
+    `;
+    
+    fetch('/api/reports')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                currentReports = data.reports || [];
+                updateReportsTable(currentReports);
+                // Don't show notification when just loading reports - only show when generating new reports
+            } else {
+                loadSampleReports();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading reports:', error);
+            loadSampleReports();
+        });
+}
+
+// ========== ANALYTICS DASHBOARDS ==========
+
+function loadAnalytics() {
+    loadEmergencyAnalytics();
+    loadMessagingAnalytics();
+}
+
+function loadEmergencyAnalytics() {
+    fetch('/api/analytics/emergencies')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+
+            const summary = data.summary || {};
+            document.getElementById('emgTotal').textContent = summary.total ?? 0;
+            document.getElementById('emgOpen').textContent = summary.open ?? 0;
+            document.getElementById('emgResolved').textContent = summary.resolved ?? 0;
+
+            const avg = summary.avg_resolution_hours ?? 0;
+            const capped = Math.min(avg, 48);
+            const percent = (capped / 48) * 100;
+            const bar = document.getElementById('emgResolutionBar');
+            const value = document.getElementById('emgResolutionValue');
+            bar.style.width = `${percent}%`;
+            value.textContent = (typeof avg === 'number' ? avg.toFixed(1) : avg);
+
+            const bySeverityEl = document.getElementById('emgBySeverity');
+            const byTypeEl = document.getElementById('emgByType');
+            bySeverityEl.innerHTML = '';
+            byTypeEl.innerHTML = '';
+
+            (data.by_severity || []).forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="badge bg-secondary me-1 text-uppercase">${item.severity_level || 'N/A'}</span> ${item.count} emergencies`;
+                bySeverityEl.appendChild(li);
+            });
+            if (!bySeverityEl.children.length) {
+                bySeverityEl.innerHTML = '<li class="text-muted">No data</li>';
+            }
+
+            (data.by_type || []).forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="badge bg-light text-dark me-1">${item.emergency_type || 'Unknown'}</span> ${item.count}`;
+                byTypeEl.appendChild(li);
+            });
+            if (!byTypeEl.children.length) {
+                byTypeEl.innerHTML = '<li class="text-muted">No data</li>';
+            }
+        })
+        .catch(err => {
+            console.error('Error loading emergency analytics', err);
+        });
+}
+
+function loadMessagingAnalytics() {
+    fetch('/api/analytics/messaging')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+
+            const summary = data.summary || {};
+            document.getElementById('msgSent').textContent = summary.total_sent ?? 0;
+            document.getElementById('msgReceived').textContent = summary.total_received ?? 0;
+            document.getElementById('msgUnread').textContent = summary.unread ?? 0;
+
+            const byTypeContainer = document.getElementById('msgByType');
+            byTypeContainer.innerHTML = '';
+            (data.by_type || []).forEach(item => {
+                const badgeClass =
+                    item.message_type === 'notification' ? 'bg-info' :
+                    item.message_type === 'announcement' ? 'bg-warning' :
+                    'bg-primary';
+                const span = document.createElement('span');
+                span.className = `badge ${badgeClass} me-1 mb-1`;
+                span.textContent = `${item.message_type}: ${item.count}`;
+                byTypeContainer.appendChild(span);
+            });
+            if (!byTypeContainer.children.length) {
+                byTypeContainer.innerHTML = '<span class="text-muted">No data</span>';
+            }
+
+            const trendEl = document.getElementById('msgTrend');
+            const sent = data.sent_daily || [];
+            const recv = data.received_daily || [];
+            if (!sent.length && !recv.length) {
+                trendEl.innerHTML = '<span class="text-muted">No recent activity</span>';
+                return;
+            }
+            let html = '';
+            sent.forEach(d => {
+                html += `<div>📤 ${d.day}: <strong>${d.count}</strong> sent</div>`;
+            });
+            recv.forEach(d => {
+                html += `<div>📥 ${d.day}: <strong>${d.count}</strong> received</div>`;
+            });
+            trendEl.innerHTML = html;
+        })
+        .catch(err => {
+            console.error('Error loading messaging analytics', err);
+        });
+}
+
+function loadSampleReports() {
+    // Create sample reports for demonstration
+    const sampleReports = [
+        {
+            report_id: 'REP-INV-' + Date.now(),
+            title: 'Inventory Analysis Report',
+            report_type: 'inventory',
+            generated_at: new Date().toISOString(),
+            content: ['stats', 'breakdowns', 'charts', 'recommendations'],
+            download_url: '#'
+        },
+        {
+            report_id: 'REP-PERF-' + (Date.now() - 86400000),
+            title: 'Performance Metrics Report',
+            report_type: 'performance',
+            generated_at: new Date(Date.now() - 86400000).toISOString(),
+            content: ['stats', 'charts', 'recommendations'],
+            download_url: '#'
+        },
+        {
+            report_id: 'REP-EMG-' + (Date.now() - 172800000),
+            title: 'Emergency Response Analysis',
+            report_type: 'emergency',
+            generated_at: new Date(Date.now() - 172800000).toISOString(),
+            content: ['stats', 'breakdowns', 'recommendations'],
+            download_url: '#'
+        }
+    ];
+    
+    currentReports = sampleReports;
+    updateReportsTable(currentReports);
+    // Don't show notification when loading sample reports - only show when generating new reports
+}
+
+function updateReportsTable(reports) {
+    const table = document.getElementById('reportsTable');
+    const count = document.getElementById('reportCount');
+    
+    if (!reports || reports.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No reports generated yet</p>
+                    <p class="small">Generate your first comprehensive report using the form</p>
+                </td>
+            </tr>
+        `;
+        count.textContent = '0 reports';
+    } else {
+        let html = '';
+        reports.forEach((report, index) => {
+            const date = report.generated_at ? new Date(report.generated_at).toLocaleDateString() : 'N/A';
+            const time = report.generated_at ? new Date(report.generated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+            
+            // Create content badges
+            const contentBadges = (report.content || []).map(content => {
+                const badgeClass = {
+                    'stats': 'bg-primary',
+                    'breakdowns': 'bg-info',
+                    'charts': 'bg-success',
+                    'recommendations': 'bg-warning'
+                }[content] || 'bg-secondary';
+                
+                const badgeText = {
+                    'stats': 'Stats',
+                    'breakdowns': 'Details',
+                    'charts': 'Charts',
+                    'recommendations': 'Advice'
+                }[content] || content;
+                
+                return `<span class="badge ${badgeClass} me-1">${badgeText}</span>`;
+            }).join('');
+            
+            html += `
+                <tr id="report-row-${index}">
+                    <td><code class="small">${report.report_id || 'N/A'}</code></td>
+                    <td>
+                        <strong>${report.title || 'Untitled Report'}</strong>
+                        ${report.notes ? `<div class="small text-muted">${report.notes.substring(0, 50)}...</div>` : ''}
+                    </td>
+                    <td><span class="badge bg-secondary">${report.report_type || 'unknown'}</span></td>
+                    <td>
+                        <div>${date}</div>
+                        ${time ? `<small class="text-muted">${time}</small>` : ''}
+                    </td>
+                    <td>${contentBadges}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="downloadReport('${report.report_id || index}', ${index})" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="btn btn-outline-info" onclick="previewComprehensiveReport(${index})" title="Preview">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteReport('${report.report_id || index}', ${index})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        table.innerHTML = html;
+        count.textContent = `${reports.length} report${reports.length !== 1 ? 's' : ''}`;
+    }
+}
+
+// Generate comprehensive report with all content types
+document.getElementById('reportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const reportType = document.getElementById('reportType').value;
+    const format = document.querySelector('input[name="format"]:checked').value;
+    const title = document.getElementById('reportTitle').value || `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
+    const notes = document.getElementById('reportNotes').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    // Collect content types
+    const contentTypes = [];
+    if (document.getElementById('includeStats').checked) contentTypes.push('stats');
+    if (document.getElementById('includeBreakdowns').checked) contentTypes.push('breakdowns');
+    if (document.getElementById('includeCharts').checked) contentTypes.push('charts');
+    if (document.getElementById('includeRecommendations').checked) contentTypes.push('recommendations');
+    
+    if (!reportType) {
+        showAlert('danger', 'Please select a report type');
+        return;
+    }
+    
+    if (contentTypes.length === 0) {
+        showAlert('danger', 'Please select at least one content type');
+        return;
+    }
+    
+    // Show loading
+    const submitBtn = document.getElementById('generateReportBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating Report...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Call backend API to generate report
+        const response = await fetch('/api/generate-report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                report_type: reportType,
+                parameters: {
+                    title: title,
+                    notes: notes,
+                    startDate: startDate,
+                    endDate: endDate,
+                    contentTypes: contentTypes,
+                    format: format,
+                    generated_by: '{{ current_user_profile.full_name }}'
+                }
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to generate report');
+        }
+        
+        // Store the report data globally
+        const reportData = result.report_data;
+        currentReportData = reportData;
+        const reportId = result.report_id;
+        
+        // Add to reports list
+        const newReport = {
+            report_id: reportId,
+            title: title,
+            report_type: reportType,
+            generated_at: reportData.generated_at,
+            content: contentTypes,
+            notes: notes,
+            download_url: result.download_url,
+            data: reportData
+        };
+        
+        currentReports.unshift(newReport);
+        updateReportsTable(currentReports);
+        
+        // Show report details modal
+        showReportDetailsModal(reportId, reportData, contentTypes);
+        
+        showAlert('success', `Report "${title}" generated successfully!`);
+        
+    } catch (error) {
+        console.error('Error generating report:', error);
+        showAlert('danger', 'Error generating report: ' + error.message);
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+});
+
+// Generate comprehensive report data
+async function generateComprehensiveReportData(reportType, parameters) {
+    return new Promise((resolve) => {
+        // Simulate API call delay
+        setTimeout(() => {
+            const reportData = {
+                report_id: `REP-${reportType.toUpperCase()}-${Date.now()}`,
+                title: parameters.title,
+                report_type: reportType,
+                generated_by: parameters.generated_by,
+                generated_at: new Date().toISOString(),
+                parameters: parameters,
+                sections: []
+            };
+            
+            // Add sections based on content types
+            if (parameters.contentTypes.includes('stats')) {
+                reportData.sections.push({
+                    title: 'Summary Statistics',
+                    type: 'stats',
+                    content: generateStatistics(reportType)
+                });
+            }
+            
+            if (parameters.contentTypes.includes('breakdowns')) {
+                reportData.sections.push({
+                    title: 'Detailed Breakdowns',
+                    type: 'breakdowns',
+                    content: generateBreakdowns(reportType)
+                });
+            }
+            
+            if (parameters.contentTypes.includes('charts')) {
+                reportData.sections.push({
+                    title: 'Charts & Visualizations',
+                    type: 'charts',
+                    content: generateCharts(reportType)
+                });
+            }
+            
+            if (parameters.contentTypes.includes('recommendations')) {
+                reportData.sections.push({
+                    title: 'Actionable Recommendations',
+                    type: 'recommendations',
+                    content: generateRecommendations(reportType)
+                });
+            }
+            
+            resolve(reportData);
+        }, 1000);
+    });
+}
+
+// Generate statistics based on report type
+function generateStatistics(reportType) {
+    const stats = {
+        inventory: {
+            total_items: Math.floor(Math.random() * 500) + 100,
+            total_value: `$${(Math.random() * 50000 + 10000).toFixed(2)}`,
+            low_stock_items: Math.floor(Math.random() * 20) + 5,
+            critical_stock_items: Math.floor(Math.random() * 10) + 1,
+            avg_stock_level: `${Math.floor(Math.random() * 50) + 30}%`,
+            reorder_rate: `${Math.floor(Math.random() * 30) + 10}%`
+        },
+        maintenance: {
+            total_requests: Math.floor(Math.random() * 200) + 50,
+            completed_requests: Math.floor(Math.random() * 150) + 40,
+            pending_requests: Math.floor(Math.random() * 30) + 5,
+            avg_completion_time: `${Math.floor(Math.random() * 7) + 1} days`,
+            critical_requests: Math.floor(Math.random() * 15) + 3,
+            satisfaction_rate: `${Math.floor(Math.random() * 30) + 70}%`
+        },
+        performance: {
+            avg_sqi_score: (Math.random() * 2 + 3).toFixed(1),
+            total_evaluations: Math.floor(Math.random() * 300) + 100,
+            excellent_ratings: Math.floor(Math.random() * 100) + 50,
+            good_ratings: Math.floor(Math.random() * 100) + 50,
+            avg_response_time: `${Math.floor(Math.random() * 24) + 2} hours`,
+            completion_rate: `${Math.floor(Math.random() * 30) + 70}%`
+        },
+        emergency: {
+            total_emergencies: Math.floor(Math.random() * 50) + 10,
+            resolved_emergencies: Math.floor(Math.random() * 40) + 8,
+            pending_emergencies: Math.floor(Math.random() * 10) + 2,
+            avg_response_time: `${Math.floor(Math.random() * 120) + 30} minutes`,
+            critical_emergencies: Math.floor(Math.random() * 15) + 3,
+            resolution_rate: `${Math.floor(Math.random() * 30) + 70}%`
+        },
+        financial: {
+            total_revenue: `$${(Math.random() * 100000 + 50000).toFixed(2)}`,
+            total_expenses: `$${(Math.random() * 80000 + 30000).toFixed(2)}`,
+            net_profit: `$${(Math.random() * 30000 + 10000).toFixed(2)}`,
+            inventory_value: `$${(Math.random() * 50000 + 20000).toFixed(2)}`,
+            maintenance_costs: `$${(Math.random() * 20000 + 5000).toFixed(2)}`,
+            roi: `${(Math.random() * 20 + 10).toFixed(1)}%`
+        },
+        comprehensive: {
+            system_health: `${Math.floor(Math.random() * 30) + 70}%`,
+            total_users: Math.floor(Math.random() * 100) + 20,
+            active_requests: Math.floor(Math.random() * 50) + 10,
+            system_uptime: `${Math.floor(Math.random() * 20) + 95}%`,
+            data_accuracy: `${Math.floor(Math.random() * 20) + 80}%`,
+            user_satisfaction: `${Math.floor(Math.random() * 30) + 65}%`
+        }
+    };
+    
+    return stats[reportType] || stats.inventory;
+}
+
+// Generate detailed breakdowns
+function generateBreakdowns(reportType) {
+    const breakdowns = {
+        inventory: [
+            { category: 'Engine Parts', count: 45, value: '$15,250', status: 'Optimal' },
+            { category: 'Electrical', count: 32, value: '$8,750', status: 'Good' },
+            { category: 'Safety Equipment', count: 28, value: '$12,500', status: 'Low Stock' },
+            { category: 'Navigation', count: 19, value: '$22,300', status: 'Optimal' },
+            { category: 'Communication', count: 15, value: '$18,450', status: 'Critical' }
+        ],
+        maintenance: [
+            { type: 'Engine Repair', count: 24, avg_days: 3.5, cost: '$12,500' },
+            { type: 'Electrical', count: 18, avg_days: 2.0, cost: '$8,200' },
+            { type: 'Hull Maintenance', count: 12, avg_days: 5.0, cost: '$15,800' },
+            { type: 'Safety Systems', count: 8, avg_days: 1.5, cost: '$4,500' },
+            { type: 'Navigation', count: 6, avg_days: 2.5, cost: '$7,300' }
+        ],
+        performance: [
+            { metric: 'Service Quality Index', score: 4.2, trend: '↑ Improving', target: 4.5 },
+            { metric: 'Response Time', score: 3.8, trend: '→ Stable', target: 4.0 },
+            { metric: 'Customer Satisfaction', score: 4.5, trend: '↑ Improving', target: 4.5 },
+            { metric: 'Completion Rate', score: 3.9, trend: '↓ Declining', target: 4.2 },
+            { metric: 'Safety Compliance', score: 4.8, trend: '→ Stable', target: 4.5 }
+        ],
+        emergency: [
+            { type: 'Mechanical Failure', count: 15, avg_response: '45 min', resolved: 14 },
+            { type: 'Electrical Issues', count: 12, avg_response: '38 min', resolved: 11 },
+            { type: 'Medical Emergency', count: 8, avg_response: '25 min', resolved: 8 },
+            { type: 'Weather Related', count: 10, avg_response: '60 min', resolved: 9 },
+            { type: 'Other Emergencies', count: 5, avg_response: '50 min', resolved: 4 }
+        ],
+        financial: [
+            { category: 'Inventory Costs', amount: '$45,250', percentage: '35%', trend: '↓' },
+            { category: 'Labor Costs', amount: '$52,800', percentage: '40%', trend: '→' },
+            { category: 'Maintenance', amount: '$19,750', percentage: '15%', trend: '↑' },
+            { category: 'Administrative', amount: '$13,200', percentage: '10%', trend: '→' }
+        ]
+    };
+    
+    return breakdowns[reportType] || breakdowns.inventory;
+}
+
+// Generate chart data
+function generateCharts(reportType) {
+    const charts = {
+        inventory: [
+            { name: 'Stock Level Distribution', type: 'pie', data: ['Optimal: 45%', 'Good: 30%', 'Low: 15%', 'Critical: 10%'] },
+            { name: 'Category Value Distribution', type: 'bar', data: ['Engine: $15K', 'Electrical: $9K', 'Safety: $13K', 'Navigation: $22K'] },
+            { name: 'Monthly Stock Trend', type: 'line', data: ['Jan: 150', 'Feb: 165', 'Mar: 180', 'Apr: 175', 'May: 190'] }
+        ],
+        performance: [
+            { name: 'SQI Score Trend', type: 'line', data: ['Q1: 3.8', 'Q2: 4.0', 'Q3: 4.2', 'Q4: 4.3'] },
+            { name: 'Service Categories', type: 'bar', data: ['Quality: 4.2', 'Speed: 3.9', 'Safety: 4.8', 'Cost: 4.0'] },
+            { name: 'Customer Feedback', type: 'pie', data: ['Excellent: 45%', 'Good: 35%', 'Fair: 15%', 'Poor: 5%'] }
+        ],
+        financial: [
+            { name: 'Revenue vs Expenses', type: 'bar', data: ['Revenue: $85K', 'Expenses: $62K', 'Profit: $23K'] },
+            { name: 'Cost Distribution', type: 'pie', data: ['Inventory: 35%', 'Labor: 40%', 'Maintenance: 15%', 'Other: 10%'] },
+            { name: 'Monthly Profit Trend', type: 'line', data: ['Jan: $18K', 'Feb: $20K', 'Mar: $22K', 'Apr: $25K', 'May: $23K'] }
+        ],
+        comprehensive: [
+            { name: 'System Health', type: 'gauge', data: ['Health: 85%', 'Performance: 78%', 'Security: 92%'] },
+            { name: 'User Activity', type: 'line', data: ['Week1: 450', 'Week2: 520', 'Week3: 480', 'Week4: 550'] },
+            { name: 'Data Distribution', type: 'pie', data: ['Inventory: 40%', 'Maintenance: 30%', 'Users: 20%', 'Other: 10%'] }
+        ]
+    };
+    
+    return charts[reportType] || charts.inventory;
+}
+
+// Generate recommendations
+function generateRecommendations(reportType) {
+    const recommendations = {
+        inventory: [
+            { priority: 'High', action: 'Reorder critical safety equipment immediately', impact: 'Prevent operational delays', deadline: 'Within 48 hours' },
+            { priority: 'Medium', action: 'Optimize stock levels for electrical components', impact: 'Reduce carrying costs by 15%', deadline: 'Next week' },
+            { priority: 'Low', action: 'Review supplier contracts for engine parts', impact: 'Potential 10% cost reduction', deadline: 'Next month' }
+        ],
+        maintenance: [
+            { priority: 'High', action: 'Implement preventive maintenance schedule', impact: 'Reduce breakdowns by 30%', deadline: 'Immediate' },
+            { priority: 'Medium', action: 'Train staff on new diagnostic equipment', impact: 'Improve repair accuracy', deadline: '2 weeks' },
+            { priority: 'Low', action: 'Standardize maintenance documentation', impact: 'Better tracking and analysis', deadline: '1 month' }
+        ],
+        performance: [
+            { priority: 'High', action: 'Address declining completion rates', impact: 'Improve customer satisfaction', deadline: 'Immediate' },
+            { priority: 'Medium', action: 'Implement quality assurance program', impact: 'Increase SQI scores', deadline: '2 weeks' },
+            { priority: 'Low', action: 'Develop staff training program', impact: 'Enhance service quality', deadline: '1 month' }
+        ],
+        financial: [
+            { priority: 'High', action: 'Reduce inventory carrying costs', impact: 'Save $5,000 monthly', deadline: 'Immediate' },
+            { priority: 'Medium', action: 'Optimize maintenance schedules', impact: 'Reduce overtime costs', deadline: '2 weeks' },
+            { priority: 'Low', action: 'Review vendor contracts', impact: 'Negotiate better rates', deadline: '1 month' }
+        ],
+        comprehensive: [
+            { priority: 'High', action: 'Upgrade server infrastructure', impact: 'Improve system performance by 25%', deadline: 'Within 2 weeks' },
+            { priority: 'Medium', action: 'Implement data backup schedule', impact: 'Ensure data security and recovery', deadline: '1 month' },
+            { priority: 'Low', action: 'Enhance user training materials', impact: 'Improve user adoption by 15%', deadline: '6 weeks' }
+        ]
+    };
+    
+    return recommendations[reportType] || recommendations.inventory;
+}
+
+// Show report details modal
+function showReportDetailsModal(reportId, reportData, contentTypes) {
+    const modal = new bootstrap.Modal(document.getElementById('reportDetailsModal'));
+    document.getElementById('reportDetailsTitle').textContent = `Report Details: ${reportData.title}`;
+    
+    let contentHTML = `
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Your comprehensive report is ready for download. This report includes:
+            ${contentTypes.map(type => `<span class="badge bg-primary ms-1">${type}</span>`).join('')}
+        </div>
+        
+        <h6>Report Summary</h6>
+        <table class="table table-sm">
+            <tr><th>Report ID:</th><td><code>${reportId}</code></td></tr>
+            <tr><th>Title:</th><td>${reportData.title}</td></tr>
+            <tr><th>Type:</th><td><span class="badge bg-secondary">${reportData.report_type}</span></td></tr>
+            <tr><th>Generated:</th><td>${new Date(reportData.generated_at).toLocaleString()}</td></tr>
+            <tr><th>Generated By:</th><td>${reportData.generated_by}</td></tr>
+        </table>
+        
+        <h6 class="mt-4">Report Content Preview</h6>
+    `;
+    
+    // Add preview of each section
+    reportData.sections.forEach(section => {
+        contentHTML += `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="fas ${getSectionIcon(section.type)} me-2"></i>
+                    ${section.title}
+                </div>
+                <div class="card-body">
+                    ${getSectionPreview(section)}
+                </div>
+            </div>
+        `;
+    });
+    
+    contentHTML += `
+        <div class="alert alert-success mt-3">
+            <i class="fas fa-check-circle me-2"></i>
+            This report contains comprehensive analysis with ${contentTypes.length} content sections.
+            Download now to get the complete detailed analysis.
+        </div>
+    `;
+    
+    document.getElementById('reportDetailsContent').innerHTML = contentHTML;
+    
+    // Set up download button
+    document.getElementById('downloadComprehensiveReport').onclick = function() {
+        downloadReport(reportId, currentReports.length - 1);
+        modal.hide();
+    };
+    
+    modal.show();
+}
+
+function getSectionIcon(sectionType) {
+    const icons = {
+        'stats': 'fa-chart-pie',
+        'breakdowns': 'fa-table',
+        'charts': 'fa-chart-bar',
+        'recommendations': 'fa-lightbulb'
+    };
+    return icons[sectionType] || 'fa-file-alt';
+}
+
+function getSectionPreview(section) {
+    switch(section.type) {
+        case 'stats':
+            const stats = section.content;
+            let statsHTML = '<div class="row">';
+            for (const [key, value] of Object.entries(stats)) {
+                statsHTML += `
+                    <div class="col-md-6 mb-2">
+                        <div class="border rounded p-2">
+                            <small class="text-muted d-block">${key.replace(/_/g, ' ').toUpperCase()}</small>
+                            <strong>${value}</strong>
+                        </div>
+                    </div>
+                `;
+            }
+            statsHTML += '</div>';
+            return statsHTML;
+            
+        case 'breakdowns':
+            const breakdowns = section.content;
+            let breakdownHTML = '<div class="table-responsive"><table class="table table-sm"><thead><tr>';
+            if (breakdowns.length > 0) {
+                const headers = Object.keys(breakdowns[0]);
+                headers.forEach(header => {
+                    breakdownHTML += `<th>${header.replace(/_/g, ' ').toUpperCase()}</th>`;
+                });
+                breakdownHTML += '</tr></thead><tbody>';
+                breakdowns.forEach(item => {
+                    breakdownHTML += '<tr>';
+                    headers.forEach(header => {
+                        breakdownHTML += `<td>${item[header]}</td>`;
+                    });
+                    breakdownHTML += '</tr>';
+                });
+                breakdownHTML += '</tbody></table></div>';
+            }
+            return breakdownHTML;
+            
+        case 'charts':
+            const charts = section.content;
+            let chartsHTML = '<div class="row">';
+            charts.forEach(chart => {
+                chartsHTML += `
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-3 text-center">
+                            <i class="fas fa-chart-${chart.type} fa-2x text-primary mb-2"></i>
+                            <h6 class="mb-2">${chart.name}</h6>
+                            <div class="small text-muted">
+                                ${chart.data.join('<br>')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            chartsHTML += '</div>';
+            return chartsHTML;
+            
+        case 'recommendations':
+            const recommendations = section.content;
+            let recHTML = '<div class="list-group">';
+            recommendations.forEach(rec => {
+                recHTML += `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${rec.action}</h6>
+                            <span class="badge bg-${rec.priority === 'High' ? 'danger' : rec.priority === 'Medium' ? 'warning' : 'secondary'}">
+                                ${rec.priority}
+                            </span>
+                        </div>
+                        <p class="mb-1 small">${rec.impact}</p>
+                        <small class="text-muted">Deadline: ${rec.deadline}</small>
+                    </div>
+                `;
+            });
+            recHTML += '</div>';
+            return recHTML;
+            
+        default:
+            return '<p>Content preview not available</p>';
+    }
+}
+
+// Download report - FIXED FUNCTION
+function downloadReport(reportId, index) {
+    console.log('Downloading report:', reportId, 'Index:', index);
+    
+    if (index >= 0 && currentReports[index]) {
+        const report = currentReports[index];
+        const reportData = report.data;
+        
+        if (!reportData) {
+            showAlert('warning', 'Report data not available. Please regenerate the report.');
+            return;
+        }
+        
+        // Get format from form or default to CSV
+        const format = document.querySelector('input[name="format"]:checked')?.value || 'csv';
+        
+        // Use backend API for download
+        const downloadUrl = `${report.download_url || `/api/reports/download/${report.report_id || reportId}`}?format=${format}`;
+        
+        // Create and trigger download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = '';
+        link.target = '_blank';
+        
+        // Append to body, click, and remove
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(link);
+        }, 100);
+        
+        showAlert('success', `Report "${report.title}" downloaded successfully as ${format.toUpperCase()}!`);
+    } else {
+        showAlert('error', 'Report not found or invalid index');
+    }
+}
+
+// Create comprehensive CSV content - IMPROVED FUNCTION
+function createComprehensiveCSV(reportData) {
+    let csv = `"${reportData.title}"\n`;
+    csv += `"Report ID: ${reportData.report_id}"\n`;
+    csv += `"Generated: ${new Date(reportData.generated_at).toLocaleString()}"\n`;
+    csv += `"Generated By: ${reportData.generated_by}"\n`;
+    csv += `"Report Type: ${reportData.report_type}"\n\n`;
+    
+    // Add each section
+    reportData.sections.forEach(section => {
+        csv += `"${section.title.toUpperCase()}"\n`;
+        
+        switch(section.type) {
+            case 'stats':
+                csv += '"Metric","Value"\n';
+                for (const [key, value] of Object.entries(section.content)) {
+                    csv += `"${key.replace(/_/g, ' ')}","${value}"\n`;
+                }
+                break;
+                
+            case 'breakdowns':
+                if (section.content && section.content.length > 0) {
+                    const headers = Object.keys(section.content[0]);
+                    csv += headers.map(h => `"${h.replace(/_/g, ' ')}"`).join(',') + '\n';
+                    section.content.forEach(item => {
+                        csv += headers.map(h => `"${item[h]}"`).join(',') + '\n';
+                    });
+                }
+                break;
+                
+            case 'charts':
+                csv += '"Chart Name","Chart Type","Data"\n';
+                if (section.content) {
+                    section.content.forEach(chart => {
+                        csv += `"${chart.name}","${chart.type}","${chart.data.join(' | ')}"\n`;
+                    });
+                }
+                break;
+                
+            case 'recommendations':
+                csv += '"Priority","Action","Impact","Deadline"\n';
+                if (section.content) {
+                    section.content.forEach(rec => {
+                        csv += `"${rec.priority}","${rec.action}","${rec.impact}","${rec.deadline}"\n`;
+                    });
+                }
+                break;
+        }
+        
+        csv += '\n';
+    });
+    
+    // Add summary
+    csv += '"REPORT SUMMARY"\n';
+    csv += '"This comprehensive report includes detailed analysis across multiple dimensions."\n';
+    csv += '"Key findings and recommendations are provided for actionable insights."\n';
+    csv += '"Generated by Marine Service Center Expert System"\n';
+    
+    return csv;
+}
+
+// Preview comprehensive report
+function previewComprehensiveReport(index) {
+    if (index >= 0 && currentReports[index]) {
+        const report = currentReports[index];
+        const preview = document.getElementById('previewContent');
+        const previewCard = document.getElementById('reportPreview');
+        
+        let previewHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>${report.title}</strong> - Preview of comprehensive report
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-2"></i> Report Information
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr><th>Report ID:</th><td><code>${report.report_id}</code></td></tr>
+                        <tr><th>Type:</th><td><span class="badge bg-secondary">${report.report_type}</span></td></tr>
+                        <tr><th>Generated:</th><td>${report.generated_at ? new Date(report.generated_at).toLocaleString() : 'N/A'}</td></tr>
+                        <tr><th>Content Included:</th><td>${(report.content || []).map(c => `<span class="badge bg-primary me-1">${c}</span>`).join('')}</td></tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-eye me-2"></i> What's Included in This Report
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        ${(report.content || []).map(content => `
+                            <div class="col-md-3 mb-3">
+                                <div class="border rounded p-3 text-center h-100">
+                                    <i class="fas ${getContentIcon(content)} fa-2x text-primary mb-2"></i>
+                                    <h6 class="mb-2">${content.charAt(0).toUpperCase() + content.slice(1)}</h6>
+                                    <p class="small text-muted mb-0">${getContentDescription(content)}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle me-2"></i>
+                        This comprehensive report includes detailed analysis across all selected dimensions.
+                        Download to access the complete analysis with actionable insights.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <button class="btn btn-primary me-2" onclick="downloadReport('${report.report_id}', ${index})">
+                    <i class="fas fa-download me-2"></i> Download Full Report
+                </button>
+                <button class="btn btn-outline-secondary" onclick="document.getElementById('reportPreview').style.display = 'none'">
+                    <i class="fas fa-times me-2"></i> Close Preview
+                </button>
+            </div>
+        `;
+        
+        preview.innerHTML = previewHTML;
+        previewCard.style.display = 'block';
+        previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function getContentIcon(contentType) {
+    const icons = {
+        'stats': 'fa-chart-pie',
+        'breakdowns': 'fa-table',
+        'charts': 'fa-chart-bar',
+        'recommendations': 'fa-lightbulb'
+    };
+    return icons[contentType] || 'fa-file-alt';
+}
+
+function getContentDescription(contentType) {
+    const descriptions = {
+        'stats': 'Summary statistics and key metrics',
+        'breakdowns': 'Detailed category breakdowns',
+        'charts': 'Visual charts and graphs',
+        'recommendations': 'Actionable recommendations'
+    };
+    return descriptions[contentType] || 'Detailed analysis content';
+}
+
+// Delete report function
+function deleteReport(reportId, index) {
+    if (confirm(`Are you sure you want to delete report ${reportId}? This action cannot be undone.`)) {
+        // Remove from UI immediately
+        const row = document.getElementById(`report-row-${index}`);
+        if (row) {
+            row.style.opacity = '0.5';
+        }
+        
+        // Remove from array
+        if (index >= 0 && currentReports[index]) {
+            currentReports.splice(index, 1);
+            updateReportsTable(currentReports);
+            showAlert('success', `Report ${reportId} deleted successfully`);
+        }
+    }
+}
+
+// Quick report setup function
+function quickReport(type) {
+    const validTypes = ['inventory', 'emergency', 'performance', 'maintenance', 'comprehensive'];
+    if (!validTypes.includes(type)) {
+        showAlert('warning', `Invalid report type: "${type}"`);
+        return;
+    }
+    
+    document.getElementById('reportType').value = type;
+    
+    // Set comprehensive content for quick reports
+    document.getElementById('includeStats').checked = true;
+    document.getElementById('includeBreakdowns').checked = true;
+    document.getElementById('includeCharts').checked = true;
+    document.getElementById('includeRecommendations').checked = true;
+    
+    // Set date range for this month
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    document.getElementById('startDate').value = formatDate(firstDay);
+    document.getElementById('endDate').value = formatDate(lastDay);
+    
+    // Set appropriate title
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = monthNames[today.getMonth()];
+    const typeName = type === 'comprehensive' ? 'Comprehensive System' : type.charAt(0).toUpperCase() + type.slice(1);
+    document.getElementById('reportTitle').value = `${typeName} Analysis Report - ${monthName} ${today.getFullYear()}`;
+    
+    // Set PDF format for comprehensive reports
+    document.getElementById('formatPDF').checked = true;
+    
+    // Set notes
+    document.getElementById('reportNotes').value = `Quick ${typeName} report generated for ${monthName} ${today.getFullYear()}. Includes comprehensive analysis with statistics, breakdowns, charts, and recommendations.`;
+    
+    showAlert('success', `${typeName} report template loaded. Click "Generate Comprehensive Report" to proceed.`);
+    
+    // Scroll to generate button
+    document.getElementById('generateReportBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Load template function
+function loadTemplate(template) {
+    const templates = {
+        'service': {
+            type: 'performance',
+            title: 'Service Quality Analysis Report',
+            format: 'pdf',
+            description: 'Comprehensive service analysis with recommendations'
+        },
+        'financial': {
+            type: 'financial',
+            title: 'Financial Performance Summary',
+            format: 'pdf',
+            description: 'Cost analysis and budgeting with financial insights'
+        },
+        'performance': {
+            type: 'performance',
+            title: 'Staff Performance Review',
+            format: 'pdf',
+            description: 'Staff and team performance evaluation'
+        },
+        'safety': {
+            type: 'maintenance',
+            title: 'Safety & Compliance Report',
+            format: 'pdf',
+            description: 'Regulatory compliance and safety audit'
+        }
+    };
+    
+    const t = templates[template];
+    if (t) {
+        document.getElementById('reportType').value = t.type;
+        document.getElementById('reportTitle').value = t.title;
+        
+        // Set all content types
+        document.getElementById('includeStats').checked = true;
+        document.getElementById('includeBreakdowns').checked = true;
+        document.getElementById('includeCharts').checked = true;
+        document.getElementById('includeRecommendations').checked = true;
+        
+        // Set format
+        document.querySelectorAll('input[name="format"]').forEach(radio => radio.checked = false);
+        document.getElementById('formatPDF').checked = true;
+        
+        // Set date range to last 30 days
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        
+        document.getElementById('startDate').value = formatDate(startDate);
+        document.getElementById('endDate').value = formatDate(endDate);
+        
+        // Set notes
+        document.getElementById('reportNotes').value = `${t.description}. Generated using professional template for comprehensive analysis.`;
+        
+        showAlert('success', `${t.title} template loaded. Includes comprehensive analysis with all content types.`);
+        
+        // Scroll to generate button
+        document.getElementById('generateReportBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        showAlert('warning', 'Template not found');
+    }
+}
+
+// Export all reports
+function exportAllReports() {
+    if (currentReports.length === 0) {
+        showAlert('warning', 'No reports to export');
+        return;
+    }
+    
+    let exportData = '"Marine Service Center - All Reports Export"\n';
+    exportData += `"Exported: ${new Date().toLocaleString()}"\n`;
+    exportData += `"Total Reports: ${currentReports.length}"\n\n`;
+    
+    currentReports.forEach((report, index) => {
+        exportData += `"Report ${index + 1}: ${report.title}"\n`;
+        exportData += `"ID: ${report.report_id}"\n`;
+        exportData += `"Type: ${report.report_type}"\n`;
+        exportData += `"Generated: ${report.generated_at}"\n`;
+        exportData += `"Content: ${(report.content || []).join(', ')}"\n`;
+        if (report.notes) exportData += `"Notes: ${report.notes}"\n`;
+        exportData += '\n';
+    });
+    
+    const blob = new Blob([exportData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `all_reports_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showAlert('success', `Exported ${currentReports.length} reports successfully`);
+}
+
+// Clear all reports
+function clearAllReports() {
+    if (currentReports.length === 0) {
+        showAlert('info', 'No reports to clear');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to clear all ${currentReports.length} reports? This action cannot be undone.`)) {
+        currentReports = [];
+        updateReportsTable(currentReports);
+        showAlert('success', 'All reports cleared successfully');
+    }
+}
+
+// Show alert function
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed shadow`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px; max-width: 500px;';
+    
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'danger') icon = 'exclamation-circle';
+    if (type === 'warning') icon = 'exclamation-triangle';
+    
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${icon} me-2"></i>
+            <div class="flex-grow-1">${message}</div>
+            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.style.opacity = '0';
+            alertDiv.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 500);
+        }
+    }, 5000);
+}
+
+// Helper function to format date as YYYY-MM-DD
+function formatDate(date) {
+    const d = new Date(date);
+    let month = '' + (d.getMonth() + 1);
+    let day = '' + d.getDate();
+    const year = d.getFullYear();
+    
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+    
+    return [year, month, day].join('-');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadReports();
+    loadAnalytics();
+    
+    // Set default dates to current month
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    document.getElementById('startDate').value = formatDate(firstDay);
+    document.getElementById('endDate').value = formatDate(lastDay);
+    
+    // Set default format to PDF for comprehensive reports
+    document.getElementById('formatPDF').checked = true;
+    
+    // Add click handlers for template cards
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('btn')) {
+                const btn = this.querySelector('.btn');
+                if (btn) btn.click();
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.template-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid #dee2e6;
+    height: 100%;
+    min-height: 200px;
+}
+
+.template-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(var(--primary-rgb, 90, 79, 207), 0.25);
+    border-color: var(--primary-color, #5a4fcf);
+}
+
+.template-card .card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.template-card i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.template-card h6 {
+    margin: 0.5rem 0;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.template-card small {
+    color: #6c757d;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    min-height: 40px;
+    display: block;
+}
+
+.template-card .btn {
+    transition: all 0.2s ease;
+    margin-top: 1rem;
+    border-width: 2px;
+}
+
+.template-card .btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.list-group-item-action {
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.list-group-item-action:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+    border-left-color: var(--primary-color, #5a4fcf);
+}
+
+/* Report table styles */
+#reportsTable tr {
+    transition: all 0.2s ease;
+}
+
+#reportsTable tr:hover {
+    background-color: rgba(var(--primary-rgb, 90, 79, 207), 0.05);
+}
+
+/* Badge styles */
+.badge {
+    font-weight: 600;
+    padding: 0.35em 0.65em;
+}
+
+/* Alert positioning fix */
+.alert.position-fixed {
+    animation: slideInRight 0.3s ease;
+    pointer-events: auto;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Content type indicators */
+.content-badge {
+    font-size: 0.7rem;
+    padding: 0.2em 0.5em;
+    margin-right: 0.3em;
+}
+
+/* Modal styles */
+.modal-content {
+    border: none;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+}
+
+/* Form check styling */
+.form-check-input:checked {
+    background-color: var(--primary-color, #5a4fcf);
+    border-color: var(--primary-color, #5a4fcf);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .template-card {
+        margin-bottom: 1rem;
+    }
+    
+    .template-card .btn {
+        font-size: 0.8rem;
+    }
+    
+    .alert.position-fixed {
+        min-width: 250px;
+        max-width: 90%;
+        right: 5%;
+    }
+    
+    #reportsTable td, #reportsTable th {
+        padding: 0.5rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.2rem 0.3rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .alert.position-fixed,
+    .btn-group,
+    .template-card .btn {
+        display: none !important;
+    }
+}
+
+/* Animation for loading */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.spinner-border {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Section preview cards */
+.card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+.card .card-header i {
+    color: white !important;
+}
+</style>
+{% endblock %}

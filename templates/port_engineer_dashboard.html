@@ -1,0 +1,1754 @@
+{% extends "base.html" %}
+
+{% block title %}Port Engineer Dashboard - Marine Service Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Emergency Alert Cards with Theme Colors */
+    .emergency-alert-card {
+        background: linear-gradient(135deg, rgba(var(--primary-rgb, 90, 79, 207), 0.1), rgba(var(--secondary-rgb, 107, 93, 216), 0.1));
+        border: 2px solid rgba(var(--primary-rgb, 90, 79, 207), 0.3);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    
+    .emergency-alert-card:hover {
+        border-color: rgba(var(--primary-rgb, 90, 79, 207), 0.5);
+        box-shadow: 0 4px 12px rgba(var(--primary-rgb, 90, 79, 207), 0.15);
+    }
+    
+    .emergency-alert-card .alert-heading {
+        color: var(--primary-color, #5a4fcf);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .emergency-alert-card p {
+        color: #475569;
+        margin-bottom: 0.25rem;
+    }
+    
+    .emergency-alert-card small {
+        color: #64748b;
+    }
+    
+    /* Port Engineer Dashboard Header Button */
+    .btn-outline-primary[onclick="openComposeTab()"] {
+        border-color: var(--primary-color, #5a4fcf) !important;
+        color: var(--primary-color, #5a4fcf) !important;
+    }
+    
+    .btn-outline-primary[onclick="openComposeTab()"]:hover {
+        background: var(--primary-color, #5a4fcf) !important;
+        border-color: var(--primary-color, #5a4fcf) !important;
+        color: white !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if current_user_profile.profile_pic_url %}
+<div class="text-center mb-4">
+    <img src="{{ current_user_profile.profile_pic_url }}" 
+         class="rounded-circle shadow" 
+         style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #007bff;"
+         alt="Profile Picture">
+    <h4 class="mt-3">{{ current_user_profile.full_name }}</h4>
+    <p class="text-muted">{{ current_user_profile.rank }} • {{ current_user_profile.role|replace('_', ' ')|title }}</p>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-user-shield fa-3x" style="color: var(--primary-color, #5a4fcf);"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-1">Port Engineer Dashboard</h1>
+                        <p class="lead mb-0">Manage users, approve requests, and oversee system operations</p>
+                    </div>
+                    <div class="ms-auto">
+                        <button class="btn btn-outline-primary" onclick="openComposeTab()">
+                            <i class="fas fa-paper-plane me-2"></i> Send Message
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Port Engineer Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-primary">
+            <div class="card-body text-center">
+                <div class="metric-value" id="totalUsers">--</div>
+                <div class="metric-label">Total Users</div>
+                <small class="text-muted">Active system users</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-warning">
+            <div class="card-body text-center">
+                <div class="metric-value" id="pendingApprovals">--</div>
+                <div class="metric-label">Pending Approvals</div>
+                <small class="text-muted">Users awaiting approval</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-info">
+            <div class="card-body text-center">
+                <div class="metric-value" id="pendingRequests">--</div>
+                <div class="metric-label">Pending Requests</div>
+                <small class="text-muted">Maintenance requests</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-danger">
+            <div class="card-body text-center">
+                <div class="metric-value" id="emergencyRequests">--</div>
+                <div class="metric-label">Emergency</div>
+                <small class="text-muted">Critical requests</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#userApprovalModal">
+                            <i class="fas fa-user-check me-2"></i> Approve Users
+                            <span class="badge bg-light text-primary ms-2" id="quickApproveCount">0</span>
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#qualityAccessModal">
+                            <i class="fas fa-key me-2"></i> Quality Officer Access
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-warning w-100" onclick="sendBulkNotifications()">
+                            <i class="fas fa-bullhorn me-2"></i> Send Announcement
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-info w-100" onclick="generateSystemReport()">
+                            <i class="fas fa-file-export me-2"></i> Export Report
+                        </button>
+                    </div>
+                </div>
+                <!-- Messaging Quick Actions -->
+                <div class="row mt-3">
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="openComposeTab()">
+                            <i class="fas fa-paper-plane me-2"></i> Quick Message
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-outline-warning w-100" onclick="loadMessagingTab('inbox')">
+                            <i class="fas fa-inbox me-2"></i> Check Inbox
+                            <span class="badge bg-primary ms-2" id="dashboardUnreadCount">0</span>
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-outline-success w-100" onclick="loadMessagingTab('threads')">
+                            <i class="fas fa-comments me-2"></i> Conversations
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-lg-7">
+        <!-- Pending User Approvals -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-clock me-2"></i> Pending User Approvals</h5>
+                    <span class="badge bg-danger" id="pendingUserCount">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Registered</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingUsersTable">
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="spinner-border text-warning" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading pending users...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Maintenance Requests Approval -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Pending Maintenance Requests</h5>
+                    <span class="badge bg-warning" id="pendingMaintenanceCount">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Ship</th>
+                                <th>Type</th>
+                                <th>Priority</th>
+                                <th>Requester</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingMaintenanceTable">
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="spinner-border text-info" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading maintenance requests...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Quality Officers -->
+        <div class="card mt-4">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i> Quality Officers Management</h5>
+                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#createQualityOfficerModal">
+                        <i class="fas fa-plus me-1"></i> New Officer
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Officer</th>
+                                <th>Access Expires</th>
+                                <th>Status</th>
+                                <th>Evaluations</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qualityOfficersTable">
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading quality officers...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent System Notifications -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bell me-2"></i> Recent System Notifications</h5>
+            </div>
+            <div class="card-body">
+                <div id="recentNotifications">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading notifications...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column -->
+    <div class="col-lg-5">
+        <!-- Emergency Requests -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Emergency Authorization</h5>
+            </div>
+            <div class="card-body">
+                <div id="emergencyRequestsPanel">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-danger" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading emergency requests...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Messaging Overview -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i> Messaging Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="p-3 bg-primary bg-opacity-10 rounded">
+                            <div class="h4 mb-1 text-primary" id="unreadMessages">0</div>
+                            <small class="text-muted">Unread Messages</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-success bg-opacity-10 rounded">
+                            <div class="h4 mb-1 text-success" id="activeThreads">0</div>
+                            <small class="text-muted">Active Conversations</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button class="btn btn-sm btn-primary me-2" onclick="openComposeTab()">
+                        <i class="fas fa-paper-plane me-1"></i> New Message
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleMessagingPanel()">
+                        <i class="fas fa-comments me-1"></i> Open Messenger
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Statistics -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> System Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-primary bg-opacity-10 rounded">
+                            <div class="h4 mb-1 text-primary" id="activeUsers">0</div>
+                            <small class="text-muted">Active Users</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-success bg-opacity-10 rounded">
+                            <div class="h4 mb-1 text-success" id="todayLogins">0</div>
+                            <small class="text-muted">Today Logins</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-warning bg-opacity-10 rounded">
+                            <div class="h4 mb-1 text-warning" id="openRequests">0</div>
+                            <small class="text-muted">Open Requests</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-info bg-opacity-10 rounded">
+                            <div class="h4 mb-1 text-info" id="completedEvaluations">0</div>
+                            <small class="text-muted">Evaluations</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i> Recent Port Engineer Activity</h5>
+            </div>
+            <div class="card-body">
+                <div id="recentActivity" style="max-height: 250px; overflow-y: auto;">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-secondary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading activity...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Approval Modal -->
+<div class="modal fade" id="userApprovalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Approve New Users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="approvalList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quality Officer Access Modal -->
+<div class="modal fade" id="qualityAccessModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quality Officer Access Management</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Quality Officer</label>
+                    <select class="form-select" id="qualityOfficerSelect">
+                        <option value="">Loading officers...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Access Duration (Days)</label>
+                    <input type="number" class="form-control" id="accessDays" value="90" min="1" max="365">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Generate One-Time Password</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="oneTimePassword" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="generateOneTimePassword()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">This password will be valid for 24 hours</small>
+                </div>
+                <div class="mt-4">
+                    <button class="btn btn-primary w-100" onclick="updateQualityOfficerAccess()">
+                        <i class="fas fa-save me-2"></i> Update Access
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Quality Officer Modal -->
+<div class="modal fade" id="createQualityOfficerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Quality Officer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createQualityOfficerForm">
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" name="first_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" name="last_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rank/Position</label>
+                        <input type="text" class="form-control" name="rank" value="Quality Officer">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Initial Access Duration (Days)</label>
+                        <input type="number" class="form-control" name="access_days" value="90" min="30" max="365">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="send_welcome_email" checked>
+                            <label class="form-check-label">Send welcome email with login instructions</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createQualityOfficer()">Create Officer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Modal -->
+<div class="modal fade" id="notificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send System Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Recipient Type</label>
+                    <select class="form-select" id="notificationType">
+                        <option value="all">All Users</option>
+                        <option value="role">Specific Role</option>
+                        <option value="user">Specific User</option>
+                        <option value="department">Department</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="roleSelection" style="display: none;">
+                    <label class="form-label">Select Role</label>
+                    <select class="form-select" id="targetRole">
+                        <option value="port_engineer">Port Engineer</option>
+                        <option value="harbour_master">Harbour Master</option>
+                        <option value="quality_officer">Quality Officer</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notification Title</label>
+                    <input type="text" class="form-control" id="notificationTitle" placeholder="Enter notification title">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-control" id="notificationMessage" rows="4" placeholder="Enter your message"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" id="notificationPriority">
+                        <option value="info">Information</option>
+                        <option value="warning">Warning</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendNotification()">Send Notification</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Authorization Modal -->
+<div class="modal fade" id="authorizationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="authorizationModalTitle">Authorization Required</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="authorizationContent">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Message Modal (for desktop use when floating panel isn't ideal) -->
+<div class="modal fade" id="quickMessageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-paper-plane me-2"></i> Send Quick Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="quickMessageModalContent">
+                    <!-- Loaded from messaging panel compose tab -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ==================== PORT ENGINEER DASHBOARD FUNCTIONS ====================
+
+// Load port engineer data
+function loadManagerData() {
+    fetch('/api/manager/dashboard-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateManagerStats(data.data);
+                loadPendingUsers();
+                loadPendingMaintenanceRequests();
+                loadQualityOfficers();
+                loadEmergencyRequests();
+                loadRecentNotifications();
+                loadSystemStatistics();
+                loadRecentActivity();
+                loadMessagingStats();
+            }
+        });
+}
+
+function updateManagerStats(data) {
+    document.getElementById('totalUsers').textContent = data.total_users || 0;
+    document.getElementById('pendingApprovals').textContent = data.pending_approvals || 0;
+    document.getElementById('pendingRequests').textContent = data.pending_requests || 0;
+    document.getElementById('emergencyRequests').textContent = data.emergency_requests || 0;
+    document.getElementById('quickApproveCount').textContent = data.pending_approvals || 0;
+}
+
+function loadMessagingStats() {
+    fetch('/api/messaging/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('unreadMessages').textContent = data.unread_count || 0;
+                document.getElementById('activeThreads').textContent = data.active_threads || 0;
+                document.getElementById('dashboardUnreadCount').textContent = data.unread_count || 0;
+            }
+        });
+}
+
+function loadPendingUsers() {
+    fetch('/api/manager/pending-users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updatePendingUsersTable(data.users);
+                updateApprovalList(data.users);
+            }
+        });
+}
+
+function updatePendingUsersTable(users) {
+    const table = document.getElementById('pendingUsersTable');
+    const count = document.getElementById('pendingUserCount');
+    
+    if (users.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">No pending user approvals</p>
+                </td>
+            </tr>
+        `;
+        count.textContent = '0';
+    } else {
+        let html = '';
+        users.forEach(user => {
+            const registeredDate = new Date(user.created_at).toLocaleDateString();
+            
+            html += `
+                <tr>
+                    <td>
+                        <strong>${user.first_name} ${user.last_name}</strong><br>
+                        <small class="text-muted">${user.rank || 'No rank specified'}</small>
+                    </td>
+                    <td>${user.email}</td>
+                    <td>
+                        <span class="badge bg-${user.role === 'quality_officer' ? 'success' : 'warning'}">
+                            ${user.role.replace('_', ' ').toUpperCase()}
+                        </span>
+                    </td>
+                    <td>${registeredDate}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-sm btn-success" onclick="approveUser('${user.user_id}', true)">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="approveUser('${user.user_id}', false)">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="viewUserDetails('${user.user_id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="messageUser('${user.user_id}', '${user.first_name} ${user.last_name}')">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        table.innerHTML = html;
+        count.textContent = users.length;
+    }
+}
+
+function loadPendingMaintenanceRequests() {
+    fetch('/api/maintenance-requests/pending-approval')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updatePendingMaintenanceTable(data.requests);
+            } else {
+                console.error('Error loading maintenance requests:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading maintenance requests:', error);
+        });
+}
+
+function updatePendingMaintenanceTable(requests) {
+    const table = document.getElementById('pendingMaintenanceTable');
+    const count = document.getElementById('pendingMaintenanceCount');
+    
+    if (requests.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">No pending maintenance requests</p>
+                </td>
+            </tr>
+        `;
+        count.textContent = '0';
+    } else {
+        let html = '';
+        requests.forEach(req => {
+            const priorityBadge = req.priority === 'critical' ? 'danger' :
+                                req.priority === 'high' ? 'warning' :
+                                req.priority === 'medium' ? 'info' : 'secondary';
+            
+            const priorityText = req.priority ? req.priority.toUpperCase() : 'MEDIUM';
+            const requestDate = req.created_at ? new Date(req.created_at).toLocaleDateString() : 'N/A';
+            const requesterName = req.requester_name || req.requester_email || 'Guest User';
+            
+            html += `
+                <tr>
+                    <td><code>${req.request_id}</code></td>
+                    <td><strong>${req.ship_name || 'N/A'}</strong></td>
+                    <td>${req.maintenance_type || 'N/A'}</td>
+                    <td><span class="badge bg-${priorityBadge}">${priorityText}</span></td>
+                    <td>
+                        ${requesterName}
+                        ${req.requester_email ? `<br><small class="text-muted">${req.requester_email}</small>` : ''}
+                    </td>
+                    <td>${requestDate}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-sm btn-success" onclick="approveMaintenanceRequest('${req.request_id}')" title="Approve Request">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectMaintenanceRequest('${req.request_id}')" title="Reject Request">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="viewMaintenanceRequestDetails('${req.request_id}')" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        table.innerHTML = html;
+        count.textContent = requests.length;
+    }
+}
+
+function approveMaintenanceRequest(requestId) {
+    if (!confirm(`Are you sure you want to approve maintenance request ${requestId}?`)) {
+        return;
+    }
+    
+    fetch(`/api/maintenance-requests/${requestId}/approve`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `Maintenance request ${requestId} has been approved successfully.`);
+            loadPendingMaintenanceRequests();
+            loadManagerData(); // Refresh stats
+        } else {
+            showAlert('danger', 'Error: ' + (data.error || 'Failed to approve request'));
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Network error: ' + error.message);
+    });
+}
+
+function rejectMaintenanceRequest(requestId) {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason === null) {
+        return; // User cancelled
+    }
+    
+    if (!reason.trim()) {
+        alert('Please provide a rejection reason.');
+        return;
+    }
+    
+    fetch(`/api/maintenance-requests/${requestId}/reject`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({rejection_reason: reason})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('warning', `Maintenance request ${requestId} has been rejected.`);
+            loadPendingMaintenanceRequests();
+            loadManagerData(); // Refresh stats
+        } else {
+            showAlert('danger', 'Error: ' + (data.error || 'Failed to reject request'));
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Network error: ' + error.message);
+    });
+}
+
+function viewMaintenanceRequestDetails(requestId) {
+    // Open request details in a new window or modal
+    window.open(`/view-request/${requestId}`, '_blank');
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function updateApprovalList(users) {
+    const container = document.getElementById('approvalList');
+    
+    if (users.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">No pending approvals</p>
+            </div>
+        `;
+    } else {
+        let html = '<div class="list-group">';
+        users.forEach(user => {
+            html += `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${user.first_name} ${user.last_name}</h6>
+                            <small class="text-muted">${user.email} • ${user.role.replace('_', ' ')}</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-success me-1" onclick="approveUser('${user.user_id}', true)">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="approveUser('${user.user_id}', false)">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            <button class="btn btn-sm btn-primary ms-1" onclick="messageUser('${user.user_id}', '${user.first_name} ${user.last_name}')">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+}
+
+function loadQualityOfficers() {
+    fetch('/api/manager/quality-officers')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateQualityOfficersTable(data.officers);
+                updateQualityOfficerSelect(data.officers);
+            }
+        });
+}
+
+function updateQualityOfficersTable(officers) {
+    const table = document.getElementById('qualityOfficersTable');
+    
+    if (officers.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <i class="fas fa-user-tie fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No quality officers found</p>
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#createQualityOfficerModal">
+                        <i class="fas fa-plus me-1"></i> Create First Officer
+                    </button>
+                </td>
+            </tr>
+        `;
+    } else {
+        let html = '';
+        officers.forEach(officer => {
+            const daysRemaining = Math.max(0, officer.days_remaining);
+            const statusClass = officer.is_active ? 
+                (daysRemaining > 7 ? 'success' : daysRemaining > 0 ? 'warning' : 'danger') : 
+                'secondary';
+            const statusText = officer.is_active ? 
+                (daysRemaining > 7 ? 'Active' : daysRemaining > 0 ? 'Expiring Soon' : 'Expired') : 
+                'Inactive';
+            
+            const expireDate = officer.survey_end_date ? 
+                new Date(officer.survey_end_date).toLocaleDateString() : 'Not set';
+            
+            html += `
+                <tr>
+                    <td>
+                        <strong>${officer.first_name} ${officer.last_name}</strong><br>
+                        <small class="text-muted">${officer.email}</small>
+                    </td>
+                    <td>${expireDate}</td>
+                    <td>
+                        <span class="badge bg-${statusClass}">
+                            ${statusText} (${daysRemaining} days)
+                        </span>
+                    </td>
+                    <td>${officer.evaluations_count || 0}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-sm btn-primary" onclick="manageOfficerAccess('${officer.user_id}')">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="extendOfficerAccess('${officer.user_id}')">
+                                <i class="fas fa-calendar-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="messageUser('${officer.user_id}', '${officer.first_name} ${officer.last_name}')">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deactivateOfficer('${officer.user_id}')">
+                                <i class="fas fa-user-slash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        table.innerHTML = html;
+    }
+}
+
+function updateQualityOfficerSelect(officers) {
+    const select = document.getElementById('qualityOfficerSelect');
+    let html = '<option value="">Select Quality Officer</option>';
+    
+    officers.forEach(officer => {
+        html += `<option value="${officer.user_id}">${officer.first_name} ${officer.last_name}</option>`;
+    });
+    
+    select.innerHTML = html;
+}
+
+function loadEmergencyRequests() {
+    fetch('/api/emergency-requests')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateEmergencyPanel(data.emergencies);
+            }
+        });
+}
+
+function updateEmergencyPanel(emergencies) {
+    const panel = document.getElementById('emergencyRequestsPanel');
+    
+    if (emergencies.length === 0) {
+        panel.innerHTML = `
+            <div class="text-center py-3">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">No emergency requests pending</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        emergencies.slice(0, 3).forEach(emergency => {
+            const severityClass = emergency.severity_level === 'critical' ? 'danger' : 
+                                emergency.severity_level === 'high' ? 'warning' : 'info';
+            
+            html += `
+                <div class="emergency-alert-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="alert-heading">${emergency.ship_name}</h6>
+                            <p class="mb-1 small">${emergency.emergency_type} - ${emergency.severity_level}</p>
+                            <small>
+                                <i class="fas fa-clock me-1"></i> 
+                                ${new Date(emergency.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-primary me-1" onclick="authorizeEmergency('${emergency.emergency_id}')" style="background: var(--primary-color, #5a4fcf); border-color: var(--primary-color, #5a4fcf);">
+                                <i class="fas fa-check me-1"></i> Authorize
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="notifyEmergencyTeam('${emergency.emergency_id}')">
+                                <i class="fas fa-bell me-1"></i> Notify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (emergencies.length > 3) {
+            html += `
+                <div class="text-center mt-2">
+                    <a href="/emergency-requests" class="btn btn-sm btn-outline-danger">
+                        View all ${emergencies.length} emergencies <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            `;
+        }
+        
+        panel.innerHTML = html;
+    }
+}
+
+function loadRecentNotifications() {
+    fetch('/api/manager/recent-notifications')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRecentNotifications(data.notifications);
+            }
+        });
+}
+
+function updateRecentNotifications(notifications) {
+    const container = document.getElementById('recentNotifications');
+    
+    if (notifications.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3">
+                <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No recent notifications</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        notifications.forEach(notification => {
+            const typeClass = notification.type || 'info';
+            const icon = notification.type === 'urgent' ? 'exclamation-circle' :
+                        notification.type === 'warning' ? 'exclamation-triangle' :
+                        notification.type === 'success' ? 'check-circle' : 'info-circle';
+            
+            const timeAgo = getTimeAgo(new Date(notification.created_at));
+            
+            html += `
+                <div class="border-start border-3 border-${typeClass} ps-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong class="text-${typeClass}">
+                                <i class="fas fa-${icon} me-1"></i>
+                                ${notification.title}
+                            </strong>
+                            <p class="mb-1 small">${notification.message}</p>
+                            <small class="text-muted">${timeAgo}</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-${typeClass} me-1" onclick="viewNotification(${notification.id})">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="replyToNotification(${notification.id})">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+}
+
+function loadSystemStatistics() {
+    fetch('/api/manager/system-statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('activeUsers').textContent = data.active_users || 0;
+                document.getElementById('todayLogins').textContent = data.today_logins || 0;
+                document.getElementById('openRequests').textContent = data.open_requests || 0;
+                document.getElementById('completedEvaluations').textContent = data.completed_evaluations || 0;
+            }
+        });
+}
+
+function loadRecentActivity() {
+    fetch('/api/manager/recent-activity')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRecentActivity(data.activities);
+            }
+        });
+}
+
+function updateRecentActivity(activities) {
+    const container = document.getElementById('recentActivity');
+    
+    if (activities.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3">
+                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No recent activity</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        activities.forEach(activity => {
+            const timeAgo = getTimeAgo(new Date(activity.timestamp));
+            
+            html += `
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3">
+                            <i class="fas fa-${activity.icon || 'history'} text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <small class="text-muted">${timeAgo}</small>
+                            <p class="mb-0 small">${activity.activity}</p>
+                            ${activity.details ? `<small class="text-muted">${activity.details}</small>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    return `${diffDays}d ago`;
+}
+
+// ==================== MESSAGING INTEGRATION FUNCTIONS ====================
+
+function messageUser(userId, userName) {
+    // Use the existing messaging panel functionality
+    openComposeTab();
+    
+    // After a short delay, pre-fill the recipient
+    setTimeout(() => {
+        const toField = document.getElementById('quickTo');
+        if (toField) {
+            toField.value = userName;
+            toField.dataset.userId = userId;
+        }
+        
+        // Focus on subject field
+        const subjectField = document.getElementById('quickSubject');
+        if (subjectField) {
+            subjectField.focus();
+            subjectField.value = `Message for ${userName}`;
+        }
+    }, 500);
+}
+
+function notifyEmergencyTeam(emergencyId) {
+    fetch(`/api/emergency-details/${emergencyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const emergency = data.emergency;
+                
+                // Open messaging panel in compose mode
+                openComposeTab();
+                
+                // After a short delay, pre-fill the message
+                setTimeout(() => {
+                    const subjectField = document.getElementById('quickSubject');
+                    const messageField = document.getElementById('quickMessage');
+                    const prioritySelect = document.getElementById('quickPriority');
+                    
+                    if (subjectField) {
+                        subjectField.value = `URGENT: Emergency Notification - ${emergency.ship_name}`;
+                    }
+                    
+                    if (messageField) {
+                        messageField.value = `EMERGENCY NOTIFICATION\n\nShip: ${emergency.ship_name}\nType: ${emergency.emergency_type}\nSeverity: ${emergency.severity_level}\nLocation: ${emergency.location}\n\nImmediate Actions Required:\n${emergency.immediate_actions}\n\nResources Required:\n${emergency.resources_required}\n\nPlease respond immediately.`;
+                    }
+                    
+                    if (prioritySelect) {
+                        prioritySelect.value = 'urgent';
+                    }
+                }, 500);
+            }
+        });
+}
+
+function replyToNotification(notificationId) {
+    // Fetch notification details
+    fetch(`/api/notification/${notificationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const notification = data.notification;
+                
+                // Open messaging panel
+                openComposeTab();
+                
+                // Pre-fill the message
+                setTimeout(() => {
+                    const subjectField = document.getElementById('quickSubject');
+                    const messageField = document.getElementById('quickMessage');
+                    
+                    if (subjectField) {
+                        subjectField.value = `Re: ${notification.title}`;
+                    }
+                    
+                    if (messageField) {
+                        messageField.value = `Regarding your notification: "${notification.message}"\n\nMy response: `;
+                        messageField.focus();
+                    }
+                }, 500);
+            }
+        });
+}
+
+// ==================== USER MANAGEMENT FUNCTIONS ====================
+
+function approveUser(userId, approve) {
+    const action = approve ? 'approve' : 'reject';
+    
+    fetch('/api/manager/approve-user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: userId,
+            approve: approve,
+            manager_id: '{{ current_user.id }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showAlert(`User ${action}d successfully!`, 'success');
+            
+            // Reload data
+            loadManagerData();
+            
+            // Send notification to user via messaging system
+            if (approve) {
+                sendUserMessage(userId, 'Account Approved', 
+                    'Your account has been approved by the port engineer. You can now log in to the Marine Service Center system.\n\nPlease use your registered credentials to access the system.', 'normal');
+            } else {
+                sendUserMessage(userId, 'Account Rejected', 
+                    'Your account registration has been rejected by the port engineer. Please contact the system administrator for more details regarding this decision.', 'normal');
+            }
+        } else {
+            showAlert('Error: ' + (data.error || 'Failed to process approval'), 'danger');
+        }
+    });
+}
+
+function sendUserMessage(userId, subject, message, priority = 'normal') {
+    fetch('/api/messaging/quick-send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id: userId,
+            subject: subject,
+            message: message,
+            priority: priority,
+            sender_id: '{{ current_user.id }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            console.error('Failed to send message to user:', data.error);
+        }
+    });
+}
+
+function viewUserDetails(userId) {
+    fetch(`/api/manager/user-details/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const user = data.user;
+                
+                let html = `
+                    <h6>User Details</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-user-circle fa-4x text-primary mb-2"></i>
+                            <div>
+                                ${user.is_approved ? 
+                                    '<span class="badge bg-success">Approved</span>' : 
+                                    '<span class="badge bg-warning">Pending</span>'}
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h5>${user.first_name} ${user.last_name}</h5>
+                            <p class="text-muted">${user.rank || 'No rank specified'}</p>
+                            <p><i class="fas fa-envelope me-2"></i> ${user.email}</p>
+                            <p><i class="fas fa-phone me-2"></i> ${user.phone || 'Not provided'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Role:</strong><br>
+                            <span class="badge bg-${user.role === 'quality_officer' ? 'success' : 'warning'}">
+                                ${user.role.replace('_', ' ').toUpperCase()}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Department:</strong><br>
+                            ${user.department || 'Not specified'}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Location:</strong><br>
+                            ${user.location || 'Not specified'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Registered:</strong><br>
+                            ${new Date(user.created_at).toLocaleDateString()}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-2">
+                            <button class="btn btn-primary w-100" onclick="messageUser('${user.user_id}', '${user.first_name} ${user.last_name}')">
+                                <i class="fas fa-envelope me-2"></i> Message User
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            ${user.is_approved ?
+                                `<button class="btn btn-danger w-100" onclick="approveUser('${user.user_id}', false)">
+                                    <i class="fas fa-times me-2"></i> Revoke Access
+                                </button>` :
+                                `<button class="btn btn-success w-100" onclick="approveUser('${user.user_id}', true)">
+                                    <i class="fas fa-check me-2"></i> Approve User
+                                </button>`
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('authorizationContent').innerHTML = html;
+                document.getElementById('authorizationModalTitle').textContent = 'User Details';
+                const modal = new bootstrap.Modal(document.getElementById('authorizationModal'));
+                modal.show();
+            }
+        });
+}
+
+// ==================== QUALITY OFFICER MANAGEMENT FUNCTIONS ====================
+
+function generateOneTimePassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('oneTimePassword').value = password;
+}
+
+function manageOfficerAccess(userId) {
+    fetch(`/api/manager/officer-access/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const officer = data.officer;
+                
+                // Set form values
+                document.getElementById('qualityOfficerSelect').value = userId;
+                document.getElementById('accessDays').value = officer.access_days || 90;
+                document.getElementById('oneTimePassword').value = officer.one_time_password || '';
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('qualityAccessModal'));
+                modal.show();
+            }
+        });
+}
+
+function updateQualityOfficerAccess() {
+    const officerId = document.getElementById('qualityOfficerSelect').value;
+    const accessDays = document.getElementById('accessDays').value;
+    const oneTimePassword = document.getElementById('oneTimePassword').value;
+    
+    if (!officerId) {
+        showAlert('Please select a quality officer', 'warning');
+        return;
+    }
+    
+    fetch('/api/manager/update-officer-access', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            officer_id: officerId,
+            access_days: parseInt(accessDays),
+            one_time_password: oneTimePassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Quality officer access updated successfully!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('qualityAccessModal')).hide();
+            loadQualityOfficers();
+            
+            // Send message to officer
+            sendUserMessage(officerId, 'Access Updated', 
+                `Your quality officer access has been updated.\n\nNew access duration: ${accessDays} days\nOne-time password: ${oneTimePassword}\n\nThis password is valid for 24 hours.`, 'normal');
+        } else {
+            showAlert('Error: ' + (data.error || 'Failed to update access'), 'danger');
+        }
+    });
+}
+
+function extendOfficerAccess(userId) {
+    const days = prompt('Enter number of additional days:', '30');
+    if (days && !isNaN(days) && days > 0) {
+        fetch('/api/manager/extend-officer-access', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                officer_id: userId,
+                additional_days: parseInt(days)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(`Access extended by ${days} days`, 'success');
+                loadQualityOfficers();
+                
+                // Send notification
+                sendUserMessage(userId, 'Access Extended', 
+                    `Your quality officer access has been extended by ${days} days.`, 'info');
+            } else {
+                showAlert('Error: ' + (data.error || 'Failed to extend access'), 'danger');
+            }
+        });
+    }
+}
+
+function deactivateOfficer(userId) {
+    if (confirm('Are you sure you want to deactivate this quality officer?')) {
+        fetch('/api/manager/deactivate-officer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                officer_id: userId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Quality officer deactivated', 'success');
+                loadQualityOfficers();
+                
+                // Send message
+                sendUserMessage(userId, 'Account Deactivated', 
+                    'Your quality officer access has been deactivated by the manager. Please contact the system administrator if you believe this is an error.', 'warning');
+            } else {
+                showAlert('Error: ' + (data.error || 'Failed to deactivate'), 'danger');
+            }
+        });
+    }
+}
+
+function createQualityOfficer() {
+    const form = document.getElementById('createQualityOfficerForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch('/api/manager/create-quality-officer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Quality officer created successfully!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createQualityOfficerModal')).hide();
+            loadQualityOfficers();
+            
+            // Send welcome message if email option was checked
+            if (data.officer_id && data.send_welcome_email) {
+                sendUserMessage(data.officer_id, 'Welcome to Marine Service Center', 
+                    `Welcome ${data.first_name} ${data.last_name}!\n\nYou have been registered as a Quality Officer in the Marine Service Center system.\n\nYour login credentials:\nEmail: ${data.email}\nTemporary Password: ${data.temp_password}\n\nPlease log in and change your password immediately.`, 'normal');
+            }
+            
+            // Reset form
+            form.reset();
+        } else {
+            showAlert('Error: ' + (data.error || 'Failed to create officer'), 'danger');
+        }
+    });
+}
+
+// ==================== NOTIFICATION FUNCTIONS ====================
+
+function sendBulkNotifications() {
+    // Show notification modal
+    const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+    modal.show();
+}
+
+function sendNotification() {
+    const type = document.getElementById('notificationType').value;
+    const targetRole = document.getElementById('targetRole').value;
+    const title = document.getElementById('notificationTitle').value;
+    const message = document.getElementById('notificationMessage').value;
+    const priority = document.getElementById('notificationPriority').value;
+    
+    if (!title || !message) {
+        showAlert('Please fill in all fields', 'warning');
+        return;
+    }
+    
+    fetch('/api/manager/send-notification', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            type: type,
+            target_role: targetRole,
+            title: title,
+            message: message,
+            priority: priority,
+            sender_id: '{{ current_user.id }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Notification sent successfully!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('notificationModal')).hide();
+            
+            // Clear form
+            document.getElementById('notificationTitle').value = '';
+            document.getElementById('notificationMessage').value = '';
+            
+            // Reload notifications
+            loadRecentNotifications();
+        } else {
+            showAlert('Error: ' + (data.error || 'Failed to send notification'), 'danger');
+        }
+    });
+}
+
+// ==================== EMERGENCY AUTHORIZATION FUNCTIONS ====================
+
+function authorizeEmergency(emergencyId) {
+    fetch(`/api/emergency-details/${emergencyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const emergency = data.emergency;
+                
+                let html = `
+                    <h6>Emergency Authorization</h6>
+                    <div class="alert alert-danger">
+                        <strong>${emergency.emergency_type}</strong> - ${emergency.ship_name}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Severity:</strong><br>
+                        <span class="badge bg-${emergency.severity_level === 'critical' ? 'danger' : 'warning'}">
+                            ${emergency.severity_level.toUpperCase()}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Immediate Actions Required:</strong><br>
+                        <p>${emergency.immediate_actions}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Resources Required:</strong><br>
+                        <p>${emergency.resources_required}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Authorization Code</label>
+                        <input type="text" class="form-control" id="authCode" 
+                               placeholder="Enter authorization code">
+                        <small class="text-muted">Required for emergency authorization</small>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button class="btn btn-success w-100" onclick="submitAuthorization('${emergencyId}')">
+                            <i class="fas fa-check-circle me-2"></i> Authorize Emergency
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('authorizationContent').innerHTML = html;
+                document.getElementById('authorizationModalTitle').textContent = 'Emergency Authorization';
+                const modal = new bootstrap.Modal(document.getElementById('authorizationModal'));
+                modal.show();
+            }
+        });
+}
+
+function submitAuthorization(emergencyId) {
+    const authCode = document.getElementById('authCode').value;
+    if (!authCode) {
+        showAlert('Please enter authorization code', 'warning');
+        return;
+    }
+    
+    fetch('/api/emergency-authorize', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            emergency_id: emergencyId, 
+            auth_code: authCode,
+            manager_id: '{{ current_user.id }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Emergency authorized successfully!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('authorizationModal')).hide();
+            loadManagerData();
+            
+            // Send notifications to relevant personnel via messaging
+            sendBulkNotificationsForEmergency(emergencyId);
+        } else {
+            showAlert('Error: ' + (data.error || 'Authorization failed'), 'danger');
+        }
+    });
+}
+
+function sendBulkNotificationsForEmergency(emergencyId) {
+    // This would send notifications to harbour masters and quality officers
+    fetch('/api/manager/notify-emergency-team', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            emergency_id: emergencyId
+        })
+    });
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function showAlert(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    alert.style.zIndex = '1060';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+
+function generateSystemReport() {
+    // Generate comprehensive system report
+    fetch('/api/manager/generate-system-report')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('System report generated successfully!', 'success');
+                // Download report
+                if (data.report_url) {
+                    window.open(data.report_url, '_blank');
+                }
+            }
+        });
+}
+
+// ==================== EVENT LISTENERS ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadManagerData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadManagerData, 30000);
+    
+    // Auto-refresh messaging stats every 60 seconds
+    setInterval(loadMessagingStats, 60000);
+    
+    // Show/hide role selection based on notification type
+    document.getElementById('notificationType').addEventListener('change', function() {
+        const roleSelection = document.getElementById('roleSelection');
+        roleSelection.style.display = this.value === 'role' ? 'block' : 'none';
+    });
+    
+    // Generate initial one-time password
+    generateOneTimePassword();
+    
+    // Initialize messaging system from base.html
+    if (typeof initMessaging === 'function') {
+        initMessaging();
+    }
+});
+</script>
+{% endblock %}

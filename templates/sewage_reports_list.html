@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Sewage Reports - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-toilet fa-2x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">Sewage Reports</h2>
+                            <p class="mb-0">MARPOL Annex IV - Sewage Management</p>
+                        </div>
+                    </div>
+                    <a href="/sewage-report" class="btn btn-dark">
+                        <i class="fas fa-plus me-2"></i> New Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <div id="reportsTable">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-warning" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading reports...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadSewageReports();
+});
+
+function loadSewageReports() {
+    fetch('/api/sewage-reports', {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.reports) {
+            displayReports(data.reports);
+        } else {
+            document.getElementById('reportsTable').innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No sewage reports found. <a href="/sewage-report">Create one now</a>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading reports:', error);
+        document.getElementById('reportsTable').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error loading reports
+            </div>
+        `;
+    });
+}
+
+function displayReports(reports) {
+    if (!reports || reports.length === 0) {
+        document.getElementById('reportsTable').innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No sewage reports found. <a href="/sewage-report">Create one now</a>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Report ID</th>
+                        <th>Vessel Name</th>
+                        <th>Date</th>
+                        <th>Tank Level</th>
+                        <th>Treatment</th>
+                        <th>Disposal Method</th>
+                        <th>Officer</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    reports.forEach(report => {
+        const date = new Date(report.report_date).toLocaleDateString();
+        html += `
+            <tr>
+                <td><strong>${report.report_id || 'N/A'}</strong></td>
+                <td>${report.vessel_name || 'N/A'}</td>
+                <td>${date}</td>
+                <td>${report.sewage_tank_level || '0'}%</td>
+                <td><small>${report.treatment_method ? report.treatment_method.replace(/_/g, ' ') : 'N/A'}</small></td>
+                <td><small>${report.disposal_method ? report.disposal_method.replace(/_/g, ' ') : 'N/A'}</small></td>
+                <td>${report.officer_name || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-warning" onclick="viewReport('${report.report_id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.getElementById('reportsTable').innerHTML = html;
+}
+
+function viewReport(reportId) {
+    alert('View report: ' + reportId + '\n(Feature coming soon)');
+}
+</script>
+{% endblock %}

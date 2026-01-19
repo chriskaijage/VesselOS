@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Logbook Entries - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-book fa-2x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">Ship's Logbook</h2>
+                            <p class="mb-0">Official Vessel Navigation and Status Log</p>
+                        </div>
+                    </div>
+                    <a href="/logbook" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i> New Entry
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <div id="reportsTable">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading entries...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadLogbookEntries();
+});
+
+function loadLogbookEntries() {
+    fetch('/api/logbook-entries', {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.entries) {
+            displayEntries(data.entries);
+        } else {
+            document.getElementById('reportsTable').innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No logbook entries found. <a href="/logbook">Create one now</a>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading entries:', error);
+        document.getElementById('reportsTable').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error loading entries
+            </div>
+        `;
+    });
+}
+
+function displayEntries(entries) {
+    if (!entries || entries.length === 0) {
+        document.getElementById('reportsTable').innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No logbook entries found. <a href="/logbook">Create one now</a>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Entry ID</th>
+                        <th>Vessel Name</th>
+                        <th>Date</th>
+                        <th>Watch Period</th>
+                        <th>Course / Speed</th>
+                        <th>Weather</th>
+                        <th>Officer</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    entries.forEach(entry => {
+        const date = new Date(entry.entry_date).toLocaleDateString();
+        html += `
+            <tr>
+                <td><strong>${entry.entry_id || 'N/A'}</strong></td>
+                <td>${entry.vessel_name || 'N/A'}</td>
+                <td>${date}</td>
+                <td><small>${entry.watch_period || 'N/A'}</small></td>
+                <td><small>${entry.course || '0'}° / ${entry.speed || '0'} kts</small></td>
+                <td><span class="badge bg-light text-dark">${entry.weather_conditions ? entry.weather_conditions.replace(/_/g, ' ') : 'N/A'}</span></td>
+                <td>${entry.officer_name || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="viewEntry('${entry.entry_id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.getElementById('reportsTable').innerHTML = html;
+}
+
+function viewEntry(entryId) {
+    alert('View entry: ' + entryId + '\n(Feature coming soon)');
+}
+</script>
+{% endblock %}

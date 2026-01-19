@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+
+{% block title %}Waste Transfer Note - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-trash-alt fa-2x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">Waste Transfer Note (Garbage Record)</h2>
+                            <p class="mb-0">MARPOL Annex V - Port Reception Facility (PRF) Waste Offload Documentation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MARPOL Annex V Compliance Alert -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-2 border-info">
+                <h6 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>MARPOL Annex V (Prevention of Pollution by Garbage) Compliance</h6>
+                <ul class="mb-0 small">
+                    <li><strong>Reception Facility Requirement:</strong> All garbage must be delivered to an adequate PRF before leaving port. This transfer note is the receipt proving proper disposal</li>
+                    <li><strong>MARPOL Garbage Categories:</strong> All waste must be categorized and recorded in the Ship's Garbage Record Book (GRB) with corresponding quantities and disposal methods</li>
+                    <li><strong>Truck Traceability:</strong> Vehicle registration/license plate is mandatory for tracking waste chain of custody and regulatory verification</li>
+                    <li><strong>PRF Certification:</strong> PRF operator signature and facility stamp/details are required as proof of waste reception and disposal capability</li>
+                    <li><strong>Officer Attestation:</strong> Ship's officer must sign confirming waste was delivered and garbage record book entry is complete</li>
+                    <li><strong>Record Retention:</strong> This transfer note must be retained on board for at least 3 years (SOLAS requirement) and kept with Garbage Record Book</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <form id="wasteTransferForm">
+                <!-- Vessel Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-ship me-2"></i> Vessel Identification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vessel Name *</label>
+                                <input type="text" class="form-control" name="vessel_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IMO Number *</label>
+                                <input type="text" class="form-control" name="imo_number" placeholder="IMO1234567" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Port & Offload Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Port & Waste Offload Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Port Name *</label>
+                                <input type="text" class="form-control" name="port_name" placeholder="e.g., Singapore, Rotterdam" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Port Country/Region</label>
+                                <input type="text" class="form-control" name="port_country" placeholder="e.g., Singapore">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date of Offload *</label>
+                                <input type="date" class="form-control" name="offload_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Time of Offload (Start) *</label>
+                                <input type="time" class="form-control" name="offload_time_start" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Time of Offload (Complete)</label>
+                                <input type="time" class="form-control" name="offload_time_complete">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Garbage Record Book Entry Number *</label>
+                                <input type="text" class="form-control" name="grb_entry_number" placeholder="e.g., GRB Entry #45" required>
+                                <small class="text-muted">Reference to corresponding entry in Ship's Garbage Record Book</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Port Reception Facility (PRF) Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-building me-2"></i> Port Reception Facility (PRF) Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">PRF Name / Facility Name *</label>
+                                <input type="text" class="form-control" name="prf_name" placeholder="e.g., Port Services Ltd, GreenPort Disposal" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">PRF License / Registration Number</label>
+                                <input type="text" class="form-control" name="prf_license_number" placeholder="Facility license/permit number">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">PRF Contact Person / Operator Name *</label>
+                                <input type="text" class="form-control" name="prf_operator_name" placeholder="Facility representative/supervisor" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">PRF Contact Phone</label>
+                                <input type="tel" class="form-control" name="prf_contact_phone" placeholder="+1 (555) 123-4567">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">PRF Address / Location</label>
+                            <textarea class="form-control" name="prf_address" rows="2" placeholder="Full address of the reception facility"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collecting Truck / Vehicle Details -->
+                <div class="card mb-4 border-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-truck me-2"></i> TRUCK/VEHICLE DETAILS (CRITICAL FOR TRACEABILITY)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger small mb-3">
+                            <i class="fas fa-warning me-1"></i><strong>Critical Field:</strong> Truck registration/license plate number is mandatory for waste chain of custody and regulatory traceability. Port State Control and flag state inspections require this information.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Truck Registration / License Plate Number *</label>
+                                <input type="text" class="form-control" name="truck_license_plate" placeholder="e.g., ABC-123-XYZ" required>
+                                <small class="text-muted">Vehicle registration number - critical for traceability</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Truck/Vehicle Type *</label>
+                                <select class="form-select" name="truck_type" required>
+                                    <option value="">-- Select Vehicle Type --</option>
+                                    <option value="garbage_truck">Garbage Truck (Compactor)</option>
+                                    <option value="flat_bed">Flat Bed Truck</option>
+                                    <option value="container_truck">Container Truck</option>
+                                    <option value="tank_truck">Tank Truck (for oils)</option>
+                                    <option value="specialized">Specialized Waste Vehicle</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Driver Name</label>
+                                <input type="text" class="form-control" name="truck_driver_name" placeholder="Driver name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Truck Capacity (m³)</label>
+                                <input type="number" class="form-control" name="truck_capacity" min="0" step="0.1" placeholder="e.g., 25.0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MARPOL Annex V Garbage Categories & Quantities -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-list-check me-2"></i> Waste Categories & Quantities (MARPOL Annex V)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Record all waste transferred using standard MARPOL garbage categories. Categories not applicable should be left as 0.</p>
+
+                        <!-- Category 1: Plastics -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-cube me-2" style="color: #4c6ef5;"></i> 1. PLASTICS (All forms - bags, containers, fishing nets, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_plastics_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_plastics_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="landfill">Landfill</option>
+                                        <option value="recycling">Recycling</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 2: Food Waste -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-apple-alt me-2" style="color: #f59f00;"></i> 2. FOOD WASTE (Galley waste, provisions, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_food_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_food_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="composting">Composting</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="landfill">Landfill</option>
+                                        <option value="animal_feed">Animal Feed Processing</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 3: Domestic Waste -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-box me-2" style="color: #868e96;"></i> 3. DOMESTIC WASTE (Paper, cardboard, rags, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_domestic_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_domestic_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="landfill">Landfill</option>
+                                        <option value="recycling">Recycling (Paper/Cardboard)</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 4: Cooking Oil/Animal Fat -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-oil-can me-2" style="color: #c3002f;"></i> 4. COOKING OIL & ANIMAL FAT (From galley operations)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (litres)</label>
+                                    <input type="number" class="form-control" name="waste_oil_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_oil_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="recycling">Recycling/Reprocessing</option>
+                                        <option value="biofuel">Biofuel Production</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 5: Incinerator Ashes -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-fire me-2" style="color: #ff6b6b;"></i> 5. INCINERATOR ASHES (From ship's incinerator)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_ashes_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_ashes_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="landfill">Landfill</option>
+                                        <option value="incineration">Further Processing</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 6: Operational Waste -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-cogs me-2" style="color: #343a40;"></i> 6. OPERATIONAL WASTE (Lubricating oil filters, engine room rags, metal scraps, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_operational_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_operational_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="recycling">Recycling</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="hazardous_disposal">Hazardous Waste Facility</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 7: Animal Carcasses -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-skull me-2" style="color: #9c36b5;"></i> 7. ANIMAL CARCASSES (Dead livestock/pets)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (number of carcasses)</label>
+                                    <input type="number" class="form-control" name="waste_animals_qty" min="0" step="1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_animals_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="rendering">Rendering/Processing</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="burial">Burial (subject to regulations)</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 8: Fishing Gear -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-fish me-2" style="color: #1971c2;"></i> 8. FISHING GEAR (Nets, hooks, fishing lines, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_fishing_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_fishing_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="recycling">Recycling</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="landfill">Landfill</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 9: E-Waste -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-laptop me-2" style="color: #0b7285;"></i> 9. E-WASTE (Electronics, batteries, light bulbs, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_ewaste_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_ewaste_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="ewaste_facility">E-Waste Recycling Facility</option>
+                                        <option value="incineration">Incineration (non-recoverable items)</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category 10: Cargo Residues -->
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-bag me-2" style="color: #d6ad0a;"></i> 10. CARGO RESIDUES (Non-HME - grain, sugar, coffee grounds, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="waste_cargo_qty" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Cargo Type / Description</label>
+                                    <input type="text" class="form-control" name="waste_cargo_type" placeholder="e.g., grain dust, sugar residue">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Disposal Method</label>
+                                    <select class="form-select" name="waste_cargo_method">
+                                        <option value="">-- Select Method --</option>
+                                        <option value="recycling">Recycling/Reuse</option>
+                                        <option value="incineration">Incineration</option>
+                                        <option value="landfill">Landfill</option>
+                                        <option value="agricultural">Agricultural Use</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remarks & Observations -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i> Remarks & Observations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">General Remarks</label>
+                            <textarea class="form-control" name="remarks" rows="3" placeholder="Observations about waste offload process, any issues, PRF capacity, weather conditions, truck condition, etc."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" name="additional_notes" rows="2" placeholder="Any other relevant information for the waste transfer record"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signatures Section -->
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-pen-fancy me-2"></i> Port Reception Facility (PRF) Operator</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="border rounded p-3" style="background-color: #f8f9fa; min-height: 120px;">
+                                    <canvas id="prfSignatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
+                                </div>
+                                <div class="mt-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearPrfSignature()">Clear Signature</button>
+                                </div>
+                                <small class="text-muted">PRF operator/supervisor signature & stamp/facility seal</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-pen-fancy me-2"></i> Ship's Officer Signature</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="border rounded p-3" style="background-color: #f8f9fa; min-height: 120px;">
+                                    <canvas id="shipSignatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
+                                </div>
+                                <div class="mt-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearShipSignature()">Clear Signature</button>
+                                </div>
+                                <small class="text-muted">Ship's officer signature (Chief Officer, Captain, or Chief Engineer)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ship's Officer Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i> Ship's Officer in Charge</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Officer Name (Auto-filled)</label>
+                                <input type="text" class="form-control" id="officer_name" readonly value="{{ current_user.first_name }} {{ current_user.last_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Officer Rank/Position *</label>
+                                <input type="text" class="form-control" name="officer_rank" placeholder="Chief Officer / Captain / Chief Engineer" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certification -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-certificate me-2"></i> Waste Transfer Certification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Certification:</strong> I hereby certify that all waste listed above was delivered to the named Port Reception Facility on the stated date and time. This waste transfer note serves as proof of proper disposal in accordance with MARPOL Annex V requirements. The corresponding entry in the Ship's Garbage Record Book (GRB) is complete and accurate. This document shall be retained on board for at least 3 years as per SOLAS regulations.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-check me-2"></i> Submit Waste Transfer Note
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// PRF Signature Canvas
+let prfSignatureCanvas = document.getElementById('prfSignatureCanvas');
+let prfCanvasContext = prfSignatureCanvas.getContext('2d');
+let prfIsDrawing = false;
+let prfLastX = 0;
+let prfLastY = 0;
+
+function resizePrfCanvas() {
+    prfSignatureCanvas.width = prfSignatureCanvas.offsetWidth;
+    prfSignatureCanvas.height = 120;
+    prfCanvasContext.strokeStyle = '#000';
+    prfCanvasContext.lineWidth = 2;
+    prfCanvasContext.lineCap = 'round';
+    prfCanvasContext.lineJoin = 'round';
+}
+
+resizePrfCanvas();
+
+prfSignatureCanvas.addEventListener('mousedown', (e) => {
+    prfIsDrawing = true;
+    [prfLastX, prfLastY] = [e.offsetX, e.offsetY];
+});
+
+prfSignatureCanvas.addEventListener('mousemove', (e) => {
+    if (!prfIsDrawing) return;
+    prfCanvasContext.beginPath();
+    prfCanvasContext.moveTo(prfLastX, prfLastY);
+    prfCanvasContext.lineTo(e.offsetX, e.offsetY);
+    prfCanvasContext.stroke();
+    [prfLastX, prfLastY] = [e.offsetX, e.offsetY];
+});
+
+prfSignatureCanvas.addEventListener('mouseup', () => { prfIsDrawing = false; });
+prfSignatureCanvas.addEventListener('mouseout', () => { prfIsDrawing = false; });
+
+function clearPrfSignature() {
+    prfCanvasContext.clearRect(0, 0, prfSignatureCanvas.width, prfSignatureCanvas.height);
+}
+
+// Ship Signature Canvas
+let shipSignatureCanvas = document.getElementById('shipSignatureCanvas');
+let shipCanvasContext = shipSignatureCanvas.getContext('2d');
+let shipIsDrawing = false;
+let shipLastX = 0;
+let shipLastY = 0;
+
+function resizeShipCanvas() {
+    shipSignatureCanvas.width = shipSignatureCanvas.offsetWidth;
+    shipSignatureCanvas.height = 120;
+    shipCanvasContext.strokeStyle = '#000';
+    shipCanvasContext.lineWidth = 2;
+    shipCanvasContext.lineCap = 'round';
+    shipCanvasContext.lineJoin = 'round';
+}
+
+resizeShipCanvas();
+window.addEventListener('resize', () => {
+    resizePrfCanvas();
+    resizeShipCanvas();
+});
+
+shipSignatureCanvas.addEventListener('mousedown', (e) => {
+    shipIsDrawing = true;
+    [shipLastX, shipLastY] = [e.offsetX, e.offsetY];
+});
+
+shipSignatureCanvas.addEventListener('mousemove', (e) => {
+    if (!shipIsDrawing) return;
+    shipCanvasContext.beginPath();
+    shipCanvasContext.moveTo(shipLastX, shipLastY);
+    shipCanvasContext.lineTo(e.offsetX, e.offsetY);
+    shipCanvasContext.stroke();
+    [shipLastX, shipLastY] = [e.offsetX, e.offsetY];
+});
+
+shipSignatureCanvas.addEventListener('mouseup', () => { shipIsDrawing = false; });
+shipSignatureCanvas.addEventListener('mouseout', () => { shipIsDrawing = false; });
+
+function clearShipSignature() {
+    shipCanvasContext.clearRect(0, 0, shipSignatureCanvas.width, shipSignatureCanvas.height);
+}
+
+// Form Submission
+document.getElementById('wasteTransferForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    data.prf_signature_data = prfSignatureCanvas.toDataURL();
+    data.ship_signature_data = shipSignatureCanvas.toDataURL();
+    
+    fetch('/api/waste-transfer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', `Waste Transfer Note ${result.report_id} submitted successfully!`);
+            setTimeout(() => window.location.href = '/waste-transfers_list', 2000);
+        } else {
+            showAlert('danger', result.error || 'Failed to submit report');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error.message);
+    });
+});
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+document.querySelector('input[name="offload_date"]').valueAsDate = new Date();
+</script>
+{% endblock %}

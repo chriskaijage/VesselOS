@@ -1,0 +1,681 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Monitor - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-tachometer-alt me-3 fa-2x"></i>
+                    <div>
+                        <h2 class="mb-0">Real-Time Performance Monitor</h2>
+                        <p class="mb-0">Live tracking of service metrics and system performance</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Performance Metrics -->
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <div class="metric-value text-primary" id="avgSQI">85.2</div>
+                <div class="metric-label">Average SQI</div>
+                <small class="text-muted">Service Quality Index</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <div class="metric-value text-success" id="avgMTTR">124</div>
+                <div class="metric-label">Avg MTTR (min)</div>
+                <small class="text-muted">Mean Time To Repair</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <div class="metric-value text-warning" id="firstTimeFix">82%</div>
+                <div class="metric-label">First-Time Fix</div>
+                <small class="text-muted">Success Rate</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <div class="metric-value text-danger" id="emergencyResponse">94%</div>
+                <div class="metric-label">Emergency Response</div>
+                <small class="text-muted">Within 30 mins</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Main Charts -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> SQI Trend (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="sqiTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-clock me-2"></i> Response Time Distribution</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="responseTimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-star me-2"></i> Service Ratings</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="ratingsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Live Updates -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-broadcast-tower me-2"></i> Live Service Updates</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="liveUpdates">
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">MV Ocean Carrier</h6>
+                            <small>2 mins ago</small>
+                        </div>
+                        <p class="mb-1">Engine maintenance completed</p>
+                        <small class="text-success"><i class="fas fa-check-circle me-1"></i> SQI: 92.5</small>
+                    </div>
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">SS Sea Voyager</h6>
+                            <small>15 mins ago</small>
+                        </div>
+                        <p class="mb-1">Electrical repair in progress</p>
+                        <small class="text-warning"><i class="fas fa-clock me-1"></i> Estimated: 45 min</small>
+                    </div>
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">MV Coastal</h6>
+                            <small>30 mins ago</small>
+                        </div>
+                        <p class="mb-1">Emergency request received</p>
+                        <small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Priority: HIGH</small>
+                    </div>
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">MV Horizon</h6>
+                            <small>1 hour ago</small>
+                        </div>
+                        <p class="mb-1">Routine inspection completed</p>
+                        <small class="text-primary"><i class="fas fa-check me-1"></i> All systems OK</small>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-outline-info btn-sm" onclick="loadLiveUpdates()">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh Updates
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Targets -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bullseye me-2"></i> Performance Targets</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>SQI Target: 85+</span>
+                        <span>85.2/100</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" style="width: 85.2%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>MTTR Target: ≤ 120 min</span>
+                        <span>124/120</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-warning" style="width: 103%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>First-Time Fix: ≥ 85%</span>
+                        <span>82%/85%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-info" style="width: 96.5%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Emergency Response: ≥ 95%</span>
+                        <span>94%/95%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-primary" style="width: 98.9%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Today's Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="h4 text-primary">8</div>
+                        <small class="text-muted">Services Completed</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="h4 text-warning">3</div>
+                        <small class="text-muted">In Progress</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-success">2</div>
+                        <small class="text-muted">Excellent Ratings</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-danger">1</div>
+                        <small class="text-muted">Emergency Cases</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Performance by Category -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> Performance by Service Category</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Avg SQI</th>
+                                <th>Avg MTTR</th>
+                                <th>Success Rate</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><i class="fas fa-cog text-primary me-2"></i> Engine Parts</td>
+                                <td><span class="badge bg-success">88.5</span></td>
+                                <td>112 min</td>
+                                <td>92%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-bolt text-warning me-2"></i> Electrical</td>
+                                <td><span class="badge bg-primary">82.3</span></td>
+                                <td>98 min</td>
+                                <td>88%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-compress text-info me-2"></i> Hydraulic</td>
+                                <td><span class="badge bg-warning">76.8</span></td>
+                                <td>145 min</td>
+                                <td>81%</td>
+                                <td><i class="fas fa-arrow-down text-danger"></i></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-satellite-dish text-success me-2"></i> Navigation</td>
+                                <td><span class="badge bg-success">91.2</span></td>
+                                <td>85 min</td>
+                                <td>95%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-shield-alt text-danger me-2"></i> Safety Gear</td>
+                                <td><span class="badge bg-success">94.5</span></td>
+                                <td>65 min</td>
+                                <td>98%</td>
+                                <td><i class="fas fa-minus text-muted"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Performers -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i> Top Performers (This Month)</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">David Chen</h6>
+                                <small class="text-muted">Quality Officer</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="h5 mb-0 text-success">92.8</div>
+                                <small class="text-muted">Avg SQI</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">Maria Garcia</h6>
+                                <small class="text-muted">Harbour Master</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="h5 mb-0 text-primary">88.5</div>
+                                <small class="text-muted">Avg SQI</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="rounded-circle bg-success d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">John Smith</h6>
+                                <small class="text-muted">Port Engineer</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="h5 mb-0 text-warning">84.2</div>
+                                <small class="text-muted">Avg SQI</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="rounded-circle bg-info d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">Sarah Johnson</h6>
+                                <small class="text-muted">Quality Surveyor</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="h5 mb-0 text-info">81.5</div>
+                                <small class="text-muted">Avg SQI</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Health -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i> System Health Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <i class="fas fa-database fa-2x text-success mb-2"></i>
+                            <div>Database</div>
+                            <small class="text-success"><i class="fas fa-check-circle me-1"></i> Healthy</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <i class="fas fa-server fa-2x text-success mb-2"></i>
+                            <div>API Server</div>
+                            <small class="text-success"><i class="fas fa-check-circle me-1"></i> Online</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <i class="fas fa-upload fa-2x text-success mb-2"></i>
+                            <div>File Upload</div>
+                            <small class="text-success"><i class="fas fa-check-circle me-1"></i> Operational</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                            <div>Analytics</div>
+                            <small class="text-success"><i class="fas fa-check-circle me-1"></i> Active</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let sqiChart, responseTimeChart, ratingsChart;
+
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    startLiveUpdates();
+    
+    // Refresh data every 30 seconds
+    setInterval(updateMetrics, 30000);
+});
+
+function initializeCharts() {
+    // SQI Trend Chart
+    const sqiCtx = document.getElementById('sqiTrendChart').getContext('2d');
+    sqiChart = new Chart(sqiCtx, {
+        type: 'line',
+        data: {
+            labels: generateLast30Days(),
+            datasets: [{
+                label: 'Daily SQI',
+                data: generateRandomData(30, 75, 95),
+                borderColor: '#0056b3',
+                backgroundColor: 'rgba(0, 86, 179, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 70,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'SQI Score'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Response Time Chart
+    const rtCtx = document.getElementById('responseTimeChart').getContext('2d');
+    responseTimeChart = new Chart(rtCtx, {
+        type: 'bar',
+        data: {
+            labels: ['<1h', '1-2h', '2-4h', '4-8h', '>8h'],
+            datasets: [{
+                label: 'Number of Services',
+                data: [12, 25, 18, 8, 3],
+                backgroundColor: [
+                    '#28a745',
+                    '#17a2b8',
+                    '#ffc107',
+                    '#fd7e14',
+                    '#dc3545'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Services'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Ratings Chart
+    const ratingsCtx = document.getElementById('ratingsChart').getContext('2d');
+    ratingsChart = new Chart(ratingsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Excellent', 'Good', 'Average', 'Poor', 'Critical'],
+            datasets: [{
+                data: [35, 42, 15, 6, 2],
+                backgroundColor: [
+                    '#28a745',
+                    '#17a2b8',
+                    '#ffc107',
+                    '#fd7e14',
+                    '#dc3545'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function generateLast30Days() {
+    const dates = [];
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        dates.push(date.getDate().toString().padStart(2, '0'));
+    }
+    return dates;
+}
+
+function generateRandomData(count, min, max) {
+    const data = [];
+    for (let i = 0; i < count; i++) {
+        data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+    }
+    return data;
+}
+
+function updateMetrics() {
+    // Update metric values with slight random variation
+    document.getElementById('avgSQI').textContent = (85.2 + (Math.random() * 2 - 1)).toFixed(1);
+    document.getElementById('avgMTTR').textContent = Math.round(124 + (Math.random() * 10 - 5));
+    document.getElementById('firstTimeFix').textContent = Math.round(82 + (Math.random() * 4 - 2)) + '%';
+    document.getElementById('emergencyResponse').textContent = Math.round(94 + (Math.random() * 2 - 1)) + '%';
+    
+    // Update chart data
+    updateCharts();
+}
+
+function updateCharts() {
+    // Update SQI trend chart
+    const newData = generateRandomData(30, 75, 95);
+    sqiChart.data.datasets[0].data = newData;
+    sqiChart.update();
+    
+    // Update response time chart with slight variations
+    const rtData = responseTimeChart.data.datasets[0].data;
+    responseTimeChart.data.datasets[0].data = rtData.map(value => 
+        Math.max(0, value + Math.round(Math.random() * 3 - 1))
+    );
+    responseTimeChart.update();
+}
+
+function loadLiveUpdates() {
+    const updates = [
+        {
+            vessel: 'MV Ocean Carrier',
+            time: 'Just now',
+            description: 'Preventive maintenance scheduled',
+            status: 'info',
+            statusText: 'Scheduled: Tomorrow'
+        },
+        {
+            vessel: 'SS Atlantic',
+            time: '5 mins ago',
+            description: 'Navigation system calibration',
+            status: 'success',
+            statusText: 'Completed'
+        },
+        {
+            vessel: 'MV Pacific',
+            time: '12 mins ago',
+            description: 'Fuel system inspection',
+            status: 'warning',
+            statusText: 'In Progress'
+        },
+        {
+            vessel: 'MV Horizon',
+            time: '25 mins ago',
+            description: 'Safety equipment audit',
+            status: 'success',
+            statusText: 'Passed'
+        }
+    ];
+    
+    let html = '';
+    updates.forEach(update => {
+        const statusIcon = update.status === 'success' ? 'check-circle' :
+                         update.status === 'warning' ? 'clock' :
+                         update.status === 'danger' ? 'exclamation-triangle' : 'info-circle';
+        
+        const statusColor = update.status === 'success' ? 'success' :
+                          update.status === 'warning' ? 'warning' :
+                          update.status === 'danger' ? 'danger' : 'info';
+        
+        html += `
+            <div class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${update.vessel}</h6>
+                    <small>${update.time}</small>
+                </div>
+                <p class="mb-1">${update.description}</p>
+                <small class="text-${statusColor}">
+                    <i class="fas fa-${statusIcon} me-1"></i> ${update.statusText}
+                </small>
+            </div>
+        `;
+    });
+    
+    document.getElementById('liveUpdates').innerHTML = html;
+}
+
+function startLiveUpdates() {
+    // Simulate live updates every 10 seconds
+    setInterval(() => {
+        const updatesList = document.getElementById('liveUpdates');
+        const firstChild = updatesList.firstElementChild;
+        
+        if (firstChild) {
+            // Add "just updated" class
+            firstChild.classList.add('border-start', 'border-3', 'border-primary');
+            
+            // Remove class after 3 seconds
+            setTimeout(() => {
+                firstChild.classList.remove('border-start', 'border-3', 'border-primary');
+            }, 3000);
+        }
+    }, 10000);
+}
+</script>
+
+<style>
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+    transition: all 0.3s ease;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: translateX(2px);
+}
+</style>
+{% endblock %}

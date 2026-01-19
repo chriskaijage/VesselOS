@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Marine Service Center{% endblock %}
+
+{% block content %}
+{% if current_user_profile.profile_pic_url %}
+<div class="text-center mb-4">
+    <img src="{{ current_user_profile.profile_pic_url }}" 
+         class="rounded-circle shadow" 
+         style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #667eea;"
+         alt="Profile Picture">
+    <h4 class="mt-3">{{ current_user_profile.full_name }}</h4>
+    <p class="text-muted">{{ current_user_profile.rank }} • {{ current_user_profile.role|replace('_', ' ')|title }}</p>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-ship fa-4x mb-3" style="color: #667eea;"></i>
+                    <h1 class="display-5">Marine Service Expert System</h1>
+                    <p class="lead">International Standard Marine Service Management Platform</p>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Welcome to the Marine Service Center!</strong>
+                            <p class="mb-0 mt-2">This system manages marine maintenance requests, inventory, and service quality evaluations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-primary">
+            <div class="card-body text-center">
+                <div class="metric-value" id="totalRequests">--</div>
+                <div class="metric-label">Total Requests</div>
+                <small class="text-muted">All maintenance requests</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-success">
+            <div class="card-body text-center">
+                <div class="metric-value" id="avgResponse">--</div>
+                <div class="metric-label">Avg Response</div>
+                <small class="text-muted">Response time in hours</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-warning">
+            <div class="card-body text-center">
+                <div class="metric-value" id="satisfaction">--</div>
+                <div class="metric-label">Satisfaction</div>
+                <small class="text-muted">Service satisfaction rate</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-info">
+            <div class="card-body text-center">
+                <div class="metric-value" id="activeShips">--</div>
+                <div class="metric-label">Active Ships</div>
+                <small class="text-muted">Currently being serviced</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Activities -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i> Recent Activities</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Activity</th>
+                                <th>Vessel</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentActivities">
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="spinner-border" role="status" style="color: #667eea;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading activities...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Features -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-tools fa-3x text-warning mb-3"></i>
+                        <h5>Maintenance Management</h5>
+                        <p class="small">Track and manage ship maintenance requests with real-time updates</p>
+                        <a href="/maintenance-request" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-plus me-1"></i> Request Service
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                        <h5>Performance Analytics</h5>
+                        <p class="small">Monitor service quality and performance metrics with detailed reports</p>
+                        <a href="/reports" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-chart-bar me-1"></i> View Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/profile" class="btn btn-primary mb-2">
+                        <i class="fas fa-user-circle me-2"></i> My Profile
+                    </a>
+                    <a href="/monitor" class="btn btn-info mb-2">
+                        <i class="fas fa-chart-bar me-2"></i> Performance Monitor
+                    </a>
+                    <a href="/reports" class="btn btn-success mb-2">
+                        <i class="fas fa-file-alt me-2"></i> Generate Report
+                    </a>
+                    <button class="btn btn-warning" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i> Refresh Dashboard
+                    </button>
+                </div>
+                
+                <hr class="my-3">
+                
+                <!-- System Status -->
+                <h6 class="mb-3"><i class="fas fa-server me-2"></i> System Status</h6>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Database</span>
+                            <span class="badge bg-success">Online</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>File Storage</span>
+                            <span class="badge bg-success">Active</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>API Services</span>
+                            <span class="badge bg-success">Running</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Security</span>
+                            <span class="badge bg-success">Protected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Upcoming Events -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Today's Schedule</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Morning Briefing</h6>
+                            <small>09:00 AM</small>
+                        </div>
+                        <p class="mb-1 small">Daily operations meeting</p>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Inventory Check</h6>
+                            <small>11:00 AM</small>
+                        </div>
+                        <p class="mb-1 small">Monthly inventory audit</p>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Team Meeting</h6>
+                            <small>03:00 PM</small>
+                        </div>
+                        <p class="mb-1 small">Weekly team coordination</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Emergency Contact -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Emergency Contacts</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-phone-alt fa-2x text-danger mb-2"></i>
+                            <h6>Emergency Hotline</h6>
+                            <p class="mb-1">+1-800-MARINE-EMERG</p>
+                            <small class="text-muted">24/7 Emergency Support</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-user-md fa-2x text-warning mb-2"></i>
+                            <h6>Medical Emergency</h6>
+                            <p class="mb-1">+1-800-MARINE-MED</p>
+                            <small class="text-muted">Medical Assistance</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-shield-alt fa-2x mb-2" style="color: #667eea;"></i>
+                            <h6>Security</h6>
+                            <p class="mb-1">+1-800-MARINE-SEC</p>
+                            <small class="text-muted">Security Operations</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-headset fa-2x text-success mb-2"></i>
+                            <h6>Technical Support</h6>
+                            <p class="mb-1">+1-800-MARINE-TECH</p>
+                            <small class="text-muted">Technical Assistance</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadDashboardData() {
+    // Load general dashboard data
+    fetch('/api/dashboard-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update metrics with sample data
+                document.getElementById('totalRequests').textContent = '156';
+                document.getElementById('avgResponse').textContent = '4.2';
+                document.getElementById('satisfaction').textContent = '92%';
+                document.getElementById('activeShips').textContent = '18';
+                
+                // Load recent activities
+                loadRecentActivities();
+            }
+        });
+}
+
+function loadRecentActivities() {
+    // Sample activities data
+    const activities = [
+        { time: '10:30 AM', activity: 'Maintenance request completed', vessel: 'MV Ocean Carrier', status: 'Completed' },
+        { time: '09:45 AM', activity: 'New inventory item added', vessel: 'N/A', status: 'Updated' },
+        { time: '08:15 AM', activity: 'Emergency request authorized', vessel: 'SS Atlantic', status: 'Emergency' },
+        { time: 'Yesterday', activity: 'Service evaluation submitted', vessel: 'MV Horizon', status: 'Evaluated' },
+        { time: 'Yesterday', activity: 'Monthly report generated', vessel: 'N/A', status: 'Report' }
+    ];
+    
+    let html = '';
+    activities.forEach(activity => {
+        const statusBadge = activity.status === 'Emergency' ? 'danger' :
+                          activity.status === 'Completed' ? 'success' :
+                          activity.status === 'Evaluated' ? 'info' : 'warning';
+        
+        html += `
+            <tr>
+                <td><small class="text-muted">${activity.time}</small></td>
+                <td>${activity.activity}</td>
+                <td>${activity.vessel}</td>
+                <td><span class="badge bg-${statusBadge}">${activity.status}</span></td>
+            </tr>
+        `;
+    });
+    
+    document.getElementById('recentActivities').innerHTML = html;
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+});
+</script>
+{% endblock %}

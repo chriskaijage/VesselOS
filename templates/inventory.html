@@ -1,0 +1,2119 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Management - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-boxes me-3 fa-2x text-white"></i>
+                    <div>
+                        <h2 class="mb-0">Inventory Management System</h2>
+                        <p class="mb-0">Real-time inventory tracking and management</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Inventory Actions -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> Inventory Actions</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary w-100 mb-3" onclick="addNewItem()">
+                    <i class="fas fa-plus-circle me-2"></i> Add New Item
+                </button>
+                <button class="btn btn-success w-100 mb-3" onclick="importInventory()">
+                    <i class="fas fa-file-import me-2"></i> Import from CSV
+                </button>
+                <button class="btn btn-info w-100 mb-3" onclick="exportInventory()">
+                    <i class="fas fa-file-export me-2"></i> Export to CSV
+                </button>
+                <button class="btn btn-warning w-100 mb-3" onclick="generateInventoryReport()">
+                    <i class="fas fa-chart-pie me-2"></i> Generate Report
+                </button>
+                <button class="btn btn-danger w-100" onclick="viewLowStock()">
+                    <i class="fas fa-exclamation-triangle me-2"></i> View Low Stock
+                </button>
+                <button class="btn btn-secondary w-100 mt-3" onclick="uploadInventoryFolders()">
+                    <i class="fas fa-folder-open me-2"></i> Upload Folders (CSV)
+                </button>
+                
+                <hr class="my-3">
+                
+                <!-- Quick Filters -->
+                <h6 class="mt-3"><i class="fas fa-filter me-2"></i> Quick Filters</h6>
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action" onclick="filterByStatus('LOW')">
+                        <i class="fas fa-exclamation-circle text-warning me-2"></i> Low Stock
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="filterByStatus('CRITICAL')">
+                        <i class="fas fa-skull-crossbones text-danger me-2"></i> Critical Stock
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="filterByCategory('Engine Parts')">
+                        <i class="fas fa-cog text-primary me-2"></i> Engine Parts
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="filterByCategory('Safety Gear')">
+                        <i class="fas fa-shield-alt text-success me-2"></i> Safety Gear
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="showAllItems()">
+                        <i class="fas fa-boxes text-info me-2"></i> Show All Items
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Inventory Summary -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Inventory Summary</h6>
+            </div>
+            <div class="card-body" id="inventorySummary">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 small">Loading summary...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Inventory Table -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-boxes me-2"></i> Current Inventory</h5>
+                    <div class="input-group" style="width: 300px;">
+                        <input type="text" class="form-control" placeholder="Search inventory..." id="inventorySearch" onkeyup="searchInventory()">
+                        <button class="btn btn-outline-primary" onclick="searchInventory()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="clearSearch()" title="Clear search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Part Number</th>
+                                <th>Part Name</th>
+                                <th>Category</th>
+                                <th>Current</th>
+                                <th>Min</th>
+                                <th>Reorder</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTable">
+                            <tr>
+                                <td colspan="10" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading inventory data...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <span id="itemCount">0 items</span>
+                    </div>
+                    <nav>
+                        <ul class="pagination mb-0" id="pagination">
+                            <!-- Pagination will be generated here -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Low Stock Alerts -->
+        <div class="card mt-4" id="lowStockCard" style="display: none;">
+            <div class="card-header bg-warning text-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Low Stock Alerts</h5>
+                    <button class="btn btn-sm btn-warning" onclick="reorderAllLowStock()">
+                        <i class="fas fa-shopping-cart me-1"></i> Reorder All
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="lowStockAlerts">
+                <!-- Low stock items will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Uploaded Inventory Files (CSV) -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-folder me-2"></i> Inventory Files (CSV Uploads)</h5>
+                    <button class="btn btn-sm btn-light" onclick="refreshInventoryFiles()">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="inventoryFilesContainer">
+                <div class="text-center py-4">
+                    <p class="text-muted"><i class="fas fa-folder-open me-2"></i> No inventory files uploaded yet.</p>
+                    <p class="text-muted small">Click "Upload Folders (CSV)" in the sidebar to add files.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Item Management Modals -->
+<div class="modal fade" id="itemModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add New Inventory Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeItemModal()"></button>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Part Number *</label>
+                                <input type="text" class="form-control" name="part_number" required id="partNumber">
+                                <div class="form-text">Unique identifier for the part</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Part Name *</label>
+                                <input type="text" class="form-control" name="part_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Category *</label>
+                                <select class="form-select" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option>Engine Parts</option>
+                                    <option>Navigation Equipment</option>
+                                    <option>Safety Gear</option>
+                                    <option>Electrical Components</option>
+                                    <option>Hydraulic Systems</option>
+                                    <option>Pump Systems</option>
+                                    <option>Deck Equipment</option>
+                                    <option>Communication</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Manufacturer</label>
+                                <input type="text" class="form-control" name="manufacturer">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Current Stock *</label>
+                                <input type="number" class="form-control" name="current_stock" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Minimum Stock *</label>
+                                <input type="number" class="form-control" name="minimum_stock" min="1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Reorder Level *</label>
+                                <input type="number" class="form-control" name="reorder_level" min="0" required>
+                                <div class="form-text">Must be less than Minimum Stock</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location" placeholder="e.g., A-12-B3">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Shelf Life (months)</label>
+                                <input type="number" class="form-control" name="shelf_life_months" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-danger" id="formError" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeItemModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveItem()" id="saveItemBtn">Save Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents Modal (upload multiple files per item) -->
+<div class="modal fade" id="docsModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Inventory Documents - <span id="docsModalPart">""</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Upload Documents (multiple allowed)</label>
+                    <input type="file" class="form-control" id="docFiles" multiple>
+                    <small class="text-muted">Allowed types: images, pdf, docs, spreadsheets. Uploading appends files; existing files are preserved.</small>
+                </div>
+
+                <div id="docsList" class="mt-3">
+                    <p class="text-muted">No documents uploaded yet.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="uploadDocsBtn" onclick="uploadDocs()">Upload Files</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Inventory from CSV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select CSV File</label>
+                    <input type="file" class="form-control" id="csvFile" accept=".csv" onchange="previewCSV()">
+                    <small class="text-muted">File must follow the inventory template format</small>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i> CSV Format Requirements</h6>
+                    <p class="small mb-1">Required columns (case-sensitive):</p>
+                    <ul class="small mb-2">
+                        <li><code>part_number</code> (text, unique)</li>
+                        <li><code>part_name</code> (text)</li>
+                        <li><code>category</code> (text)</li>
+                        <li><code>current_stock</code> (integer)</li>
+                        <li><code>minimum_stock</code> (integer)</li>
+                        <li><code>reorder_level</code> (integer)</li>
+                    </ul>
+                    <p class="small mb-0">Optional columns: manufacturer, location, shelf_life_months, notes</p>
+                </div>
+                
+                <div id="importPreview" style="display: none;">
+                    <h6>Preview (first 5 rows):</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered" id="previewTable">
+                            <!-- Preview will be loaded here -->
+                        </table>
+                    </div>
+                    <div class="alert alert-warning mt-2" id="importWarnings" style="display: none;"></div>
+                </div>
+                
+                <div class="alert alert-success mt-3" id="importSuccess" style="display: none;"></div>
+                <div class="alert alert-danger mt-3" id="importError" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="importButton" disabled onclick="processImport()">
+                    <i class="fas fa-file-import me-1"></i> Import Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteItemName"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Folders with CSV Files Modal -->
+<div class="modal fade" id="folderUploadModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-folder-open me-2"></i> Upload Inventory Folders (CSV Files)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Folders with CSV Files</label>
+                    <input type="file" class="form-control" id="folderInput" multiple webkitdirectory directory mozdirectory />
+                    <small class="text-muted">Select folders containing CSV files with part data. CSV columns: part_number, part_name, category, quantity, location (optional: manufacturer, notes)</small>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i> Expected CSV Format</h6>
+                    <p class="small mb-2">Each CSV file should contain parts inventory data:</p>
+                    <ul class="small mb-0">
+                        <li><code>part_number</code> - Unique part identifier</li>
+                        <li><code>part_name</code> - Description of the part</li>
+                        <li><code>category</code> - Part category/type</li>
+                        <li><code>quantity</code> - Number in stock</li>
+                        <li><code>location</code> - Storage location (optional)</li>
+                    </ul>
+                </div>
+                
+                <div id="folderUploadProgress" style="display: none;">
+                    <h6>Upload Progress:</h6>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" id="folderUploadBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p id="folderUploadStatus" class="small text-muted"></p>
+                </div>
+                
+                <div id="folderUploadResult" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="processFolderBtn" onclick="processFolderUpload()">
+                    <i class="fas fa-upload me-1"></i> Process & Import
+                </button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let currentPage = 1;
+const itemsPerPage = 10;
+let allInventory = [];
+let filteredInventory = [];
+let currentItemToDelete = null;
+let isEditMode = false;
+let currentPartNumber = '';
+let userRole = "{{ current_user_profile.role if current_user_profile else 'guest' }}";
+let totalInventoryFolders = 0;
+
+// Load inventory data
+function loadInventory() {
+    showLoading(true);
+    
+    fetch('/api/inventory')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                allInventory = data.inventory;
+                filteredInventory = [...allInventory];
+                updateInventoryTable();
+                updateInventorySummary(data.summary);
+                checkLowStock(data.inventory);
+            } else {
+                showAlert('danger', `Error loading inventory: ${data.error || 'Unknown error'}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading inventory:', error);
+            showAlert('danger', `Network error loading inventory: ${error.message}`);
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+}
+
+function showLoading(show) {
+    const table = document.getElementById('inventoryTable');
+    if (show) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading inventory data...</p>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function updateInventoryTable() {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageItems = filteredInventory.slice(start, end);
+    const table = document.getElementById('inventoryTable');
+    const count = document.getElementById('itemCount');
+    
+    if (pageItems.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center py-4">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No inventory items found</p>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="addNewItem()">
+                        <i class="fas fa-plus me-1"></i> Add First Item
+                    </button>
+                </td>
+            </tr>
+        `;
+    } else {
+        let html = '';
+        pageItems.forEach(item => {
+            const statusClass = item.status === 'CRITICAL' ? 'table-danger' :
+                              item.status === 'LOW' ? 'table-warning' : '';
+            
+            const statusBadge = item.status === 'CRITICAL' ? 'danger' :
+                              item.status === 'LOW' ? 'warning' : 'success';
+            
+            const stockPercent = (item.current_stock / item.minimum_stock) * 100;
+            const stockBar = `
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-${stockPercent > 100 ? 'success' : stockPercent > 50 ? 'warning' : 'danger'}" 
+                         style="width: ${Math.min(100, stockPercent)}%">
+                    </div>
+                </div>
+                <small>${item.current_stock}/${item.minimum_stock}</small>
+            `;
+            
+            // Create action buttons based on user role
+            let actionButtons = `
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="editItem('${escapeSingleQuote(item.part_number)}')" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-success" onclick="updateStock('${escapeSingleQuote(item.part_number)}', '${escapeSingleQuote(item.part_name)}')" title="Update Stock">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="reorderItem('${escapeSingleQuote(item.part_number)}', '${escapeSingleQuote(item.part_name)}')" title="Reorder">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="openDocsModal('${escapeSingleQuote(item.part_number)}')" title="Documents">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+            `;
+            
+            // Only show delete button for port engineers
+            if (userRole === 'port_engineer') {
+                actionButtons += `
+                    <button class="btn btn-outline-danger" onclick="confirmDelete('${escapeSingleQuote(item.part_number)}', '${escapeSingleQuote(item.part_name)}')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+            }
+            
+            actionButtons += `</div>`;
+            
+            html += `
+                <tr class="${statusClass}">
+                    <td><strong>${escapeHtml(item.part_number)}</strong></td>
+                    <td>${escapeHtml(item.part_name)}</td>
+                    <td>${escapeHtml(item.category || 'N/A')}</td>
+                    <td>${stockBar}</td>
+                    <td>${item.minimum_stock}</td>
+                    <td>${item.reorder_level}</td>
+                    <td><span class="badge bg-${statusBadge}">${item.status}</span></td>
+                    <td><small>${formatDate(item.last_updated)}</small></td>
+                    <td>${actionButtons}</td>
+                </tr>
+            `;
+        });
+        
+        table.innerHTML = html;
+    }
+    
+    count.textContent = `${filteredInventory.length} items (Page ${currentPage} of ${Math.ceil(filteredInventory.length / itemsPerPage)})`;
+    updatePagination();
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+    const pagination = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    
+    // Previous button
+    html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Previous</a>
+        </li>
+    `;
+    
+    // Page numbers
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage + 1 < maxVisible) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    if (startPage > 1) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(1); return false;">1</a></li>`;
+        if (startPage > 2) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        html += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a></li>`;
+    }
+    
+    // Next button
+    html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Next</a>
+        </li>
+    `;
+    
+    pagination.innerHTML = html;
+}
+
+function changePage(page) {
+    currentPage = page;
+    updateInventoryTable();
+    // Scroll to top of table
+    document.getElementById('inventoryTable').scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateInventorySummary(summary) {
+    const summaryDiv = document.getElementById('inventorySummary');
+    
+    if (!summary) {
+        summaryDiv.innerHTML = '<div class="text-muted">No summary data available</div>';
+        return;
+    }
+    
+    summaryDiv.innerHTML = `
+        <div class="row text-center">
+            <div class="col-6 mb-3">
+                <div class="h4 text-primary">${summary.total_items || 0}</div>
+                <small class="text-muted">Total Items</small>
+            </div>
+            <div class="col-6 mb-3">
+                <div class="h4 text-danger">${(summary.low_stock || 0) + (summary.critical_stock || 0)}</div>
+                <small class="text-muted">Low/Critical</small>
+            </div>
+            <div class="col-6 mb-3">
+                <div class="h4 text-info">${summary.categories || 0}</div>
+                <small class="text-muted">Categories</small>
+            </div>
+            <div class="col-6 mb-3">
+                <div class="h4 text-warning">${totalInventoryFolders || 0}</div>
+                <small class="text-muted">Inventory Folders</small>
+            </div>
+        </div>
+        <div class="mt-3">
+            <small class="text-muted d-block">Last updated: Just now</small>
+        </div>
+    `;
+}
+
+function checkLowStock(inventory) {
+    const lowStockItems = inventory.filter(item => item.status === 'LOW' || item.status === 'CRITICAL');
+    
+    if (lowStockItems.length > 0) {
+        const card = document.getElementById('lowStockCard');
+        const alerts = document.getElementById('lowStockAlerts');
+        
+        card.style.display = 'block';
+        
+        let html = '<div class="row">';
+        lowStockItems.slice(0, 6).forEach(item => {
+            const criticality = item.status === 'CRITICAL' ? 'danger' : 'warning';
+            const icon = item.status === 'CRITICAL' ? 'skull-crossbones' : 'exclamation-triangle';
+            
+            html += `
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-${criticality}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-${icon} me-1"></i>
+                                    ${escapeHtml(item.part_number)}
+                                </h6>
+                                <p class="mb-1 small">${escapeHtml(item.part_name)}</p>
+                                <small>Current: ${item.current_stock} | Min: ${item.minimum_stock} | Reorder: ${item.reorder_level}</small>
+                                <br>
+                                <small class="text-muted">Category: ${escapeHtml(item.category || 'N/A')}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-${criticality}" 
+                                    onclick="reorderItem('${escapeSingleQuote(item.part_number)}', '${escapeSingleQuote(item.part_name)}')">
+                                <i class="fas fa-shopping-cart me-1"></i>Reorder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        if (lowStockItems.length > 6) {
+            html += `
+                <div class="text-center">
+                    <button class="btn btn-sm btn-outline-warning" onclick="viewLowStock()">
+                        View All ${lowStockItems.length} Low Stock Items
+                    </button>
+                </div>
+            `;
+        }
+        
+        alerts.innerHTML = html;
+    } else {
+        document.getElementById('lowStockCard').style.display = 'none';
+    }
+}
+
+// Item Management Functions
+function addNewItem() {
+    isEditMode = false;
+    currentPartNumber = '';
+    document.getElementById('modalTitle').textContent = 'Add New Inventory Item';
+    document.getElementById('itemForm').reset();
+    document.getElementById('partNumber').disabled = false;
+    document.getElementById('formError').style.display = 'none';
+    
+    const modal = new bootstrap.Modal(document.getElementById('itemModal'));
+    modal.show();
+}
+
+function editItem(partNumber) {
+    showLoading(true);
+    
+    fetch(`/api/inventory/item/${encodeURIComponent(partNumber)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                isEditMode = true;
+                currentPartNumber = partNumber;
+                document.getElementById('modalTitle').textContent = 'Edit Inventory Item';
+                const form = document.getElementById('itemForm');
+                
+                // Fill form with item data
+                Object.keys(data.item).forEach(key => {
+                    if (form.elements[key]) {
+                        form.elements[key].value = data.item[key] || '';
+                    }
+                });
+                
+                // Disable part number field in edit mode
+                document.getElementById('partNumber').disabled = true;
+                document.getElementById('formError').style.display = 'none';
+                
+                const modal = new bootstrap.Modal(document.getElementById('itemModal'));
+                modal.show();
+            } else {
+                showAlert('danger', `Error loading item: ${data.error || 'Unknown error'}`);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', `Network error: ${error.message}`);
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+}
+
+function closeItemModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('itemModal'));
+    if (modal) {
+        modal.hide();
+    }
+    document.getElementById('itemForm').reset();
+    document.getElementById('formError').style.display = 'none';
+}
+
+function saveItem() {
+    const form = document.getElementById('itemForm');
+    const formError = document.getElementById('formError');
+    const saveBtn = document.getElementById('saveItemBtn');
+    
+    // Validate form
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = {};
+    for (const [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    // Validate reorder level < minimum stock
+    const minimumStock = parseInt(data.minimum_stock);
+    const reorderLevel = parseInt(data.reorder_level);
+    
+    if (reorderLevel >= minimumStock) {
+        formError.textContent = 'Reorder level must be less than minimum stock';
+        formError.style.display = 'block';
+        return;
+    }
+    
+    // Show loading state
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+    saveBtn.disabled = true;
+    formError.style.display = 'none';
+    
+    // Send to API
+    fetch('/api/inventory/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message || 'Item saved successfully!');
+            closeItemModal();
+            loadInventory();
+        } else {
+            formError.textContent = result.error || 'Failed to save item';
+            formError.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        formError.textContent = `Network error: ${error.message}`;
+        formError.style.display = 'block';
+    })
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function updateStock(partNumber, partName) {
+    const currentStock = prompt(`Enter new stock quantity for "${partName}":`, '');
+    
+    if (currentStock === null) return; // User cancelled
+    
+    const stock = parseInt(currentStock);
+    if (isNaN(stock) || stock < 0) {
+        showAlert('warning', 'Please enter a valid positive number');
+        return;
+    }
+    
+    fetch('/api/inventory/update-stock', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({part_number: partNumber, current_stock: stock})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || 'Stock updated successfully!');
+            loadInventory();
+        } else {
+            showAlert('danger', data.error || 'Failed to update stock');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', `Network error: ${error.message}`);
+    });
+}
+
+function reorderItem(partNumber, partName) {
+    const quantity = prompt(`Enter reorder quantity for "${partName}":`, '10');
+    
+    if (quantity === null) return;
+    
+    const qty = parseInt(quantity);
+    if (isNaN(qty) || qty <= 0) {
+        showAlert('warning', 'Please enter a valid positive number');
+        return;
+    }
+    
+    fetch('/api/request-reorder', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            part_number: partNumber,
+            part_name: partName,
+            quantity: qty
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || `Reorder request submitted for ${partName}.`);
+        } else {
+            showAlert('danger', data.error || 'Failed to submit reorder request');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', `Network error: ${error.message}`);
+    });
+}
+
+function confirmDelete(partNumber, partName) {
+    currentItemToDelete = partNumber;
+    document.getElementById('deleteItemName').textContent = `"${partName}" (${partNumber})`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+function deleteItem() {
+    if (!currentItemToDelete) return;
+    
+    fetch(`/api/inventory/delete/${encodeURIComponent(currentItemToDelete)}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || 'Item deleted successfully!');
+            loadInventory();
+        } else {
+            showAlert('danger', data.error || 'Failed to delete item');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', `Network error: ${error.message}`);
+    })
+    .finally(() => {
+        currentItemToDelete = null;
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+        if (modal) {
+            modal.hide();
+        }
+    });
+}
+
+// Import/Export Functions
+function importInventory() {
+    const modal = new bootstrap.Modal(document.getElementById('importModal'));
+    resetImportModal();
+    modal.show();
+}
+
+function resetImportModal() {
+    document.getElementById('csvFile').value = '';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importButton').disabled = true;
+    document.getElementById('importWarnings').style.display = 'none';
+    document.getElementById('importSuccess').style.display = 'none';
+    document.getElementById('importError').style.display = 'none';
+}
+
+function previewCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        resetImportModal();
+        return;
+    }
+    
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+        showAlert('warning', 'Please select a CSV file');
+        fileInput.value = '';
+        resetImportModal();
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const text = event.target.result;
+            const rows = text.trim().split('\n');
+            
+            if (rows.length < 2) { // header + at least 1 data row
+                showImportError('CSV file must contain at least one data row');
+                return;
+            }
+            
+            const headers = rows[0].split(',').map(h => h.trim());
+            const requiredHeaders = ['part_number', 'part_name', 'category', 'current_stock', 
+                                   'minimum_stock', 'reorder_level'];
+            
+            // Check for required headers
+            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+            if (missingHeaders.length > 0) {
+                showImportError(`Missing required columns: ${missingHeaders.join(', ')}`);
+                return;
+            }
+            
+            // Show preview
+            showCSVPreview(rows.slice(0, 6)); // Show header + 5 rows
+            document.getElementById('importButton').disabled = false;
+            
+        } catch (error) {
+            showImportError(`Error reading CSV: ${error.message}`);
+        }
+    };
+    
+    reader.onerror = function() {
+        showImportError('Error reading file');
+    };
+    
+    reader.readAsText(file);
+}
+
+function showCSVPreview(rows) {
+    const previewDiv = document.getElementById('importPreview');
+    const previewTable = document.getElementById('previewTable');
+    
+    let html = '<thead><tr>';
+    const headers = rows[0].split(',').map(h => h.trim());
+    headers.forEach(header => {
+        html += `<th>${escapeHtml(header)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    for (let i = 1; i < Math.min(rows.length, 6); i++) {
+        html += '<tr>';
+        const cols = rows[i].split(',').map(c => c.trim());
+        cols.forEach(col => {
+            html += `<td>${escapeHtml(col)}</td>`;
+        });
+        html += '</tr>';
+    }
+    html += '</tbody>';
+    
+    if (rows.length > 6) {
+        html += `<tfoot><tr><td colspan="${headers.length}" class="text-center text-muted">
+                    ... and ${rows.length - 6} more rows
+                 </td></tr></tfoot>`;
+    }
+    
+    previewTable.innerHTML = html;
+    previewDiv.style.display = 'block';
+}
+
+function showImportError(message) {
+    document.getElementById('importError').textContent = message;
+    document.getElementById('importError').style.display = 'block';
+    document.getElementById('importButton').disabled = true;
+}
+
+function processImport() {
+    const fileInput = document.getElementById('csvFile');
+    const file = fileInput.files[0];
+    const importBtn = document.getElementById('importButton');
+    
+    if (!file) {
+        showImportError('No file selected');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Show loading state
+    const originalText = importBtn.innerHTML;
+    importBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+    importBtn.disabled = true;
+    
+    // Clear previous messages
+    document.getElementById('importError').style.display = 'none';
+    document.getElementById('importSuccess').style.display = 'none';
+    document.getElementById('importWarnings').style.display = 'none';
+    
+    fetch('/api/inventory/import', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('importSuccess').textContent = data.message || 'Import completed successfully!';
+            document.getElementById('importSuccess').style.display = 'block';
+            
+            if (data.errors && data.errors.length > 0) {
+                document.getElementById('importWarnings').innerHTML = `
+                    <strong>Import completed with ${data.errors.length} errors:</strong>
+                    <ul class="mb-0">
+                        ${data.errors.map(err => `<li>${escapeHtml(err)}</li>`).join('')}
+                    </ul>
+                `;
+                document.getElementById('importWarnings').style.display = 'block';
+            }
+            
+            // Reload inventory after successful import
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                loadInventory();
+            }, 2000);
+            
+        } else {
+            showImportError(data.error || 'Import failed');
+        }
+    })
+    .catch(error => {
+        showImportError(`Network error: ${error.message}`);
+    })
+    .finally(() => {
+        importBtn.innerHTML = originalText;
+        importBtn.disabled = false;
+    });
+}
+
+function exportInventory() {
+    // Show loading
+    showAlert('info', 'Preparing export...');
+    
+    fetch('/api/inventory/export')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Export failed: ${response.status}`);
+            }
+            
+            // Get filename from content-disposition header or generate one
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = 'inventory_export.csv';
+            
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (match) {
+                    filename = match[1];
+                }
+            }
+            
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showAlert('success', 'Export completed! File downloading...');
+        })
+        .catch(error => {
+            console.error('Export error:', error);
+            showAlert('danger', `Export failed: ${error.message}`);
+        });
+}
+
+function generateInventoryReport() {
+    window.location.href = '/reports';
+}
+
+function reorderAllLowStock() {
+    const lowStockItems = allInventory.filter(item => item.status === 'LOW' || item.status === 'CRITICAL');
+    
+    if (lowStockItems.length === 0) {
+        showAlert('info', 'No low stock items found.');
+        return;
+    }
+    
+    if (confirm(`Request reorder for all ${lowStockItems.length} low stock items?`)) {
+        fetch('/api/bulk-reorder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({items: lowStockItems.slice(0, 50)}) // Limit to 50 items
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message || `Bulk reorder request submitted for ${lowStockItems.length} items.`);
+            } else {
+                showAlert('danger', data.error || 'Failed to submit bulk reorder request');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', `Network error: ${error.message}`);
+        });
+    }
+}
+
+// Filter Functions
+function filterByStatus(status) {
+    filteredInventory = allInventory.filter(item => item.status === status);
+    currentPage = 1;
+    updateInventoryTable();
+    showAlert('info', `Showing ${filteredInventory.length} ${status.toLowerCase()} stock items`);
+}
+
+function filterByCategory(category) {
+    filteredInventory = allInventory.filter(item => item.category === category);
+    currentPage = 1;
+    updateInventoryTable();
+    showAlert('info', `Showing ${filteredInventory.length} items in ${category}`);
+}
+
+function showAllItems() {
+    filteredInventory = [...allInventory];
+    currentPage = 1;
+    updateInventoryTable();
+    document.getElementById('inventorySearch').value = '';
+    showAlert('info', `Showing all ${allInventory.length} items`);
+}
+
+function viewLowStock() {
+    filterByStatus('LOW');
+    filterByStatus('CRITICAL');
+}
+
+function searchInventory() {
+    const searchTerm = document.getElementById('inventorySearch').value.toLowerCase().trim();
+    
+    if (searchTerm === '') {
+        filteredInventory = [...allInventory];
+    } else {
+        filteredInventory = allInventory.filter(item => 
+            (item.part_number && item.part_number.toLowerCase().includes(searchTerm)) ||
+            (item.part_name && item.part_name.toLowerCase().includes(searchTerm)) ||
+            (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+            (item.manufacturer && item.manufacturer.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    currentPage = 1;
+    updateInventoryTable();
+    
+    if (searchTerm && filteredInventory.length === 0) {
+        showAlert('warning', `No items found for "${searchTerm}"`);
+    }
+}
+
+function clearSearch() {
+    document.getElementById('inventorySearch').value = '';
+    searchInventory();
+}
+
+// Utility Functions
+function showAlert(type, message) {
+    // Remove existing alerts
+    const existingAlerts = document.querySelectorAll('.alert.position-fixed');
+    existingAlerts.forEach(alert => alert.remove());
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            <div>${escapeHtml(message)}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function escapeSingleQuote(text) {
+    return text.replace(/'/g, "\\'");
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    } catch (e) {
+        return dateString;
+    }
+}
+
+// Documents modal functions
+let currentDocsPart = '';
+function openDocsModal(partNumber) {
+    currentDocsPart = partNumber;
+    document.getElementById('docsModalPart').textContent = partNumber;
+    document.getElementById('docFiles').value = '';
+    refreshDocsList(partNumber);
+    const modal = new bootstrap.Modal(document.getElementById('docsModal'));
+    modal.show();
+}
+
+function refreshDocsList(partNumber) {
+    const list = document.getElementById('docsList');
+    list.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm"></span> Loading documents...</div>';
+    fetch(`/api/inventory/${encodeURIComponent(partNumber)}/docs`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                list.innerHTML = `<div class="text-danger">${data.error || 'Failed to load documents'}</div>`;
+                return;
+            }
+            if (!data.docs || data.docs.length === 0) {
+                list.innerHTML = '<p class="text-muted">No documents uploaded for this item.</p>';
+                return;
+            }
+
+            let html = '<ul class="list-group">';
+            data.docs.forEach(doc => {
+                const url = `/uploads/${doc.stored_filename}`;
+                html += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="${url}" target="_blank">${escapeHtml(doc.original_filename)}</a>
+                            <div class="small text-muted">${new Date(doc.uploaded_at).toLocaleString()} • ${Math.round((doc.file_size||0)/1024)} KB</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteDoc('${doc.id}')">Delete</button>
+                        </div>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            list.innerHTML = html;
+        })
+        .catch(err => {
+            list.innerHTML = `<div class="text-danger">Network error: ${err.message}</div>`;
+        });
+}
+
+function uploadDocs() {
+    const input = document.getElementById('docFiles');
+    if (!input.files || input.files.length === 0) {
+        showAlert('warning', 'Please select at least one file to upload');
+        return;
+    }
+    const btn = document.getElementById('uploadDocsBtn');
+    const original = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+    btn.disabled = true;
+
+    const fd = new FormData();
+    for (let i = 0; i < input.files.length; i++) {
+        fd.append('files', input.files[i]);
+    }
+
+    fetch(`/api/inventory/${encodeURIComponent(currentDocsPart)}/docs/upload`, {
+        method: 'POST',
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || 'Files uploaded');
+            refreshDocsList(currentDocsPart);
+        } else {
+            showAlert('danger', data.error || 'Upload failed');
+        }
+    })
+    .catch(err => {
+        showAlert('danger', `Network error: ${err.message}`);
+    })
+    .finally(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        input.value = '';
+    });
+}
+
+function deleteDoc(docId) {
+    if (!confirm('Delete this document?')) return;
+    fetch(`/api/inventory/docs/delete/${encodeURIComponent(docId)}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message || 'Document deleted');
+                refreshDocsList(currentDocsPart);
+            } else {
+                showAlert('danger', data.error || 'Failed to delete document');
+            }
+        })
+        .catch(err => showAlert('danger', `Network error: ${err.message}`));
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize
+    loadInventory();
+    loadInventoryFiles();
+    
+    // Set up delete confirmation
+    document.getElementById('confirmDeleteBtn').addEventListener('click', deleteItem);
+    
+    // Set up enter key in search
+    document.getElementById('inventorySearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchInventory();
+        }
+    });
+    
+    // Auto-refresh every 60 seconds
+    setInterval(loadInventory, 60000);
+    
+    // Close modals on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const itemModal = bootstrap.Modal.getInstance(document.getElementById('itemModal'));
+            if (itemModal) {
+                itemModal.hide();
+            }
+            const importModal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
+            if (importModal) {
+                importModal.hide();
+            }
+        }
+    });
+});
+
+// Folder Upload Functions
+function uploadInventoryFolders() {
+    // Clear previous state
+    document.getElementById('folderInput').value = '';
+    document.getElementById('folderUploadProgress').style.display = 'none';
+    document.getElementById('folderUploadResult').innerHTML = '';
+    document.getElementById('processFolderBtn').disabled = false;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('folderUploadModal'));
+    modal.show();
+}
+
+function processFolderUpload() {
+    const folderInput = document.getElementById('folderInput');
+    const files = folderInput.files;
+    
+    if (files.length === 0) {
+        alert('Please select at least one CSV file to upload');
+        return;
+    }
+    
+    // Organize files by folder
+    const folderStructure = {};
+    let csvCount = 0;
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const pathParts = file.webkitRelativePath.split('/');
+        const folderName = pathParts[0];
+        const fileName = file.name;
+        
+        // Only process CSV files
+        if (!fileName.endsWith('.csv')) continue;
+        
+        csvCount++;
+        
+        if (!folderStructure[folderName]) {
+            folderStructure[folderName] = [];
+        }
+        
+        folderStructure[folderName].push({
+            file: file,
+            fileName: fileName,
+            path: file.webkitRelativePath
+        });
+    }
+    
+    if (csvCount === 0) {
+        alert('No CSV files found. Please select folders containing .csv files');
+        return;
+    }
+    
+    // Show progress
+    document.getElementById('folderUploadProgress').style.display = 'block';
+    document.getElementById('processFolderBtn').disabled = true;
+    
+    // Parse all CSV files
+    const folderData = [];
+    let processedCount = 0;
+    
+    for (const folderName in folderStructure) {
+        const csvFiles = folderStructure[folderName];
+        
+        csvFiles.forEach(csvItem => {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                processedCount++;
+                updateProgress(processedCount, csvCount, `Processing ${csvItem.fileName}...`);
+                
+                try {
+                    const csvContent = e.target.result;
+                    const parts = parseCSVContent(csvContent);
+                    
+                    folderData.push({
+                        folderName: folderName,
+                        fileName: csvItem.fileName,
+                        parts: parts
+                    });
+                    
+                    if (processedCount === csvCount) {
+                        uploadFolderDataToServer(folderData);
+                    }
+                } catch (error) {
+                    showError(`Error parsing ${csvItem.fileName}: ${error.message}`);
+                }
+            };
+            
+            reader.readAsText(csvItem.file);
+        });
+    }
+}
+
+function parseCSVContent(csvContent) {
+    const lines = csvContent.trim().split('\n');
+    if (lines.length < 2) {
+        throw new Error('CSV file must contain header row and data rows');
+    }
+    
+    // Parse header
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    // Required columns
+    const requiredCols = ['part_number', 'part_name', 'category', 'quantity'];
+    const missingCols = requiredCols.filter(col => !headers.includes(col));
+    
+    if (missingCols.length > 0) {
+        throw new Error(`CSV missing required columns: ${missingCols.join(', ')}`);
+    }
+    
+    const parts = [];
+    
+    // Parse data rows
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // Handle quoted CSV fields
+        const values = [];
+        let currentValue = '';
+        let inQuotes = false;
+        
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                values.push(currentValue.trim());
+                currentValue = '';
+            } else {
+                currentValue += char;
+            }
+        }
+        values.push(currentValue.trim());
+        
+        // Create part object
+        const part = {};
+        headers.forEach((header, idx) => {
+            if (idx < values.length) {
+                part[header] = values[idx];
+            } else {
+                part[header] = '';
+            }
+        });
+        
+        // Validate required fields
+        if (!part.part_number || !part.part_name || !part.category) {
+            continue; // Skip rows with missing required data
+        }
+        
+        parts.push({
+            part_number: part.part_number,
+            part_name: part.part_name,
+            category: part.category,
+            quantity: parseInt(part.quantity) || 0,
+            location: part.location || '',
+            manufacturer: headers.includes('manufacturer') ? part.manufacturer || '' : '',
+            notes: headers.includes('notes') ? part.notes || '' : ''
+        });
+    }
+    
+    if (parts.length === 0) {
+        throw new Error('No valid parts found in CSV');
+    }
+    
+    return parts;
+}
+
+function uploadFolderDataToServer(folderData) {
+    updateProgress(100, 100, 'Uploading to server...');
+    
+    fetch('/api/inventory-files/upload-csv', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ folders: folderData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess(data);
+        } else {
+            showError(data.error || 'Upload failed');
+        }
+    })
+    .catch(error => {
+        showError('Upload error: ' + error.message);
+    })
+    .finally(() => {
+        document.getElementById('processFolderBtn').disabled = false;
+    });
+}
+
+function updateProgress(current, total, status) {
+    const percentage = Math.round((current / total) * 100);
+    document.getElementById('folderUploadBar').style.width = percentage + '%';
+    document.getElementById('folderUploadStatus').textContent = `${current}/${total} files processed - ${status}`;
+}
+
+function showSuccess(data) {
+    const resultDiv = document.getElementById('folderUploadResult');
+    resultDiv.innerHTML = `
+        <div class="alert alert-success alert-dismissible fade show">
+            <h6 class="alert-heading"><i class="fas fa-check-circle me-2"></i> Upload Successful</h6>
+            <p>Created ${data.data.created_files} folders with ${data.data.created_parts} total parts</p>
+            ${data.data.details && data.data.details.length > 0 ? `
+                <h6 class="mt-3">Summary:</h6>
+                <ul class="mb-0 small">
+                    ${data.data.details.map(d => `<li>${d.folderName}: ${d.partsCount} parts</li>`).join('')}
+                </ul>
+            ` : ''}
+            <button type="button" class="btn btn-sm btn-success mt-2" onclick="closeAndRefresh()">
+                Done - Close and Refresh
+            </button>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function showError(errorMsg) {
+    const resultDiv = document.getElementById('folderUploadResult');
+    resultDiv.innerHTML = `
+        <div class="alert alert-danger alert-dismissible fade show">
+            <h6 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i> Error</h6>
+            <p>${errorMsg}</p>
+            <button type="button" class="btn btn-sm btn-danger mt-2" data-bs-dismiss="alert">
+                Try Again
+            </button>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function closeAndRefresh() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('folderUploadModal'));
+    modal.hide();
+    setTimeout(() => {
+        loadInventory();
+        loadInventoryFiles();
+    }, 300);
+}
+
+// Load and display inventory files
+function loadInventoryFiles() {
+    fetch('/api/inventory-files', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data && data.data.length > 0) {
+            totalInventoryFolders = data.data.length;
+            displayInventoryFiles(data.data);
+            updateInventorySummary();
+        } else {
+            totalInventoryFolders = 0;
+            document.getElementById('inventoryFilesContainer').innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-muted"><i class="fas fa-folder-open me-2"></i> No inventory files uploaded yet.</p>
+                    <p class="text-muted small">Click "Upload Folders (CSV)" in the sidebar to add files.</p>
+                </div>
+            `;
+            updateInventorySummary();
+        }
+    })
+    .catch(error => {
+        console.error('Error loading inventory files:', error);
+    });
+}
+
+function displayInventoryFiles(files) {
+    let html = '<div class="row">';
+    
+    files.forEach(file => {
+        const createdDate = new Date(file.created_at).toLocaleDateString();
+        const partCount = file.part_count || 0;
+        
+        html += `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-left-info">
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate" title="${file.file_name}">
+                            <i class="fas fa-folder text-info me-2"></i> ${file.file_name}
+                        </h6>
+                        <p class="card-text small text-muted">
+                            <strong>Parts:</strong> ${partCount}<br>
+                            <strong>Created:</strong> ${createdDate}
+                        </p>
+                        <div class="btn-group-sm d-flex flex-wrap gap-1">
+                            <button class="btn btn-sm btn-info" onclick="expandFileDetails('${file.file_id}')" title="View parts">
+                                <i class="fas fa-list"></i> View
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="downloadFileCSV('${file.file_id}', '${file.file_name}')" title="Download as CSV">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteInventoryFile('${file.file_id}', '${file.file_name}')" title="Delete file">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="details-${file.file_id}" style="display: none;" class="mt-2">
+                    <!-- Parts will load here -->
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    document.getElementById('inventoryFilesContainer').innerHTML = html;
+}
+
+function expandFileDetails(fileId) {
+    const detailsDiv = document.getElementById(`details-${fileId}`);
+    
+    if (detailsDiv.style.display === 'block') {
+        detailsDiv.style.display = 'none';
+        return;
+    }
+    
+    // Load parts for this file
+    fetch(`/api/inventory-files/${fileId}/parts`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data && data.data.length > 0) {
+            let partsHtml = '<div class="card card-sm"><div class="card-body p-2"><h6 class="mb-2">Parts in this file:</h6><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th style="font-size:0.85rem;">Part Number</th><th style="font-size:0.85rem;">Name</th><th style="font-size:0.85rem;">Qty</th><th style="font-size:0.85rem;">Actions</th></tr></thead><tbody>';
+            
+            data.data.forEach(part => {
+                partsHtml += `
+                    <tr style="font-size:0.85rem;">
+                        <td><strong>${part.part_number}</strong></td>
+                        <td title="${part.part_name}">${part.part_name.substring(0, 20)}${part.part_name.length > 20 ? '...' : ''}</td>
+                        <td><span class="badge bg-secondary">${part.quantity}</span></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editFilePart('${fileId}', '${part.part_id}')" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="requestPartLowStock('${part.part_number}', '${fileId}')" title="Request stock">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteFilePart('${fileId}', '${part.part_id}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            partsHtml += '</tbody></table></div></div></div>';
+            detailsDiv.innerHTML = partsHtml;
+        } else {
+            detailsDiv.innerHTML = '<div class="alert alert-info mb-0 p-2">No parts in this file</div>';
+        }
+        detailsDiv.style.display = 'block';
+    })
+    .catch(error => {
+        detailsDiv.innerHTML = `<div class="alert alert-danger mb-0 p-2">Error loading parts: ${error.message}</div>`;
+        detailsDiv.style.display = 'block';
+    });
+}
+
+function downloadFileCSV(fileId, fileName) {
+    window.location.href = `/api/inventory-files/${fileId}/download-csv`;
+}
+
+function deleteInventoryFile(fileId, fileName) {
+    if (!confirm(`Delete inventory file "${fileName}"? This will also delete all parts in this file.`)) {
+        return;
+    }
+    
+    fetch(`/api/inventory-files/${fileId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('File deleted successfully');
+            loadInventoryFiles();
+        } else {
+            alert('Error: ' + (data.error || 'Could not delete file'));
+        }
+    })
+    .catch(error => alert('Error: ' + error.message));
+}
+
+function editFilePart(fileId, partId) {
+    // Similar to editing regular inventory items
+    // For now, you can fetch the part details and open a modal
+    alert('Edit functionality will open a modal with part details');
+}
+
+function deleteFilePart(fileId, partId) {
+    if (!confirm('Delete this part from the file?')) {
+        return;
+    }
+    
+    fetch(`/api/inventory-files/${fileId}/parts/${partId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            expandFileDetails(fileId); // Reload the parts list
+        } else {
+            alert('Error: ' + (data.error || 'Could not delete part'));
+        }
+    })
+    .catch(error => alert('Error: ' + error.message));
+}
+
+function requestPartLowStock(partNumber, fileId) {
+    const quantity = prompt('Enter quantity to request:', '1');
+    if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
+        return;
+    }
+    
+    const priority = confirm('Mark as HIGH priority? (Cancel for standard)') ? 'high' : 'standard';
+    
+    fetch('/api/procurement/request-low-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            part_number: partNumber,
+            file_id: fileId,
+            quantity_requested: parseInt(quantity),
+            priority: priority,
+            notes: 'Requested from inventory file'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Low stock request created successfully');
+        } else {
+            alert('Error: ' + (data.error || 'Could not create request'));
+        }
+    })
+    .catch(error => alert('Error: ' + error.message));
+}
+
+function refreshInventoryFiles() {
+    loadInventoryFiles();
+}
+</script>
+
+<style>
+/* ===== THEME & COLOR VARIABLES ===== */
+:root {
+    --primary-color: #007acc;
+    --secondary-color: #0e639c;
+    --accent-color: #1a8cd8;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --light-bg: #f8f9fa;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+/* ===== CARD STYLING ===== */
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    border: none;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 1rem 1.5rem;
+}
+
+.card-header i.fas,
+.card-header i.fa,
+.card-header .text-white {
+    color: white !important;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* ===== TABLE STYLING ===== */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--light-bg);
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+    padding: 1rem;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 122, 204, 0.02);
+}
+
+/* ===== BADGE & LABEL STYLING ===== */
+.badge {
+    font-size: 0.75em;
+    padding: 0.5em 0.85em;
+    border-radius: 4px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.badge-primary { background-color: var(--primary-color); }
+.badge-success { background-color: var(--success-color); }
+.badge-warning { background-color: var(--warning-color); color: #212529; }
+.badge-danger { background-color: var(--danger-color); }
+.badge-info { background-color: var(--info-color); }
+
+/* ===== PROGRESS BAR STYLING ===== */
+.progress {
+    background-color: var(--light-bg);
+    border-radius: 6px;
+    height: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+/* ===== BUTTON STYLING ===== */
+.btn-group-sm .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-group-sm .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===== FORM STYLING ===== */
+.form-control, .form-select {
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    padding: 0.625rem 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+    color: #212529;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+/* ===== MODAL STYLING ===== */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px 12px 0 0;
+    padding: 1.5rem;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.modal-backdrop {
+    backdrop-filter: blur(3px);
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* ===== ALERT STYLING ===== */
+.alert {
+    border: none;
+    border-radius: 8px;
+    border-left: 4px solid;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.alert-success { border-left-color: var(--success-color); }
+.alert-danger { border-left-color: var(--danger-color); }
+.alert-warning { border-left-color: var(--warning-color); }
+.alert-info { border-left-color: var(--info-color); }
+
+/* ===== ERROR/SUCCESS MESSAGES ===== */
+#formError, #importError, #uploadResult, #folderUploadResult {
+    margin-top: 1rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 768px) {
+    .btn-group-sm {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .btn-group-sm .btn {
+        flex: 1;
+        min-width: 45px;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.875rem 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+
+{% block title %}Bilge Report - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-water fa-2x me-3"></i>
+                            <div>
+                                <h2 class="mb-0">Bilge Report - OWS Discharge</h2>
+                                <p class="mb-0">MARPOL Annex I Compliance - Oily Water Separator Operation Log</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- MARPOL Compliance Notice -->
+                <div class="card-body bg-light pt-2 pb-2">
+                    <div class="alert alert-danger mb-0" style="font-size: 0.9rem;">
+                        <strong><i class="fas fa-exclamation-triangle me-2"></i>MARPOL Annex I Requirements:</strong>
+                        <ul class="mb-0 mt-2" style="font-size: 0.85rem;">
+                            <li><strong>Oil Content Limit:</strong> Discharge must be < 15 ppm (continuous monitoring required)</li>
+                            <li><strong>OCM Auto-Record Mode:</strong> Oil Content Monitor must be in automatic recording mode</li>
+                            <li><strong>GPS Position:</strong> Latitude/Longitude at start and end of discharge required</li>
+                            <li><strong>Continuous Monitoring:</strong> Oil content must be logged throughout discharge operation</li>
+                            <li><strong>Tank Level Records:</strong> Before and after discharge volumes mandatory</li>
+                            <li><strong>Alarms & Stoppages:</strong> All 15ppm alarm activations and manual stoppages must be logged</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-11 mx-auto">
+            <form id="bilgeReportForm">
+                <!-- Vessel Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-ship me-2"></i> Vessel Identification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vessel Name *</label>
+                                <input type="text" class="form-control" name="vessel_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IMO Number *</label>
+                                <input type="text" class="form-control" name="imo_number" placeholder="IMO1234567" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discharge Operation Date & Time -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i> Discharge Operation Timing (UTC/GMT)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Discharge Start Date (UTC) *</label>
+                                <input type="date" class="form-control" name="report_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Discharge Start Time (UTC) *</label>
+                                <input type="time" class="form-control" name="discharge_start_time" required>
+                                <small class="text-muted">In 24-hour format (UTC/GMT)</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Discharge End Time (UTC) *</label>
+                                <input type="time" class="form-control" name="discharge_end_time" required>
+                                <small class="text-muted">In 24-hour format (UTC/GMT)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total Duration (hours)</label>
+                                <input type="number" step="0.5" class="form-control" name="discharge_duration" placeholder="Auto-calculated" readonly>
+                                <small class="text-muted">Duration between start and end times</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ship Position -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-location-dot me-2"></i> Position of Ship (GPS/Chart Datum)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">Obtain from GPS log. Format: DD°MM'SS"N/S, DD°MM'SS"E/W</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Latitude at Start of Discharge *</label>
+                                <input type="text" class="form-control" name="start_latitude" placeholder="DD°MM'SS&quot;N/S" required>
+                                <small class="text-muted">Example: 40°45'30"N</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Longitude at Start of Discharge *</label>
+                                <input type="text" class="form-control" name="start_longitude" placeholder="DD°MM'SS&quot;E/W" required>
+                                <small class="text-muted">Example: 070°15'45"W</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Latitude at End of Discharge *</label>
+                                <input type="text" class="form-control" name="end_latitude" placeholder="DD°MM'SS&quot;N/S" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Longitude at End of Discharge *</label>
+                                <input type="text" class="form-control" name="end_longitude" placeholder="DD°MM'SS&quot;E/W" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bilge Tank Levels -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Bilge Tank Levels</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tank Level BEFORE Discharge (m³ or litres) *</label>
+                                <input type="number" step="0.01" class="form-control" name="tank_level_before" required placeholder="0.00">
+                                <small class="text-muted">Total bilge volume before discharge operation</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tank Level AFTER Discharge (m³ or litres) *</label>
+                                <input type="number" step="0.01" class="form-control" name="tank_level_after" required placeholder="0.00">
+                                <small class="text-muted">Total bilge volume after discharge operation</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity Discharged -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-droplet me-2"></i> Quantity Discharged</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total Volume Discharged (m³) *</label>
+                                <input type="number" step="0.01" class="form-control" name="quantity_discharged" required placeholder="0.00">
+                                <small class="text-muted">Calculated or measured: Tank Before - Tank After</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Unit of Measurement *</label>
+                                <select class="form-select" name="quantity_unit" required>
+                                    <option value="">Select Unit</option>
+                                    <option value="cubic_meters">Cubic Meters (m³)</option>
+                                    <option value="litres">Litres (L)</option>
+                                    <option value="gallons">Gallons (US)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Oil Content Monitor Data -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-microscope me-2"></i> Oil Content Monitor (OCM) / 15ppm Alarm Recordings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <strong>SOLAS Requirement:</strong> OCM must be in "auto-record" mode continuously during discharge.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">OCM Model / Serial Number</label>
+                                <input type="text" class="form-control" name="ocm_model" placeholder="OWS-2000 / SN: ABC123">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">OCM Status *</label>
+                                <select class="form-select" name="ocm_status" required>
+                                    <option value="">Select Status</option>
+                                    <option value="in_auto_record">In Auto-Record Mode</option>
+                                    <option value="manual_record">Manual Recording</option>
+                                    <option value="spot_checks">Spot-Check Recordings</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Initial Oil Content (ppm) *</label>
+                                <input type="number" step="0.1" class="form-control" name="initial_oil_content_ppm" required placeholder="0.0">
+                                <small class="text-muted">At start of discharge</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Average Oil Content (ppm) *</label>
+                                <input type="number" step="0.1" class="form-control" name="average_oil_content_ppm" required placeholder="0.0">
+                                <small class="text-muted">Throughout discharge</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Final Oil Content (ppm) *</label>
+                                <input type="number" step="0.1" class="form-control" name="final_oil_content_ppm" required placeholder="0.0">
+                                <small class="text-muted">At end of discharge</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">15ppm Alarm Activation Record</label>
+                            <select class="form-select" name="alarm_activation" required>
+                                <option value="">Select Option</option>
+                                <option value="no_alarm">No 15ppm Alarms Activated</option>
+                                <option value="alarm_activated">Alarm Activated - Discharge Stopped</option>
+                                <option value="multiple_alarms">Multiple Alarms - See Remarks</option>
+                            </select>
+                            <small class="text-muted">Oil content exceeded 15 ppm limit during discharge</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">OCM Chart/Data Log Reference</label>
+                            <input type="text" class="form-control" name="ocm_chart_reference" placeholder="Chart paper number / Data file reference">
+                            <small class="text-muted">For archival and inspection purposes</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OWS Operating Parameters -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i> Oily Water Separator (OWS) Operating Parameters</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">OWS Model / Serial Number</label>
+                                <input type="text" class="form-control" name="ows_model" placeholder="OWS-3000 / SN: XYZ789">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">OWS Operating Status *</label>
+                                <select class="form-select" name="ows_status" required>
+                                    <option value="">Select Status</option>
+                                    <option value="normal_operation">Normal Operation</option>
+                                    <option value="manual_override">Manual Override</option>
+                                    <option value="maintenance_mode">Maintenance Mode</option>
+                                    <option value="abnormal">Abnormal Operation</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Inlet Pressure (bar) *</label>
+                                <input type="number" step="0.1" class="form-control" name="inlet_pressure" required placeholder="0.0">
+                                <small class="text-muted">Pressure at OWS inlet</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Outlet Pressure (bar) *</label>
+                                <input type="number" step="0.1" class="form-control" name="outlet_pressure" required placeholder="0.0">
+                                <small class="text-muted">Pressure at OWS outlet</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Differential Pressure (bar)</label>
+                                <input type="number" step="0.1" class="form-control" name="differential_pressure" placeholder="Auto-calculated" readonly>
+                                <small class="text-muted">Inlet - Outlet Pressure</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Flow Rate (m³/hour)</label>
+                                <input type="number" step="0.1" class="form-control" name="flow_rate" placeholder="0.0">
+                                <small class="text-muted">OWS discharge flow rate</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alarms & Stoppages -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-bell me-2"></i> Alarms, Manual Stoppages & Incidents</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">15ppm Alarm Details (if any)</label>
+                            <textarea class="form-control" name="alarm_details" rows="3" placeholder="Time of alarm, reason, action taken, duration of stoppage..."></textarea>
+                            <small class="text-muted">Record time (UTC), reason, action taken, and how alarm was reset</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Manual Stoppages During Discharge</label>
+                            <textarea class="form-control" name="manual_stoppages" rows="3" placeholder="Times and reasons for any manual stops of the discharge operation..."></textarea>
+                            <small class="text-muted">Record reason and duration of each manual stoppage</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Equipment Issues / Anomalies</label>
+                            <textarea class="form-control" name="equipment_issues" rows="3" placeholder="Any OWS or OCM malfunctions, unusual readings, gauge discrepancies..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Officer Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i> Duty Officer / Responsible Person</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Duty Officer Name (Auto-filled)</label>
+                            <input type="text" class="form-control" id="officer_name" readonly value="{{ current_user.first_name }} {{ current_user.last_name }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Officer Rank / Position *</label>
+                            <input type="text" class="form-control" name="officer_rank" placeholder="Chief Engineer / Captain" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Witnessed By (if applicable)</label>
+                            <input type="text" class="form-control" name="witnessed_by" placeholder="Name of other officer/inspector present">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Notes & Remarks -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i> Additional Remarks & Observations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">General Remarks</label>
+                            <textarea class="form-control" name="remarks" rows="4" placeholder="Any relevant observations about the discharge operation, sea state, weather, unusual conditions..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Any additional information or comments"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signature -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-pen-fancy me-2"></i> Duty Officer Signature</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><strong>Note:</strong> By signing below, the duty officer certifies that all information in this report is true, accurate, and complete in accordance with MARPOL Annex I regulations.</p>
+                        <div class="border rounded p-3" style="background-color: #f8f9fa; min-height: 150px;">
+                            <canvas id="signatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
+                        </div>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="clearSignature()">Clear Signature</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-check me-2"></i> Submit Bilge Report
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Signature Canvas Setup
+let signatureCanvas = document.getElementById('signatureCanvas');
+let canvasContext = signatureCanvas.getContext('2d');
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+
+function resizeCanvas() {
+    signatureCanvas.width = signatureCanvas.offsetWidth;
+    signatureCanvas.height = 150;
+    canvasContext.strokeStyle = '#000';
+    canvasContext.lineWidth = 2;
+    canvasContext.lineCap = 'round';
+    canvasContext.lineJoin = 'round';
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+signatureCanvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    canvasContext.beginPath();
+    canvasContext.moveTo(lastX, lastY);
+    canvasContext.lineTo(e.offsetX, e.offsetY);
+    canvasContext.stroke();
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
+signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+function clearSignature() {
+    canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+}
+
+// Calculate discharge duration
+document.querySelector('input[name="discharge_start_time"]')?.addEventListener('change', calculateDuration);
+document.querySelector('input[name="discharge_end_time"]')?.addEventListener('change', calculateDuration);
+
+function calculateDuration() {
+    const startTime = document.querySelector('input[name="discharge_start_time"]').value;
+    const endTime = document.querySelector('input[name="discharge_end_time"]').value;
+    
+    if (startTime && endTime) {
+        const [startHour, startMin] = startTime.split(':').map(Number);
+        const [endHour, endMin] = endTime.split(':').map(Number);
+        
+        let duration = (endHour + endMin/60) - (startHour + startMin/60);
+        if (duration < 0) duration += 24; // Account for next day
+        
+        document.querySelector('input[name="discharge_duration"]').value = duration.toFixed(2);
+    }
+}
+
+// Calculate differential pressure
+document.querySelector('input[name="inlet_pressure"]')?.addEventListener('change', calculateDifferentialPressure);
+document.querySelector('input[name="outlet_pressure"]')?.addEventListener('change', calculateDifferentialPressure);
+
+function calculateDifferentialPressure() {
+    const inlet = parseFloat(document.querySelector('input[name="inlet_pressure"]').value) || 0;
+    const outlet = parseFloat(document.querySelector('input[name="outlet_pressure"]').value) || 0;
+    document.querySelector('input[name="differential_pressure"]').value = (inlet - outlet).toFixed(2);
+}
+
+// Form Submission
+document.getElementById('bilgeReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    data.signature_data = signatureCanvas.toDataURL();
+    
+    if (!data.report_date) {
+        data.report_date = new Date().toISOString().split('T')[0];
+    }
+    
+    fetch('/api/bilge-report', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', `Bilge Report ${result.report_id} submitted successfully!`);
+            setTimeout(() => window.location.href = '/bilge-reports', 2000);
+        } else {
+            showAlert('danger', result.error || 'Failed to submit report');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error.message);
+    });
+});
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+document.querySelector('input[name="report_date"]').valueAsDate = new Date();
+</script>
+{% endblock %}

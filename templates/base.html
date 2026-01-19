@@ -1,0 +1,4765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>{% block title %}Marine Service Center{% endblock %}</title>
+    
+    <!-- Theme Initialization Script (runs before rendering) -->
+    <script>
+        (function() {
+            // Load and apply theme immediately to prevent flickering
+            const savedTheme = localStorage.getItem('selectedTheme') || 'purple';
+            if (savedTheme && savedTheme !== 'purple') {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        })();
+    </script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <style>
+        /* Cursor AI Colors with White Background */
+        :root {
+            /* Cursor AI Accent Colors */
+            --primary-color: #007acc;
+            --secondary-color: #0e639c;
+            --accent-color: #1a8cd8;
+            --primary-rgb: 0, 122, 204;
+            --secondary-rgb: 14, 99, 156;
+            --accent-rgb: 26, 140, 216;
+            
+            /* Legacy variables for backward compatibility */
+            --primary-purple: #007acc;
+            --secondary-purple: #0e639c;
+            --accent-purple: #1a8cd8;
+            --primary-blue: #007acc;
+            --secondary-blue: #0e639c;
+            --accent-blue: #1a8cd8;
+            
+            /* White Background Theme */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #f1f3f5;
+            --bg-hover: #e9ecef;
+            --bg-active: #dee2e6;
+            --light-color: #f8f9fa;
+            
+            /* Border Colors */
+            --border-color: #dee2e6;
+            --border-hover: #ced4da;
+            
+            /* Cursor AI Text Colors (stored for reference) */
+            --text-primary-dark: #cccccc;
+            --text-secondary-dark: #858585;
+            --text-muted-dark: #6a6a6a;
+            
+            /* Text colors for white background - darker and more visible */
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-muted: #6c757d;
+            --text-primary-light: #212529;
+            --text-secondary-light: #495057;
+            --text-muted-light: #6c757d;
+            --text-primary-readable: #212529;
+            
+            /* Common Colors */
+            --success-green: #4ec9b0;
+            --warning-orange: #dcdcaa;
+            --danger-red: #f48771;
+            --info-blue: #4fc1ff;
+            --dark-gray: #1e1e1e;
+            --light-gray: #f8f9fa;
+            --medium-gray: #858585;
+            --white: #ffffff;
+            
+            /* Role Colors */
+            --manager-color: #f48771;
+            --maintenance-color: #dcdcaa;
+            --quality-color: #4ec9b0;
+        }
+        
+        /* Blue Ocean Theme */
+        [data-theme="blue-ocean"] {
+            --primary-color: #2563eb;
+            --secondary-color: #1d4ed8;
+            --accent-color: #3b82f6;
+            --light-color: #eff6ff;
+            --primary-rgb: 37, 99, 235;
+            --primary-purple: #2563eb;
+            --secondary-purple: #1d4ed8;
+            --accent-purple: #3b82f6;
+            --light-purple: #eff6ff;
+            --primary-blue: #2563eb;
+            --secondary-blue: #1d4ed8;
+            --accent-blue: #3b82f6;
+            --light-blue: #eff6ff;
+        }
+        
+        /* Teal Marine Theme */
+        [data-theme="teal-marine"] {
+            --primary-color: #0f766e;
+            --secondary-color: #0d9488;
+            --accent-color: #14b8a6;
+            --light-color: #f0fdfa;
+            --primary-rgb: 15, 118, 110;
+            --secondary-rgb: 13, 148, 136;
+            --accent-rgb: 20, 184, 166;
+            --primary-purple: #0d9488;
+            --secondary-purple: #14b8a6;
+            --accent-purple: #2dd4bf;
+            --light-purple: #f0fdfa;
+            --primary-blue: #0d9488;
+            --secondary-blue: #14b8a6;
+            --accent-blue: #2dd4bf;
+            --light-blue: #f0fdfa;
+        }
+        
+        /* Emerald Theme */
+        [data-theme="emerald"] {
+            --primary-color: #047857;
+            --secondary-color: #059669;
+            --accent-color: #10b981;
+            --light-color: #ecfdf5;
+            --primary-rgb: 4, 120, 87;
+            --secondary-rgb: 5, 150, 105;
+            --accent-rgb: 16, 185, 129;
+            --primary-purple: #059669;
+            --secondary-purple: #10b981;
+            --accent-purple: #34d399;
+            --light-purple: #ecfdf5;
+            --primary-blue: #059669;
+            --secondary-blue: #10b981;
+            --accent-blue: #34d399;
+            --light-blue: #ecfdf5;
+        }
+        
+        /* Indigo Theme */
+        [data-theme="indigo"] {
+            --primary-color: #4338ca;
+            --secondary-color: #4f46e5;
+            --accent-color: #6366f1;
+            --light-color: #eef2ff;
+            --primary-rgb: 67, 56, 202;
+            --secondary-rgb: 79, 70, 229;
+            --accent-rgb: 99, 102, 241;
+            --primary-purple: #4f46e5;
+            --secondary-purple: #6366f1;
+            --accent-purple: #818cf8;
+            --light-purple: #eef2ff;
+            --primary-blue: #4f46e5;
+            --secondary-blue: #6366f1;
+            --accent-blue: #818cf8;
+            --light-blue: #eef2ff;
+        }
+        
+        /* Rose Theme */
+        [data-theme="rose"] {
+            --primary-color: #be123c;
+            --secondary-color: #e11d48;
+            --accent-color: #f43f5e;
+            --light-color: #fff1f2;
+            --primary-rgb: 190, 18, 60;
+            --secondary-rgb: 225, 29, 72;
+            --accent-rgb: 244, 63, 94;
+            --primary-purple: #e11d48;
+            --secondary-purple: #f43f5e;
+            --accent-purple: #fb7185;
+            --light-purple: #fff1f2;
+            --primary-blue: #e11d48;
+            --secondary-blue: #f43f5e;
+            --accent-blue: #fb7185;
+            --light-blue: #fff1f2;
+        }
+        
+        /* Amber Theme */
+        [data-theme="amber"] {
+            --primary-color: #b45309;
+            --secondary-color: #d97706;
+            --accent-color: #f59e0b;
+            --light-color: #fffbeb;
+            --primary-rgb: 180, 83, 9;
+            --secondary-rgb: 217, 119, 6;
+            --accent-rgb: 245, 158, 11;
+            --primary-purple: #d97706;
+            --secondary-purple: #f59e0b;
+            --accent-purple: #fbbf24;
+            --light-purple: #fffbeb;
+            --primary-blue: #d97706;
+            --secondary-blue: #f59e0b;
+            --accent-blue: #fbbf24;
+            --light-blue: #fffbeb;
+        }
+        
+        /* High-Quality Rendering - Optimized for all zoom levels */
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: "kern" 1;
+            font-kerning: normal;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            /* Improve rendering quality */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: auto;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        
+        /* High-quality image and icon rendering */
+        img {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: auto;
+            -ms-interpolation-mode: bicubic;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Vector graphics should scale smoothly */
+        svg {
+            image-rendering: auto;
+            shape-rendering: geometricPrecision;
+            text-rendering: optimizeLegibility;
+        }
+        
+        /* Icons should render smoothly at all sizes */
+        i, .fas, .far, .fal, .fab, .bi, [class^="fa-"], [class*=" fa-"], [class^="bi-"], [class*=" bi-"] {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: normal;
+            display: inline-block;
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary-readable);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-left: 320px; /* Add padding for sidebar */
+            transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: "kern" 1;
+            font-kerning: normal;
+        }
+        
+        /* Use Cursor AI text colors where appropriate (for dark elements) */
+        .sidebar-header,
+        .top-navbar {
+            color: var(--text-primary-readable);
+        }
+        
+        /* Use readable colors for main content */
+        main, .card-body, .table, p, h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary-readable);
+        }
+        
+        /* Use readable secondary/muted colors for less important text */
+        .text-muted, small, .text-secondary {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Ensure all text is visible */
+        p, span, div, label, td, th, li {
+            color: var(--text-primary);
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        /* Links should use primary accent color */
+        a:not(.btn):not(.nav-link):not(.dropdown-item) {
+            color: var(--primary-color);
+        }
+        
+        a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
+            color: var(--accent-color);
+        }
+        
+        /* Ensure dropdown items are visible */
+        .dropdown-item {
+            color: var(--text-primary) !important;
+        }
+        
+        .dropdown-item:hover {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Ensure form controls have visible text */
+        .form-control, .form-select, .form-label {
+            color: var(--text-primary);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-muted);
+            opacity: 1;
+        }
+        
+        /* Ensure input group text is visible */
+        .input-group-text {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+        
+        body.sidebar-collapsed {
+            padding-left: 80px;
+        }
+        
+        /* Remove padding on login/register pages and set dark background */
+        body:has(.login-logo),
+        body:has(.maintenance-header-logo) {
+            padding-left: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 120px !important; /* Add padding for footer on login page */
+            background: var(--bg-primary) !important;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        /* Top Navigation Bar */
+        .top-navbar {
+            background: var(--bg-secondary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 1.5rem;
+            position: fixed;
+            top: 0;
+            left: 0; /* Start from left edge */
+            right: 0;
+            z-index: 1020;
+            height: 70px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            top: 0; /* Start from top to allow header overlap */
+            left: 0;
+            width: 320px;
+            bottom: 120px; /* End above footer */
+            background: transparent; /* Let header and nav sections handle their own backgrounds */
+            z-index: 1030;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent overflow beyond bounds */
+            max-height: calc(100vh - 120px); /* Ensure sidebar doesn't exceed viewport minus footer */
+        }
+        
+        /* Slide only nav and footer sections, not the header */
+        .sidebar-nav,
+        .sidebar-footer {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(0); /* Fully visible by default */
+        }
+        
+        .sidebar.collapsed .sidebar-nav,
+        .sidebar.collapsed .sidebar-footer {
+            transform: translateX(-320px); /* Slide nav and footer off-screen to the left */
+        }
+        
+        .sidebar-header {
+            padding: 0.8rem 1.5rem 0.8rem 1.5rem; /* Left, right padding */
+            padding-right: 4.5rem; /* Extra right padding to make room for toggle button (32px button + 16px spacing + extra margin) */
+            height: 70px; /* Match navbar height */
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: padding 0.3s ease;
+            position: fixed; /* Fixed positioning so it doesn't move with sidebar */
+            top: 0;
+            left: 0;
+            width: 320px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            color: var(--text-primary-light);
+            z-index: 1031; /* Above sidebar container and nav/footer */
+        }
+        
+        .sidebar-header * {
+            color: var(--text-primary-light) !important;
+        }
+        
+        .sidebar.collapsed .sidebar-header {
+            padding: 0.8rem 1.5rem 0.8rem 1.5rem; /* Keep same padding when collapsed */
+            padding-right: 4.5rem; /* Keep extra right padding for toggle button */
+            justify-content: flex-start; /* Keep logo and text aligned left */
+            /* Header stays fixed, no transform needed */
+        }
+        
+        .sidebar-brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-primary) !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            flex: 1; /* Allow brand to take available space */
+            min-width: 0; /* Allow text to truncate if needed */
+            overflow: hidden; /* Prevent overflow */
+            max-width: calc(100% - 0px); /* Ensure it doesn't exceed container */
+        }
+        
+        .sidebar-brand span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+            max-width: 100%; /* Ensure span respects parent constraints */
+        }
+        
+        /* Keep brand text visible when collapsed - header always shows */
+        .sidebar.collapsed .sidebar-brand span {
+            opacity: 1; /* Keep text visible */
+            width: auto;
+            overflow: visible;
+            transform: translateX(0);
+        }
+        
+        .sidebar .navbar-logo {
+            height: 45px;
+            width: 45px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%); /* Center vertically */
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary-light);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            flex-shrink: 0; /* Don't shrink */
+        }
+        
+        .sidebar-toggle-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-50%) scale(1.05);
+        }
+        
+        .sidebar.collapsed .sidebar-toggle-btn {
+            right: 1rem; /* Keep same position when collapsed */
+            transform: translateY(-50%); /* Maintain vertical centering */
+        }
+        
+        .sidebar.collapsed .sidebar-toggle-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+        }
+        
+        .sidebar-toggle-btn i {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0;
+            margin-top: 70px; /* Add margin to account for fixed header */
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: var(--bg-secondary); /* Dark background for navigation section */
+            min-height: 0; /* Allow flexbox to properly calculate height */
+            border-radius: 0; /* Remove rounded corners for cleaner look */
+        }
+        
+        .sidebar-nav .nav-item {
+            margin: 0.25rem 0.75rem;
+            transition: margin 0.3s ease;
+        }
+        
+        .sidebar.collapsed .sidebar-nav .nav-item {
+            margin: 0.25rem 0.5rem;
+        }
+        
+        .sidebar-nav .nav-link {
+            color: var(--text-primary-light) !important;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .sidebar.collapsed .sidebar-nav .nav-link {
+            padding: 0.75rem;
+            justify-content: center;
+        }
+        
+        .sidebar-nav .nav-link span {
+            transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease;
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .sidebar.collapsed .sidebar-nav .nav-link span {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            transform: translateX(-10px);
+        }
+        
+        
+        .sidebar-nav .nav-link:hover {
+            background: var(--bg-hover);
+            color: var(--primary-color) !important;
+        }
+        
+        .sidebar-nav .nav-link:hover i {
+            color: var(--primary-color) !important;
+        }
+        
+        .sidebar-nav .nav-link.active {
+            background: var(--bg-active);
+            color: var(--primary-color) !important;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar:not(.collapsed) .sidebar-nav .nav-link:hover,
+        .sidebar:not(.collapsed) .sidebar-nav .nav-link.active {
+            transform: translateX(2px);
+        }
+        
+        .sidebar-nav .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            color: inherit;
+        }
+        
+        .sidebar-footer {
+            padding: 1rem 1.5rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            transition: padding 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+            color: #1f2937;
+            position: relative; /* Ensure it stays within sidebar bounds */
+            margin-top: auto; /* Push to bottom of flex container */
+            border-radius: 0 0 0 15px; /* Rounded bottom-left corner */
+        }
+        
+        .sidebar-footer * {
+            color: #1f2937 !important;
+        }
+        
+        .sidebar-footer .text-white-50 {
+            color: #6b7280 !important;
+        }
+        
+        .sidebar.collapsed .sidebar-footer {
+            padding: 1rem 0.5rem;
+        }
+        
+        .sidebar-footer .dropdown {
+            width: 100%;
+        }
+        
+        .sidebar-footer .nav-link {
+            transition: padding 0.3s ease;
+        }
+        
+        .sidebar.collapsed .sidebar-footer .nav-link {
+            padding: 0.5rem;
+            justify-content: center;
+        }
+        
+        .sidebar-footer .nav-link .d-flex.flex-column {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .sidebar.collapsed .sidebar-footer .nav-link .d-flex.flex-column {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            transform: translateX(-10px);
+        }
+        
+        .sidebar-footer .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 0.5rem;
+            min-width: 200px;
+            transform-origin: bottom left;
+        }
+        
+        .sidebar.collapsed .sidebar-footer .dropdown-menu {
+            left: 90px;
+            bottom: auto;
+            top: 0;
+            transform-origin: top left;
+        }
+        
+        .sidebar-toggle {
+            display: none;
+        }
+        
+        .sidebar .nav-profile-img,
+        .sidebar .nav-profile-placeholder {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+        
+        /* Tooltip for collapsed sidebar */
+        .sidebar.collapsed .nav-link[title]::after {
+            content: attr(title);
+            position: absolute;
+            left: calc(100% + 15px);
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease 0.1s, transform 0.2s ease 0.1s;
+            z-index: 1000;
+            font-size: 0.875rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .sidebar.collapsed .nav-link:hover::after {
+            opacity: 1;
+            transform: translateY(-50%) translateX(5px);
+        }
+        
+        /* Arrow for tooltip */
+        .sidebar.collapsed .nav-link[title]::before {
+            content: '';
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 5px;
+            border: 6px solid transparent;
+            border-right-color: rgba(0, 0, 0, 0.9);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease 0.1s;
+            z-index: 1001;
+        }
+        
+        .sidebar.collapsed .nav-link:hover::before {
+            opacity: 1;
+        }
+        
+        /* Legacy navbar-custom for backward compatibility */
+        .navbar-custom {
+            display: none;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .navbar-logo {
+            height: 50px;
+            width: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .navbar-logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        .footer-logo {
+            height: 45px;
+            width: 45px;
+            object-fit: cover;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--primary-rgb), 0.05));
+            border: 3px solid rgba(var(--primary-rgb), 0.3);
+            box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.15), inset 0 1px 0 rgba(var(--primary-rgb), 0.1);
+        }
+        
+        .login-logo {
+            height: 80px;
+            width: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        .maintenance-header-logo {
+            height: 70px;
+            width: 70px;
+            object-fit: cover;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Responsive logo sizing */
+        @media (max-width: 768px) {
+            .navbar-logo {
+                height: 42px;
+                width: 42px;
+                border-width: 2.5px;
+            }
+            
+            .login-logo {
+                height: 65px;
+                width: 65px;
+                border-width: 3.5px;
+            }
+            
+            .footer-logo {
+                height: 38px;
+                width: 38px;
+                border-width: 2.5px;
+            }
+            
+            .maintenance-header-logo {
+                height: 58px;
+                width: 58px;
+                border-width: 3.5px;
+            }
+        }
+        
+        /* Top navbar nav links (for notifications, theme, user dropdown) */
+        .top-navbar .nav-link {
+            color: var(--text-primary-light) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .top-navbar .nav-link i,
+        .top-navbar .nav-link .fas,
+        .top-navbar .nav-link .fa {
+            color: var(--text-primary-light) !important;
+            opacity: 1 !important;
+        }
+        
+        .top-navbar .nav-link:hover {
+            background: var(--bg-hover);
+            color: var(--primary-color) !important;
+        }
+        
+        .top-navbar .nav-link:hover i,
+        .top-navbar .nav-link:hover .fas,
+        .top-navbar .nav-link:hover .fa {
+            color: var(--primary-color) !important;
+        }
+        
+        /* Sidebar scrollbar styling */
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        
+        /* User dropdown menu icons - match system theme */
+        .dropdown-menu .dropdown-item i,
+        .dropdown-menu .dropdown-item .fas,
+        .dropdown-menu .dropdown-item .fa {
+            color: var(--primary-color, #5a4fcf) !important;
+        }
+        
+        .dropdown-menu .dropdown-item:hover i,
+        .dropdown-menu .dropdown-item:hover .fas,
+        .dropdown-menu .dropdown-item:hover .fa {
+            color: var(--primary-color, #5a4fcf) !important;
+        }
+        
+        /* Logout icon stays red */
+        .dropdown-menu .dropdown-item.text-danger i,
+        .dropdown-menu .dropdown-item.text-danger .fas,
+        .dropdown-menu .dropdown-item.text-danger .fa {
+            color: #dc3545 !important;
+        }
+        
+        .dropdown-menu .dropdown-item.text-danger:hover i,
+        .dropdown-menu .dropdown-item.text-danger:hover .fas,
+        .dropdown-menu .dropdown-item.text-danger:hover .fa {
+            color: #dc3545 !important;
+        }
+        
+        /* High-Quality Text Rendering for all text elements */
+        h1, h2, h3, h4, h5, h6, p, span, div, a, label, input, textarea, select, button, .btn {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: "kern" 1;
+            font-kerning: normal;
+        }
+        
+        /* Ensure text remains crisp at all zoom levels */
+        input, textarea, select, button {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
+            color: white !important;
+            border-bottom: none;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 4px rgba(var(--primary-rgb), 0.1);
+            position: relative;
+        }
+        
+        /* Ensure all icons and text in card headers are white */
+        .card-header,
+        .card-header *,
+        .card-header i,
+        .card-header .fas,
+        .card-header .fa,
+        .card-header .bi,
+        .card-header h1,
+        .card-header h2,
+        .card-header h3,
+        .card-header h4,
+        .card-header h5,
+        .card-header h6,
+        .card-header p,
+        .card-header span,
+        .card-header div,
+        .card-header .text-dark,
+        .card-header .text-muted,
+        .card-header .text-secondary {
+            color: white !important;
+        }
+        
+        /* Override for colored card headers (bg-primary, bg-info, bg-success, bg-warning, bg-danger) */
+        .card-header.bg-primary,
+        .card-header.bg-info,
+        .card-header.bg-success,
+        .card-header.bg-warning,
+        .card-header.bg-danger,
+        .card-header.bg-light,
+        .card-header[class*="bg-"] {
+            color: white !important;
+        }
+        
+        .card-header.bg-primary *,
+        .card-header.bg-info *,
+        .card-header.bg-success *,
+        .card-header.bg-warning *,
+        .card-header.bg-danger *,
+        .card-header.bg-light *,
+        .card-header[class*="bg-"] * {
+            color: white !important;
+        }
+        
+        .card-header.bg-primary i,
+        .card-header.bg-info i,
+        .card-header.bg-success i,
+        .card-header.bg-warning i,
+        .card-header.bg-danger i,
+        .card-header.bg-light i,
+        .card-header[class*="bg-"] i,
+        .card-header.bg-primary .fas,
+        .card-header.bg-info .fas,
+        .card-header.bg-success .fas,
+        .card-header.bg-warning .fas,
+        .card-header.bg-danger .fas,
+        .card-header.bg-light .fas,
+        .card-header[class*="bg-"] .fas,
+        .card-header.bg-primary .fa,
+        .card-header.bg-info .fa,
+        .card-header.bg-success .fa,
+        .card-header.bg-warning .fa,
+        .card-header.bg-danger .fa,
+        .card-header.bg-light .fa,
+        .card-header[class*="bg-"] .fa {
+            color: white !important;
+        }
+        
+        /* Special handling for bg-light - make it darker so white text is visible */
+        .card-header.bg-light {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 50%, #495057 100%) !important;
+        }
+        
+        /* Ensure badges in card headers are visible */
+        .card-header .badge {
+            background: rgba(255, 255, 255, 0.3) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Buttons in card headers should match the header color */
+        .card-header .btn-light,
+        .card-header .btn.btn-light {
+            background: transparent !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        }
+        
+        .card-header .btn-light:hover,
+        .card-header .btn.btn-light:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            border-color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        .card-header .btn-light i,
+        .card-header .btn.btn-light i,
+        .card-header .btn-light .fas,
+        .card-header .btn.btn-light .fas,
+        .card-header .btn-light .fa,
+        .card-header .btn.btn-light .fa {
+            color: white !important;
+        }
+        
+        /* Specific styling for buttons in colored card headers - match the header color */
+        .card-header.bg-primary .btn-light,
+        .card-header.bg-primary .btn.btn-light {
+            background: rgba(0, 122, 204, 0.3) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        }
+        
+        .card-header.bg-primary .btn-light:hover,
+        .card-header.bg-primary .btn.btn-light:hover {
+            background: rgba(0, 122, 204, 0.5) !important;
+            border-color: rgba(255, 255, 255, 0.6) !important;
+        }
+        
+        .card-header.bg-success .btn-light,
+        .card-header.bg-success .btn.btn-light {
+            background: rgba(5, 150, 105, 0.3) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        }
+        
+        .card-header.bg-success .btn-light:hover,
+        .card-header.bg-success .btn.btn-light:hover {
+            background: rgba(5, 150, 105, 0.5) !important;
+            border-color: rgba(255, 255, 255, 0.6) !important;
+        }
+        
+        .card-header.bg-info .btn-light,
+        .card-header.bg-info .btn.btn-light {
+            background: rgba(2, 132, 199, 0.3) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        }
+        
+        .card-header.bg-info .btn-light:hover,
+        .card-header.bg-info .btn.btn-light:hover {
+            background: rgba(2, 132, 199, 0.5) !important;
+            border-color: rgba(255, 255, 255, 0.6) !important;
+        }
+        
+        .card-header.bg-warning .btn-light,
+        .card-header.bg-warning .btn.btn-light {
+            background: rgba(217, 119, 6, 0.3) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        }
+        
+        .card-header.bg-warning .btn-light:hover,
+        .card-header.bg-warning .btn.btn-light:hover {
+            background: rgba(217, 119, 6, 0.5) !important;
+            border-color: rgba(255, 255, 255, 0.6) !important;
+        }
+        
+        .card-header.bg-danger .btn-light,
+        .card-header.bg-danger .btn.btn-light {
+            background: rgba(220, 53, 69, 0.3) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        }
+        
+        .card-header.bg-danger .btn-light:hover,
+        .card-header.bg-danger .btn.btn-light:hover {
+            background: rgba(220, 53, 69, 0.5) !important;
+            border-color: rgba(255, 255, 255, 0.6) !important;
+        }
+        
+        /* Ensure all colored backgrounds have white text and icons */
+        .bg-primary,
+        .bg-info,
+        .bg-success,
+        .bg-warning,
+        .bg-danger,
+        [class*="bg-primary"],
+        [class*="bg-info"],
+        [class*="bg-success"],
+        [class*="bg-warning"],
+        [class*="bg-danger"] {
+            color: white !important;
+        }
+        
+        .bg-primary *,
+        .bg-info *,
+        .bg-success *,
+        .bg-warning *,
+        .bg-danger *,
+        [class*="bg-primary"] *,
+        [class*="bg-info"] *,
+        [class*="bg-success"] *,
+        [class*="bg-warning"] *,
+        [class*="bg-danger"] * {
+            color: white !important;
+        }
+        
+        .bg-primary i,
+        .bg-info i,
+        .bg-success i,
+        .bg-warning i,
+        .bg-danger i,
+        [class*="bg-primary"] i,
+        [class*="bg-info"] i,
+        [class*="bg-success"] i,
+        [class*="bg-warning"] i,
+        [class*="bg-danger"] i,
+        .bg-primary .fas,
+        .bg-info .fas,
+        .bg-success .fas,
+        .bg-warning .fas,
+        .bg-danger .fas,
+        [class*="bg-primary"] .fas,
+        [class*="bg-info"] .fas,
+        [class*="bg-success"] .fas,
+        [class*="bg-warning"] .fas,
+        [class*="bg-danger"] .fas {
+            color: white !important;
+        }
+        
+        /* Override text-dark and text-muted in colored backgrounds */
+        .bg-primary .text-dark,
+        .bg-info .text-dark,
+        .bg-success .text-dark,
+        .bg-warning .text-dark,
+        .bg-danger .text-dark,
+        [class*="bg-primary"] .text-dark,
+        [class*="bg-info"] .text-dark,
+        [class*="bg-success"] .text-dark,
+        [class*="bg-warning"] .text-dark,
+        [class*="bg-danger"] .text-dark {
+            color: white !important;
+        }
+        
+        /* Special handling for bg-warning - make it darker for better contrast */
+        .bg-warning {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%) !important;
+        }
+        
+        .card-header.bg-warning {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%) !important;
+        }
+        
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+        
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Shimmer effect for all buttons */
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+            z-index: 0;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--secondary-color) 50%, var(--primary-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.4), 0 2px 8px rgba(var(--primary-rgb), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.3), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-success::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-success:hover::before {
+            left: 100%;
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4), 0 2px 8px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .btn-success:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-info:hover::before {
+            left: 100%;
+        }
+        
+        .btn-info:hover {
+            background: linear-gradient(135deg, #075985 0%, #0369a1 50%, #0284c7 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4), 0 2px 8px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .btn-info:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-warning::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-warning:hover::before {
+            left: 100%;
+        }
+        
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #92400e 0%, #b45309 50%, #d97706 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(217, 119, 6, 0.4), 0 2px 8px rgba(217, 119, 6, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .btn-warning:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Metrics Cards */
+        .metric-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Increase contrast for metric cards with colored backgrounds */
+        .bg-primary.bg-opacity-10,
+        [class*="bg-primary"][class*="bg-opacity-10"] {
+            background: linear-gradient(135deg, rgba(0, 122, 204, 0.25) 0%, rgba(14, 99, 156, 0.3) 50%, rgba(26, 140, 216, 0.25) 100%) !important;
+            border: 1px solid rgba(0, 122, 204, 0.2);
+        }
+        
+        .bg-success.bg-opacity-10,
+        [class*="bg-success"][class*="bg-opacity-10"] {
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.25) 0%, rgba(4, 120, 87, 0.3) 50%, rgba(6, 95, 70, 0.25) 100%) !important;
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+        
+        .bg-warning.bg-opacity-10,
+        [class*="bg-warning"][class*="bg-opacity-10"] {
+            background: linear-gradient(135deg, rgba(217, 119, 6, 0.3) 0%, rgba(180, 83, 9, 0.35) 50%, rgba(146, 64, 14, 0.3) 100%) !important;
+            border: 1px solid rgba(217, 119, 6, 0.25);
+        }
+        
+        .bg-info.bg-opacity-10,
+        [class*="bg-info"][class*="bg-opacity-10"] {
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.25) 0%, rgba(3, 105, 161, 0.3) 50%, rgba(7, 89, 133, 0.25) 100%) !important;
+            border: 1px solid rgba(2, 132, 199, 0.2);
+        }
+        
+        /* Ensure text is visible in colored metric cards */
+        .bg-primary.bg-opacity-10 .h4,
+        .bg-primary.bg-opacity-10 .h1,
+        .bg-primary.bg-opacity-10 .h2,
+        .bg-primary.bg-opacity-10 .h3,
+        .bg-primary.bg-opacity-10 .h5,
+        .bg-primary.bg-opacity-10 .h6,
+        [class*="bg-primary"][class*="bg-opacity-10"] .h4,
+        [class*="bg-primary"][class*="bg-opacity-10"] .h1,
+        [class*="bg-primary"][class*="bg-opacity-10"] .h2,
+        [class*="bg-primary"][class*="bg-opacity-10"] .h3 {
+            color: #0056b3 !important;
+            font-weight: 700;
+        }
+        
+        .bg-success.bg-opacity-10 .h4,
+        .bg-success.bg-opacity-10 .h1,
+        .bg-success.bg-opacity-10 .h2,
+        .bg-success.bg-opacity-10 .h3,
+        [class*="bg-success"][class*="bg-opacity-10"] .h4,
+        [class*="bg-success"][class*="bg-opacity-10"] .h1,
+        [class*="bg-success"][class*="bg-opacity-10"] .h2,
+        [class*="bg-success"][class*="bg-opacity-10"] .h3 {
+            color: #047857 !important;
+            font-weight: 700;
+        }
+        
+        .bg-warning.bg-opacity-10 .h4,
+        .bg-warning.bg-opacity-10 .h1,
+        .bg-warning.bg-opacity-10 .h2,
+        .bg-warning.bg-opacity-10 .h3,
+        [class*="bg-warning"][class*="bg-opacity-10"] .h4,
+        [class*="bg-warning"][class*="bg-opacity-10"] .h1,
+        [class*="bg-warning"][class*="bg-opacity-10"] .h2,
+        [class*="bg-warning"][class*="bg-opacity-10"] .h3 {
+            color: #b45309 !important;
+            font-weight: 700;
+        }
+        
+        .bg-info.bg-opacity-10 .h4,
+        .bg-info.bg-opacity-10 .h1,
+        .bg-info.bg-opacity-10 .h2,
+        .bg-info.bg-opacity-10 .h3,
+        [class*="bg-info"][class*="bg-opacity-10"] .h4,
+        [class*="bg-info"][class*="bg-opacity-10"] .h1,
+        [class*="bg-info"][class*="bg-opacity-10"] .h2,
+        [class*="bg-info"][class*="bg-opacity-10"] .h3 {
+            color: #0369a1 !important;
+            font-weight: 700;
+        }
+        
+        /* Make text-muted darker and more visible in colored backgrounds */
+        .bg-primary.bg-opacity-10 .text-muted,
+        .bg-primary.bg-opacity-10 small,
+        .bg-success.bg-opacity-10 .text-muted,
+        .bg-success.bg-opacity-10 small,
+        .bg-warning.bg-opacity-10 .text-muted,
+        .bg-warning.bg-opacity-10 small,
+        .bg-info.bg-opacity-10 .text-muted,
+        .bg-info.bg-opacity-10 small,
+        [class*="bg-opacity-10"] .text-muted,
+        [class*="bg-opacity-10"] small {
+            color: var(--text-primary) !important;
+            font-weight: 500;
+        }
+        
+        /* Ensure colored text classes are darker for visibility */
+        .bg-primary.bg-opacity-10 .text-primary,
+        [class*="bg-primary"][class*="bg-opacity-10"] .text-primary {
+            color: #0056b3 !important;
+            font-weight: 700;
+        }
+        
+        .bg-success.bg-opacity-10 .text-success,
+        [class*="bg-success"][class*="bg-opacity-10"] .text-success {
+            color: #047857 !important;
+            font-weight: 700;
+        }
+        
+        .bg-warning.bg-opacity-10 .text-warning,
+        [class*="bg-warning"][class*="bg-opacity-10"] .text-warning {
+            color: #b45309 !important;
+            font-weight: 700;
+        }
+        
+        .bg-info.bg-opacity-10 .text-info,
+        [class*="bg-info"][class*="bg-opacity-10"] .text-info {
+            color: #0369a1 !important;
+            font-weight: 700;
+        }
+        
+        /* Tables */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+            color: var(--text-primary);
+        }
+        
+        .table th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            border: none;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .table td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-top: 1px solid var(--border-color);
+            background-color: white;
+            color: var(--text-primary);
+        }
+        
+        .table tbody tr {
+            background-color: white;
+        }
+        
+        .table tr:hover {
+            background-color: var(--bg-hover);
+        }
+        
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--bg-tertiary);
+        }
+        
+        /* Navigation Tabs - Global Theme Support */
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: white;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px 8px 0 0;
+            margin-right: 0.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--primary-color, #007acc) 0%, var(--secondary-color, #0e639c) 100%);
+        }
+        
+        /* Shimmer effect for tabs */
+        .nav-tabs .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+            z-index: 0;
+        }
+        
+        .nav-tabs .nav-link:hover::before {
+            left: 100%;
+        }
+        
+        .nav-tabs .nav-link > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: white;
+            background: linear-gradient(135deg, var(--accent-color, #1a8cd8) 0%, var(--primary-color, #007acc) 100%);
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color, #007acc) 0%, var(--secondary-color, #0e639c) 100%);
+            color: white;
+            border-bottom: 3px solid white;
+            font-weight: 600;
+        }
+        
+        /* Tab Content Area - Clean styling without borders */
+        .tab-content {
+            background: white;
+            border: none;
+            padding: 1rem 0;
+        }
+        
+        .tab-pane {
+            background: transparent;
+            border: none;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 0.4em 0.8em;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+        
+        .badge-emergency {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .badge-high {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+        }
+        
+        .badge-medium {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #212529;
+        }
+        
+        .badge-low {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        /* Footer - Hidden by default, shown only on login page */
+        .footer {
+            display: none; /* Hidden by default */
+        }
+        
+        /* Show footer only on login page */
+        body:has(.login-logo) .footer {
+            display: block;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 1.5rem 0;
+            position: fixed;
+            bottom: 0;
+            left: 0; /* Start from left edge */
+            right: 0;
+            z-index: 1010;
+            min-height: 100px;
+            height: auto;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .footer h5 {
+            font-size: 1.1rem;
+            margin: 0;
+            white-space: nowrap;
+            color: var(--text-primary);
+        }
+        
+        .footer p {
+            margin: 0.25rem 0;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        
+        .footer small {
+            font-size: 0.8rem;
+            display: block;
+            line-height: 1.4;
+            color: var(--text-secondary);
+        }
+        
+        .footer i {
+            color: var(--primary-color);
+        }
+        
+        .footer .text-white-50 {
+            color: rgba(var(--primary-rgb), 0.7) !important;
+        }
+        
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active { background-color: var(--success-green); }
+        .status-pending { background-color: var(--warning-orange); }
+        .status-inactive { background-color: var(--medium-gray); }
+        .status-critical { background-color: var(--danger-red); }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+        
+        
+        
+        /* Alert Styles */
+        .alert.position-fixed {
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 500px;
+        }
+        
+        .btn-outline-secondary {
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: var(--bg-hover);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .metric-value {
+                font-size: 2rem;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            body {
+                padding-left: 0;
+                padding-top: 60px;
+                padding-bottom: 120px;
+            }
+            
+            .sidebar {
+                width: 320px !important;
+                top: 0; /* Start from top to allow header overlap */
+                bottom: 90px; /* End above footer */
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow: hidden; /* Prevent overflow beyond bounds */
+                max-height: calc(100vh - 90px); /* Ensure sidebar doesn't exceed viewport minus footer */
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .sidebar.collapsed {
+                width: 320px !important;
+            }
+            
+            .top-navbar {
+                left: 0 !important;
+            }
+            
+            body.sidebar-collapsed {
+                padding-left: 0 !important;
+            }
+            
+            .footer {
+                left: 0 !important;
+            }
+            
+            body.sidebar-collapsed .footer {
+                left: 0 !important;
+            }
+            
+            .sidebar-toggle {
+                display: block !important;
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                z-index: 1040;
+                background: rgba(var(--primary-rgb), 0.9);
+                border: none;
+                color: white;
+                padding: 0.5rem;
+                border-radius: 6px;
+                font-size: 1.2rem;
+            }
+            
+            .sidebar-toggle-btn {
+                display: none !important;
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1025;
+            }
+            
+            .sidebar-overlay.active {
+                display: block;
+            }
+            
+            .footer {
+                min-height: 100px;
+                height: auto;
+                padding: 1rem 0;
+                left: 0;
+            }
+            
+            .navbar-custom {
+                display: none;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .footer .text-end {
+                text-align: left !important;
+                width: 100%;
+            }
+        }
+        
+        /* Profile Picture in Navbar */
+        .nav-profile-img {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .nav-profile-placeholder {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Modal Styling */
+        .profile-pic-preview {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border: 3px solid #007bff;
+        }
+        
+        .profile-pic-placeholder {
+            width: 150px;
+            height: 150px;
+            background: #f8f9fa;
+            border: 3px solid #dee2e6;
+        }
+        
+        /* Print Styles - High Quality 300 DPI */
+        @media print {
+            @page {
+                size: letter;
+                margin: 0.4in;
+                /* Ensure 300 DPI printing */
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            * {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            /* High quality image rendering for 300 DPI */
+            img, svg, canvas {
+                image-rendering: -webkit-optimize-contrast !important;
+                image-rendering: crisp-edges !important;
+                image-rendering: pixelated !important;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+                position: relative;
+                /* High quality rendering */
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+            
+            /* Watermark for profile documents */
+            body::before {
+                content: '';
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 400px;
+                height: 400px;
+                background-image: url('{{ url_for("static", filename="images/logo.png") }}');
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+                opacity: 0.08;
+                z-index: 0;
+                pointer-events: none;
+            }
+            
+            /* Ensure content is above watermark */
+            body > * {
+                position: relative;
+                z-index: 1;
+            }
+            
+            .card {
+                box-shadow: none !important;
+                border: 1px solid #dee2e6 !important;
+                background: white !important;
+            }
+            
+            .container {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            
+            .table {
+                border: 1px solid #dee2e6;
+            }
+            
+            .table th, .table td {
+                border: 1px solid #dee2e6;
+            }
+        }
+        
+        /* Print Profile Button */
+        .btn-print {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            border: none;
+        }
+        
+        .btn-print:hover {
+            background: linear-gradient(135deg, #495057, #343a40);
+            color: white;
+        }
+
+        /* Messaging System Styles */
+        .message-priority-urgent {
+            border-left: 4px solid #dc3545 !important;
+            background-color: rgba(220, 53, 69, 0.05) !important;
+        }
+        
+        .message-priority-high {
+            border-left: 4px solid #ffc107 !important;
+            background-color: rgba(255, 193, 7, 0.05) !important;
+        }
+        
+        .message-priority-normal {
+            border-left: 4px solid #0d6efd !important;
+            background-color: rgba(13, 110, 253, 0.05) !important;
+        }
+        
+        .message-priority-low {
+            border-left: 4px solid #6c757d !important;
+            background-color: rgba(108, 117, 125, 0.05) !important;
+        }
+        
+        .message-unread {
+            background-color: #f8f9fa !important;
+            font-weight: 600 !important;
+        }
+        
+        .recipient-field {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .user-search-dropdown {
+            position: absolute;
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 100%;
+            display: none;
+        }
+        
+        .user-search-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-search-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .user-search-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-search-item .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .user-search-item .info {
+            flex: 1;
+        }
+        
+        .user-search-item .name {
+            font-weight: 500;
+        }
+        
+        .user-search-item .details {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        /* Multiple files upload styles */
+        .file-list {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .file-item .file-icon {
+            margin-right: 10px;
+            color: #6c757d;
+        }
+        
+        .file-item .file-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .file-item .file-name {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-item .file-size {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .file-item .file-remove {
+            color: #dc3545;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .multiple-files-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Alert Styles */
+        .alert.position-fixed {
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 500px;
+        }
+        
+        /* ==================== FLOATING MESSAGING PANEL ==================== */
+        .messaging-panel {
+            position: fixed;
+            right: -520px;
+            top: 70px;
+            bottom: 70px; /* Adequate space at bottom for better visibility */
+            width: 520px; /* Slightly wider for better content visibility */
+            height: auto; /* Let bottom constraint control height */
+            background: white;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
+            border-radius: 15px 0 0 15px;
+            z-index: 1050;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .messaging-panel.active {
+            right: 0;
+        }
+        
+        /* Hide messaging panel and toggle button on login/register/maintenance request pages */
+        body:has(.login-logo) .messaging-panel,
+        body:has(.login-logo) .messaging-toggle-btn,
+        body:has(.maintenance-header-logo) .messaging-panel,
+        body:has(.maintenance-header-logo) .messaging-toggle-btn {
+            display: none !important;
+        }
+        
+        .messaging-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 0.875rem 1.25rem; /* Optimized padding */
+            border-radius: 15px 0 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-height: 56px; /* Ensure consistent height */
+        }
+        
+        .messaging-header h5 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem; /* Slightly smaller for better fit */
+            color: white !important;
+            white-space: nowrap;
+        }
+        
+        .messaging-header h5 i {
+            font-size: 1.1rem;
+        }
+        
+        .messaging-header h5 i,
+        .messaging-header h5 .fas,
+        .messaging-header h5 .fa {
+            color: white !important;
+        }
+        
+        .messaging-header button {
+            color: white !important;
+            opacity: 0.9;
+            padding: 0.375rem 0.5rem; /* Optimized padding */
+            font-size: 0.875rem;
+            min-width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .messaging-header button i,
+        .messaging-header button .fas,
+        .messaging-header button .fa {
+            color: white !important;
+            font-size: 0.875rem;
+        }
+        
+        .messaging-header button:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
+            color: white !important;
+        }
+        
+        .messaging-header button:hover i,
+        .messaging-header button:hover .fas,
+        .messaging-header button:hover .fa {
+            color: white !important;
+        }
+        
+        .messaging-tabs {
+            display: flex;
+            border-bottom: 1px solid #dee2e6;
+            background: #f8f9fa;
+            flex-shrink: 0;
+            min-height: 48px; /* Ensure consistent height */
+            padding-left: 0.75rem; /* Add space on the left before tabs start */
+        }
+        
+        .messaging-tab {
+            flex: 1;
+            padding: 0.75rem 0.5rem; /* Optimized padding for better fit */
+            text-align: center;
+            background: none !important;
+            border: none !important;
+            font-weight: 500;
+            font-size: 0.875rem; /* Slightly smaller font for better fit */
+            color: #6c757d !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden; /* Changed from visible to prevent overflow */
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .messaging-tab i {
+            font-size: 0.9rem; /* Smaller icon for better fit */
+        }
+        
+        /* Ensure messaging tabs don't inherit nav-tabs styles */
+        .messaging-tab::before {
+            display: none !important;
+        }
+        
+        .messaging-tab:hover {
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: var(--primary-color) !important;
+        }
+        
+        .messaging-tab.active {
+            color: var(--primary-color) !important;
+            border-bottom: 2px solid var(--primary-color) !important;
+            background: white !important;
+        }
+        
+        .messaging-content {
+            flex: 1;
+            overflow: hidden;
+            padding: 0;
+            min-height: 200px; /* Minimum height for content area */
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .messaging-content-inner {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.25rem; /* Optimized padding */
+            min-height: 0;
+            max-height: 100%;
+        }
+        
+        .messaging-content-inner::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        .messaging-content-inner::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+        
+        .messaging-content-inner::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 5px;
+            border: 2px solid #f1f1f1;
+        }
+        
+        .messaging-content-inner::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+        
+        .messaging-footer {
+            padding: 0.875rem 1.25rem; /* Optimized padding */
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            color: white !important;
+            min-height: 80px; /* Minimum height for footer */
+        }
+        
+        .messaging-footer * {
+            color: white !important;
+        }
+        
+        .messaging-footer textarea {
+            color: #212529 !important; /* Keep textarea text dark for readability */
+        }
+        
+        .messaging-footer textarea::placeholder {
+            color: #6c757d !important; /* Keep placeholder gray */
+        }
+        
+        /* Panel trigger zone on the right edge */
+        /* FIX: Better placement using vertical writing mode */
+        .messaging-toggle-btn {
+            position: fixed;
+            top: 50%;
+            right: 0; /* Attach directly to right edge */
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white !important;
+            border: none;
+            padding: 18px 7px; /* Optimized padding */
+            border-radius: 8px 0 0 8px; /* Rounded only on left */
+            cursor: pointer;
+            z-index: 1040;
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px; /* Optimized gap */
+            box-shadow: -4px 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            writing-mode: vertical-rl; /* Makes text vertical */
+            text-orientation: mixed;
+            height: auto;
+            width: auto;
+            min-height: 110px; /* Optimized min height */
+            max-height: calc(100vh - 240px); /* Ensure bottom edge doesn't overlap footer */
+        }
+        
+        .messaging-toggle-btn i,
+        .messaging-toggle-btn .fas,
+        .messaging-toggle-btn .fa {
+            color: white !important;
+            font-size: 1.1rem; /* Slightly smaller for better fit */
+            margin-bottom: 4px; /* Optimized margin */
+            transform: rotate(0deg); /* Reset rotation */
+        }
+        
+        .messaging-toggle-btn span.label-text {
+            display: inline-block;
+            white-space: nowrap;
+            letter-spacing: 0.5px; /* Optimized letter spacing */
+            color: white !important;
+            font-size: 0.875rem; /* Slightly smaller font */
+        }
+        
+        .messaging-toggle-btn:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            box-shadow: -6px 6px 16px rgba(102, 126, 234, 0.4);
+            right: 0; /* Keep anchored */
+            color: white !important;
+        }
+        
+        .messaging-toggle-btn:hover i,
+        .messaging-toggle-btn:hover .fas,
+        .messaging-toggle-btn:hover .fa,
+        .messaging-toggle-btn:hover span.label-text {
+            color: white !important;
+        }
+        
+        .messaging-toggle-btn.active {
+            right: 500px; /* Slide out with panel - match new panel width (520px - 20px spacing) */
+        }
+        
+        .messaging-footer .quick-reply-area {
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+            margin-top: 0;
+            flex-shrink: 0;
+            width: 100%;
+        }
+        
+        .quick-reply-area {
+            padding: 0.75rem; /* Optimized padding */
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            margin-top: 0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .messaging-footer .quick-reply-area textarea {
+            background: rgba(255, 255, 255, 0.95);
+            color: #212529;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 100%;
+            font-size: 0.875rem; /* Optimized font size */
+            padding: 0.625rem 0.75rem; /* Optimized padding */
+        }
+        
+        .messaging-footer .quick-reply-area textarea::placeholder {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        
+        .messaging-footer .quick-reply-area .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white !important;
+            padding: 0.5rem 1rem; /* Optimized padding */
+            font-size: 0.875rem; /* Optimized font size */
+            white-space: nowrap;
+        }
+        
+        .messaging-footer .quick-reply-area .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white !important;
+        }
+        
+        .messaging-footer .quick-reply-area .btn i,
+        .messaging-footer .quick-reply-area .btn .fas,
+        .messaging-footer .quick-reply-area .btn .fa {
+            color: white !important;
+            font-size: 0.875rem;
+        }
+        
+        .quick-reply-area textarea {
+            width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            resize: vertical;
+            min-height: 70px; /* Reduced min height */
+            max-height: 120px; /* Reduced max height */
+            font-size: 0.875rem;
+        }
+        
+        .message-conversation {
+            max-height: calc(100vh - 400px); /* Responsive height based on viewport */
+            min-height: 250px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 1rem;
+        }
+        
+        .message-bubble {
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-radius: 12px;
+            max-width: 80%;
+            position: relative;
+            color: white;
+        }
+        
+        .message-bubble * {
+            color: white !important;
+        }
+        
+        .message-bubble div {
+            color: white !important;
+        }
+        
+        .message-bubble.sent {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .message-bubble.received {
+            background: linear-gradient(135deg, var(--secondary-color, #0e639c) 0%, var(--primary-color, #007acc) 100%);
+            color: white;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 6px rgba(var(--primary-rgb, 0, 122, 204), 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .notification-item {
+            transition: all 0.2s ease;
+        }
+        
+        .notification-item:hover {
+            transform: translateX(3px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .notification-unread {
+            background-color: #f0f7ff !important;
+        }
+        
+        .message-bubble .message-time {
+            font-size: 0.7rem;
+            opacity: 0.85;
+            margin-top: 0.25rem;
+            color: white;
+        }
+        
+        .message-bubble.sent .message-time,
+        .message-bubble.received .message-time {
+            color: white;
+        }
+        
+        .conversation-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.875rem 1rem; /* Optimized padding */
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            margin: 0 -1.25rem 1rem -1.25rem; /* Only negative horizontal margins, no negative top margin */
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .conversation-header .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .conversation-header .info h6 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .conversation-header .info p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        /* Emoji Picker */
+        .emoji-picker {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            z-index: 1060;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 200px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .emoji-picker.active {
+            display: block;
+        }
+        
+        .emoji-item {
+            display: inline-block;
+            padding: 5px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+        
+        .emoji-item:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Theme Switcher */
+        .theme-option {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .theme-option:hover {
+            background-color: rgba(var(--primary-rgb), 0.1);
+        }
+        
+        .theme-option.active {
+            background-color: rgba(var(--primary-rgb), 0.15);
+            font-weight: 600;
+        }
+        
+        .theme-option.active::after {
+            content: '✓';
+            margin-left: auto;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        .theme-preview {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Attachment preview */
+        .attachment-preview {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .attachment-preview .file-info {
+            flex: 1;
+            margin-left: 10px;
+        }
+        
+        .attachment-preview .file-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .attachment-preview .file-size {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .attachment-preview .remove-attachment {
+            color: #dc3545;
+            cursor: pointer;
+        }
+        
+        /* For mobile responsiveness */
+        @media (max-width: 768px) {
+            .messaging-panel {
+                width: 100%;
+                right: -100%;
+                top: 60px;
+                bottom: 90px; /* End above footer on mobile */
+                height: auto; /* Let bottom constraint control height */
+                border-radius: 0;
+            }
+            
+            .messaging-panel.active {
+                right: 0;
+            }
+            
+            .messaging-toggle-btn {
+                right: 0;
+                padding: 10px 5px;
+                font-size: 0.9rem;
+                writing-mode: horizontal-tb; /* Horizontal on mobile maybe better */
+                flex-direction: row;
+                border-radius: 8px 0 0 8px;
+            }
+            
+            .messaging-toggle-btn.active {
+                right: 100%; /* Push off screen or overlay */
+                display: none; /* Hide when open on mobile */
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if request.endpoint != 'login' and request.endpoint != 'register' and request.endpoint != 'maintenance_request' %}
+    <!-- Floating Messaging Toggle Button -->
+    <button class="messaging-toggle-btn no-print" id="messagingToggleBtn" onclick="toggleMessagingPanel()">
+        <i class="fas fa-comments"></i>
+        <span class="label-text">Messaging</span>
+        <span class="badge bg-danger rounded-pill mt-2" id="floatingUnreadCount" style="display: none; transform: rotate(0deg);">0</span>
+    </button>
+    
+    <!-- Floating Messaging Panel -->
+    <div class="messaging-panel no-print" id="messagingPanel">
+        <div class="messaging-header">
+            <h5>
+                <i class="fas fa-comments"></i>
+                Messaging Center
+            </h5>
+            <button class="btn btn-sm btn-light" onclick="toggleMessagingPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="messaging-tabs">
+            <button class="messaging-tab active" onclick="switchMessagingTab('inbox')">
+                <i class="fas fa-inbox"></i> Inbox
+            </button>
+            <button class="messaging-tab" onclick="switchMessagingTab('compose')">
+                <i class="fas fa-pen"></i> Compose
+            </button>
+            <button class="messaging-tab" onclick="switchMessagingTab('threads')">
+                <i class="fas fa-comments"></i> Threads
+            </button>
+        </div>
+        
+        <div class="messaging-content" id="messagingContent">
+            <div class="messaging-content-inner">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading messaging panel...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="messaging-footer" id="messagingFooter" style="display: none;">
+            <!-- Quick reply area will be inserted here by JavaScript -->
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Emoji Picker -->
+    <div class="emoji-picker" id="emojiPicker">
+        <div class="emoji-item" onclick="insertEmoji('😊')">😊</div>
+        <div class="emoji-item" onclick="insertEmoji('😀')">😀</div>
+        <div class="emoji-item" onclick="insertEmoji('😂')">😂</div>
+        <div class="emoji-item" onclick="insertEmoji('😍')">😍</div>
+        <div class="emoji-item" onclick="insertEmoji('😎')">😎</div>
+        <div class="emoji-item" onclick="insertEmoji('👍')">👍</div>
+        <div class="emoji-item" onclick="insertEmoji('👌')">👌</div>
+        <div class="emoji-item" onclick="insertEmoji('❤️')">❤️</div>
+        <div class="emoji-item" onclick="insertEmoji('😉')">😉</div>
+        <div class="emoji-item" onclick="insertEmoji('🤔')">🤔</div>
+        <div class="emoji-item" onclick="insertEmoji('😅')">😅</div>
+        <div class="emoji-item" onclick="insertEmoji('😢')">😢</div>
+    </div>
+    
+    <!-- Sidebar Navigation -->
+    {% if request.endpoint != 'login' and request.endpoint != 'register' and request.endpoint != 'maintenance_request' %}
+    <div class="sidebar-overlay no-print" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <aside class="sidebar no-print" id="sidebar">
+        <div class="sidebar-header">
+            <a class="sidebar-brand" href="{{ url_for('dashboard') }}">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Marine Service Center Logo" class="navbar-logo">
+                <span>Marine Service Center</span>
+            </a>
+            <button class="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Toggle Sidebar">
+                <i class="fas fa-chevron-left" id="sidebarToggleIcon"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" 
+                       href="{{ url_for('dashboard') }}" title="Dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                {% if current_user.role in ['chief_engineer', 'captain'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'maintenance_request' %}active{% endif %}" 
+                       href="{{ url_for('maintenance_request') }}" title="Maintenance Request">
+                        <i class="fas fa-tools"></i>
+                        <span>Maintenance Request</span>
+                    </a>
+                </li>
+                
+                <!-- International Reports Section -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list'] %}active{% endif %}" 
+                       href="#internationalReports" data-bs-toggle="collapse" aria-expanded="false" title="International Reports">
+                        <i class="fas fa-globe"></i>
+                        <span>Int'l Reports</span>
+                    </a>
+                    <div class="collapse {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list'] %}show{% endif %}" id="internationalReports">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'bilge_report' %}active{% endif %}" href="{{ url_for('bilge_report') }}" title="Bilge Report">
+                                    <i class="fas fa-water fa-sm"></i>
+                                    <span>Bilge Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'bilge_reports_list' %}active{% endif %}" href="{{ url_for('bilge_reports_list') }}" title="Bilge Reports">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Bilge</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'fuel_report' %}active{% endif %}" href="{{ url_for('fuel_report') }}" title="Fuel Report">
+                                    <i class="fas fa-gas-pump fa-sm"></i>
+                                    <span>Fuel Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'fuel_reports_list' %}active{% endif %}" href="{{ url_for('fuel_reports_list') }}" title="Fuel Reports">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Fuel</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'sewage_report' %}active{% endif %}" href="{{ url_for('sewage_report') }}" title="Sewage Report">
+                                    <i class="fas fa-toilet fa-sm"></i>
+                                    <span>Sewage Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'sewage_reports_list' %}active{% endif %}" href="{{ url_for('sewage_reports_list') }}" title="Sewage Reports">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Sewage</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'logbook' %}active{% endif %}" href="{{ url_for('logbook') }}" title="Logbook">
+                                    <i class="fas fa-book fa-sm"></i>
+                                    <span>Logbook Entry</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'logbook_entries_list' %}active{% endif %}" href="{{ url_for('logbook_entries_list') }}" title="Logbook Entries">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Log</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'emission_report' %}active{% endif %}" href="{{ url_for('emission_report') }}" title="Emission Report">
+                                    <i class="fas fa-wind fa-sm"></i>
+                                    <span>Emission Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'emission_reports_list' %}active{% endif %}" href="{{ url_for('emission_reports_list') }}" title="Emission Reports">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Emissions</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role in ['port_engineer', 'harbour_master'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'inventory' %}active{% endif %}" 
+                       href="{{ url_for('inventory') }}" title="Inventory">
+                        <i class="fas fa-boxes"></i>
+                        <span>Inventory</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role in ['harbour_master', 'chief_engineer', 'captain'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'machinery_manual' %}active{% endif %}" 
+                       href="{{ url_for('machinery_manual') }}" title="Machinery Manual">
+                        <i class="fas fa-book"></i>
+                        <span>Machinery Manual</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role in ['port_engineer', 'harbour_master'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'emergency_requests' %}active{% endif %}" 
+                       href="{{ url_for('emergency_requests') }}" title="Emergency">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Emergency</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role in ['harbour_master', 'quality_officer'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'evaluate' %}active{% endif %}" 
+                       href="{{ url_for('evaluate') }}" title="Evaluate">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Evaluate</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}" 
+                       href="{{ url_for('reports') }}" title="Reports">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="sidebarUserDropdown" 
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if current_user_profile and current_user_profile.profile_pic_url %}
+                    <img src="{{ current_user_profile.profile_pic_url }}" 
+                         class="rounded-circle nav-profile-img me-2" 
+                         alt="Profile Picture">
+                    {% else %}
+                    <div class="rounded-circle nav-profile-placeholder d-flex align-items-center justify-content-center me-2">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex flex-column flex-grow-1">
+                        <small class="fw-bold text-white">{{ current_user.get_full_name() }}</small>
+                        <small class="text-white-50">{{ current_user.role|replace('_', ' ')|title }}</small>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sidebarUserDropdown">
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('profile') }}">
+                            <i class="fas fa-user me-2"></i> Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#uploadProfilePicModal">
+                            <i class="fas fa-camera me-2"></i> Change Profile Picture
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="printProfile()">
+                            <i class="fas fa-print me-2"></i> Print Profile
+                        </a>
+                    </li>
+                    {% if current_user.role in ['port_engineer', 'harbour_master', 'chief_engineer', 'captain'] %}
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="openComposeTab(); return false;">
+                            <i class="fas fa-paper-plane me-2"></i> Send Message
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Top Navigation Bar -->
+    <nav class="top-navbar no-print">
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <!-- Notification Bell -->
+        <div class="dropdown">
+            <a href="#" class="nav-link dropdown-toggle position-relative" id="notificationDropdown" 
+               data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-bell"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount">
+                    0
+                </span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                <li><h6 class="dropdown-header">Notifications</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                <div id="notificationList" class="px-3 py-2" style="max-height: 300px; overflow-y: auto; min-width: 300px;">
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-bell-slash fa-2x mb-2"></i>
+                        <p>No notifications</p>
+                    </div>
+                </div>
+            </ul>
+        </div>
+        
+        <!-- Messaging Inbox Link -->
+        <div class="dropdown">
+            <a href="#" class="nav-link dropdown-toggle position-relative" onclick="toggleMessagingPanel(); return false;">
+                <i class="fas fa-inbox"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" id="navbarUnreadCount" style="display: none;">
+                    0
+                </span>
+            </a>
+        </div>
+        
+        <!-- Theme Switcher -->
+        <div class="dropdown">
+            <a href="#" class="nav-link dropdown-toggle" id="themeDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Change Theme">
+                <i class="fas fa-palette"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="themeDropdown" style="min-width: 200px;">
+                <li><h6 class="dropdown-header"><i class="fas fa-palette me-2"></i>Color Themes</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item theme-option" href="#" data-theme="purple" onclick="setTheme('purple'); return false;">
+                        <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #5a4fcf, #6b5dd8); margin-right: 10px; vertical-align: middle;"></span>
+                        Purple (Default)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item theme-option" href="#" data-theme="blue-ocean" onclick="setTheme('blue-ocean'); return false;">
+                        <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #2563eb, #1d4ed8); margin-right: 10px; vertical-align: middle;"></span>
+                        Blue Ocean
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item theme-option" href="#" data-theme="teal-marine" onclick="setTheme('teal-marine'); return false;">
+                        <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #0d9488, #14b8a6); margin-right: 10px; vertical-align: middle;"></span>
+                        Teal Marine
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item theme-option" href="#" data-theme="emerald" onclick="setTheme('emerald'); return false;">
+                        <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #059669, #10b981); margin-right: 10px; vertical-align: middle;"></span>
+                        Emerald
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item theme-option" href="#" data-theme="indigo" onclick="setTheme('indigo'); return false;">
+                        <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #4f46e5, #6366f1); margin-right: 10px; vertical-align: middle;"></span>
+                        Indigo
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item theme-option" href="#" data-theme="rose" onclick="setTheme('rose'); return false;">
+                        <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #e11d48, #f43f5e); margin-right: 10px; vertical-align: middle;"></span>
+                        Rose
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item theme-option" href="#" data-theme="amber" onclick="setTheme('amber'); return false;">
+                        <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #d97706, #f59e0b); margin-right: 10px; vertical-align: middle;"></span>
+                        Amber
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="flex-grow-1 py-4">
+        <div class="container">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            {% for category, message in messages %}
+                                {# Filter out info messages and non-critical notifications on page navigation #}
+                                {% if category != 'info' or 'theme' not in message|lower %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                            <div>{{ message }}</div>
+                                        </div>
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer no-print">
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Marine Service Center Logo" class="footer-logo me-2">
+                        <h5 class="mb-0">Marine Service Center</h5>
+                    </div>
+                    <small>Version 2.0 | ISO 9001:2015 Certified</small>
+                </div>
+                <div class="text-end">
+                    <p class="mb-1">© 2025 Marine Service Center. All rights reserved.</p>
+                    <small>
+                        <i class="fas fa-phone me-1"></i> +1-800-MARINE | 
+                        <i class="fas fa-envelope ms-2 me-1"></i> support@marineservice.com
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Profile Picture Upload Modal -->
+    <div class="modal fade" id="uploadProfilePicModal" tabindex="-1" aria-labelledby="uploadProfilePicModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadProfilePicModalLabel">Change Profile Picture</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <div id="currentProfilePicContainer">
+                            {% if current_user_profile and current_user_profile.profile_pic_url %}
+                            <img src="{{ current_user_profile.profile_pic_url }}" 
+                                 id="currentProfilePic"
+                                 class="rounded-circle profile-pic-preview shadow" 
+                                 alt="Current Profile Picture">
+                            {% else %}
+                            <div id="currentProfilePic" class="rounded-circle profile-pic-placeholder d-flex align-items-center justify-content-center mx-auto shadow">
+                                <i class="fas fa-user text-secondary" style="font-size: 60px;"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <p class="text-muted mt-2 mb-0">Current profile picture</p>
+                    </div>
+                    
+                    <form id="profilePicUploadForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="profilePicFile" class="form-label">Upload New Picture</label>
+                            <input type="file" class="form-control" id="profilePicFile" name="profile_pic" accept="image/*" required>
+                            <div class="form-text">
+                                Allowed formats: JPG, PNG, GIF. Max size: 15MB.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="imagePreviewContainer" style="display: none;">
+                            <label class="form-label">Preview</label>
+                            <div class="text-center">
+                                <img id="imagePreview" 
+                                     class="rounded-circle profile-pic-preview" 
+                                     alt="Image Preview">
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="cancelUpload()">
+                                        <i class="fas fa-times me-1"></i> Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="uploadProgressContainer" style="display: none;">
+                            <label class="form-label">Uploading...</label>
+                            <div class="progress">
+                                <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
+                        
+                        <div id="uploadMessage" class="alert" style="display: none;"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="uploadButton" onclick="uploadProfilePicture()" disabled>
+                        <i class="fas fa-upload me-1"></i> Upload Picture
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Detail Modal -->
+    <div class="modal fade" id="messageDetailModal" tabindex="-1" aria-labelledby="messageDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="messageDetailModalLabel">
+                        <i class="fas fa-envelope me-2"></i>Message Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="messageDetailContent">
+                        <!-- Message details will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+    // ==================== GLOBAL VARIABLES ====================
+    let currentMessageFilter = 'all';
+    let currentMessageId = null;
+    let userSearchTimeout = null;
+    let messageAttachments = [];
+    let currentConversationId = null;
+    let currentTab = 'inbox';
+    let threadAttachments = [];
+
+    // ==================== FLOATING PANEL FUNCTIONS ====================
+
+    function toggleMessagingPanel() {
+        const panel = document.getElementById('messagingPanel');
+        const toggleBtn = document.getElementById('messagingToggleBtn');
+        
+        panel.classList.toggle('active');
+        toggleBtn.classList.toggle('active');
+        
+        if (panel.classList.contains('active')) {
+            loadMessagingTab(currentTab);
+        }
+    }
+
+    function switchMessagingTab(tabName) {
+        currentTab = tabName;
+        
+        // Update tab buttons
+        document.querySelectorAll('.messaging-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        loadMessagingTab(tabName);
+    }
+
+    function loadMessagingTab(tabName) {
+        const content = document.getElementById('messagingContent');
+        
+        switch(tabName) {
+            case 'inbox':
+                loadInboxTab(content);
+                break;
+            case 'compose':
+                loadComposeTab(content);
+                break;
+            case 'threads':
+                loadThreadsTab(content);
+                break;
+        }
+        
+        // Move quick-reply-area to footer if it exists in content
+        moveQuickReplyToFooter();
+    }
+    
+    // Function to ensure content structure is correct
+    function ensureMessagingContentStructure() {
+        const content = document.getElementById('messagingContent');
+        if (!content) return;
+        
+        let contentInner = content.querySelector('.messaging-content-inner');
+        
+        // Create messaging-content-inner if it doesn't exist
+        if (!contentInner) {
+            contentInner = document.createElement('div');
+            contentInner.className = 'messaging-content-inner';
+            // Move all direct children of content (except footer) into contentInner
+            while (content.firstChild && !content.firstChild.classList.contains('messaging-footer')) {
+                contentInner.appendChild(content.firstChild);
+            }
+            content.insertBefore(contentInner, content.firstChild);
+        }
+        
+        // Move any direct children (except messaging-content-inner and messaging-footer) into contentInner
+        Array.from(content.children).forEach(child => {
+            if (!child.classList.contains('messaging-content-inner') && 
+                !child.classList.contains('messaging-footer') &&
+                !child.classList.contains('quick-reply-area')) {
+                contentInner.appendChild(child);
+            }
+        });
+    }
+    
+    // Function to move quick-reply-area from content to footer
+    function moveQuickReplyToFooter() {
+        ensureMessagingContentStructure();
+        
+        const content = document.getElementById('messagingContent');
+        const footer = document.getElementById('messagingFooter');
+        const contentInner = content?.querySelector('.messaging-content-inner');
+        
+        if (!content || !footer) return;
+        
+        // Find quick-reply-area in content or content-inner
+        let quickReply = content.querySelector('.quick-reply-area:not(.messaging-footer .quick-reply-area)');
+        if (!quickReply && contentInner) {
+            quickReply = contentInner.querySelector('.quick-reply-area');
+        }
+        
+        if (quickReply && footer) {
+            // Remove from current location and move to footer
+            quickReply.remove();
+            footer.appendChild(quickReply);
+            footer.style.display = 'block';
+        } else if (!quickReply) {
+            // Hide footer if no quick-reply-area
+            footer.style.display = 'none';
+        }
+    }
+    
+    // Observer to watch for quick-reply-area being added
+    const messagingContentObserver = new MutationObserver(function(mutations) {
+        ensureMessagingContentStructure();
+        moveQuickReplyToFooter();
+    });
+    
+    // Start observing when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const content = document.getElementById('messagingContent');
+        if (content) {
+            messagingContentObserver.observe(content, {
+                childList: true,
+                subtree: true
+            });
+        }
+        // Initial check
+        setTimeout(function() {
+            ensureMessagingContentStructure();
+            moveQuickReplyToFooter();
+        }, 100);
+    });
+
+    function loadInboxTab(content) {
+        content.innerHTML = `
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading inbox...</p>
+            </div>
+        `;
+        
+        fetch('/api/messaging/inbox?filter=unread')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderInboxTab(content, data.messages);
+                } else {
+                    content.innerHTML = `<div class="alert alert-danger">Error loading inbox</div>`;
+                }
+            })
+            .catch(error => {
+                content.innerHTML = `<div class="alert alert-danger">Network error</div>`;
+            });
+    }
+
+    function renderInboxTab(content, messages) {
+        if (!messages || messages.length === 0) {
+            content.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">No new messages</h6>
+                    <p class="text-muted small">Your inbox is empty</p>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="switchMessagingTab('compose')">
+                        <i class="fas fa-pen me-1"></i> Compose New
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="list-group list-group-flush">';
+        
+        messages.slice(0, 10).forEach(message => {
+            const priorityClass = message.priority === 'urgent' ? 'message-priority-urgent' : 
+                                message.priority === 'high' ? 'message-priority-high' : 
+                                message.priority === 'low' ? 'message-priority-low' : 'message-priority-normal';
+            
+            const readClass = message.is_read ? '' : 'message-unread';
+            const icon = message.message_type === 'notification' ? 'bell' :
+                        message.message_type === 'announcement' ? 'bullhorn' : 'envelope';
+            
+            html += `
+                <a href="#" class="list-group-item list-group-item-action border-0 ${priorityClass} ${readClass}" 
+                   onclick="openMessageDetail('${message.message_id}')">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-small me-3">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                                 style="width: 36px; height: 36px; font-size: 0.8rem; font-weight: bold;">
+                                ${message.sender_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <strong class="text-truncate" style="max-width: 200px;">${message.sender_name}</strong>
+                                <small class="text-muted">${formatTimeAgo(message.created_at)}</small>
+                            </div>
+                            <p class="mb-1 text-truncate" style="max-width: 250px;">${message.title}</p>
+                            ${!message.is_read ? '<span class="badge bg-primary badge-sm">NEW</span>' : ''}
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+        
+        html += '</div>';
+        
+        if (messages.length > 10) {
+            html += `
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('messaging_center') }}" class="btn btn-sm btn-outline-primary">
+                        View All Messages (${messages.length})
+                    </a>
+                </div>
+            `;
+        }
+        
+        content.innerHTML = html;
+    }
+
+    function loadComposeTab(content) {
+        content.innerHTML = `
+            <form id="quickComposeForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">To</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="quickTo" 
+                               placeholder="Search user or enter email..." 
+                               onkeyup="quickSearchUsers(this.value)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="openUserSearchModal()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="user-search-dropdown" id="quickUserSearchResults"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="quickSubject" placeholder="Message subject">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-control" id="quickMessage" rows="4" placeholder="Type your message here..."></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" id="quickPriority">
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Attachment</label>
+                    <input type="file" class="form-control" id="quickAttachment" multiple onchange="handleAttachmentUpload(this, 'compose')">
+                    <small class="form-text text-muted">Multiple files allowed, max 20MB each</small>
+                    <div id="composeAttachmentPreview"></div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" onclick="sendQuickMessage()">
+                        <i class="fas fa-paper-plane me-1"></i> Send Message
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="saveAsDraft()">
+                        <i class="fas fa-save me-1"></i> Save as Draft
+                    </button>
+                </div>
+            </form>
+        `;
+    }
+
+    function handleAttachmentUpload(input, context) {
+        const files = Array.from(input.files);
+        const previewId = context === 'thread' ? 'threadAttachmentPreview' : 'composeAttachmentPreview';
+        const previewDiv = document.getElementById(previewId);
+        
+        if (!previewDiv) {
+            const newPreview = document.createElement('div');
+            newPreview.id = previewId;
+            input.parentNode.appendChild(newPreview);
+        }
+        
+        previewDiv.innerHTML = '';
+        
+        if (context === 'thread') {
+            threadAttachments = files;
+        } else {
+            messageAttachments = files;
+        }
+        
+        files.forEach((file, index) => {
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+            const previewItem = document.createElement('div');
+            previewItem.className = 'attachment-preview';
+            previewItem.innerHTML = `
+                <i class="fas fa-paperclip"></i>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${fileSize} MB</div>
+                </div>
+                <i class="fas fa-times remove-attachment" onclick="removeAttachment(${index}, '${context}')"></i>
+            `;
+            previewDiv.appendChild(previewItem);
+        });
+    }
+
+    function removeAttachment(index, context) {
+        if (context === 'thread') {
+            threadAttachments.splice(index, 1);
+            updateAttachmentPreview('thread');
+        } else {
+            messageAttachments.splice(index, 1);
+            updateAttachmentPreview('compose');
+        }
+    }
+
+    function updateAttachmentPreview(context) {
+        const files = context === 'thread' ? threadAttachments : messageAttachments;
+        const previewId = context === 'thread' ? 'threadAttachmentPreview' : 'composeAttachmentPreview';
+        const previewDiv = document.getElementById(previewId);
+        const inputId = context === 'thread' ? 'threadAttachment' : 'quickAttachment';
+        const input = document.getElementById(inputId);
+        
+        if (!previewDiv) return;
+        
+        previewDiv.innerHTML = '';
+        
+        // Create new DataTransfer for the input
+        const dataTransfer = new DataTransfer();
+        
+        files.forEach((file, index) => {
+            dataTransfer.items.add(file);
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+            const previewItem = document.createElement('div');
+            previewItem.className = 'attachment-preview';
+            previewItem.innerHTML = `
+                <i class="fas fa-paperclip"></i>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${fileSize} MB</div>
+                </div>
+                <i class="fas fa-times remove-attachment" onclick="removeAttachment(${index}, '${context}')"></i>
+            `;
+            previewDiv.appendChild(previewItem);
+        });
+        
+        // Update the file input
+        input.files = dataTransfer.files;
+    }
+
+    function loadThreadsTab(content) {
+        content.innerHTML = `
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading conversations...</p>
+            </div>
+        `;
+        
+        fetch('/api/messaging/threads')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    renderThreadsTab(content, data.threads);
+                } else {
+                    content.innerHTML = `<div class="alert alert-danger">Error loading conversations: ${data.error || 'Unknown error'}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading threads:', error);
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Could not load conversations. Please try again later.
+                    </div>
+                `;
+            });
+    }
+
+    function renderThreadsTab(content, threads) {
+        if (!threads || threads.length === 0) {
+            content.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">No conversations</h6>
+                    <p class="text-muted small">Start a new conversation</p>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="switchMessagingTab('compose')">
+                        <i class="fas fa-pen me-1"></i> Compose New
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="list-group list-group-flush">';
+        
+        threads.forEach(thread => {
+            const unreadCount = thread.unread_count || 0;
+            const partyName = thread.other_party_name || 'Unknown User';
+            const initials = partyName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            
+            html += `
+                <a href="#" class="list-group-item list-group-item-action border-0" 
+                   onclick="openMessageThread('${thread.other_party_id}', '${partyName.replace(/'/g, "\\'")}')">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-small me-3 position-relative">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px; font-size: 0.9rem; font-weight: bold;">
+                                ${initials}
+                            </div>
+                            ${unreadCount > 0 ? `
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    ${unreadCount}
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <strong>${partyName}</strong>
+                                <small class="text-muted">${formatTimeAgo(thread.last_message_date)}</small>
+                            </div>
+                            <p class="mb-1 text-truncate" style="max-width: 250px;">${thread.message_count || 0} messages</p>
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+        
+        html += '</div>';
+        content.innerHTML = html;
+    }
+
+    function openComposeTab() {
+        toggleMessagingPanel();
+        setTimeout(() => {
+            switchMessagingTab('compose');
+        }, 300);
+    }
+
+    function openMessageThread(otherPartyId, userName) {
+        currentConversationId = otherPartyId;
+        
+        const content = document.getElementById('messagingContent');
+        content.innerHTML = `
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading conversation...</p>
+            </div>
+        `;
+        
+        fetch(`/api/messaging/thread/${otherPartyId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    renderMessageThread(content, data.messages, userName);
+                } else {
+                    content.innerHTML = `<div class="alert alert-danger">Error loading conversation: ${data.error || 'Unknown error'}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading thread:', error);
+                content.innerHTML = `<div class="alert alert-danger">Network error loading conversation</div>`;
+            });
+    }
+
+    function renderMessageThread(content, messages, userName) {
+        const displayName = userName || 'Unknown';
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        let html = `
+            <div class="conversation-header">
+                <div class="avatar">${initials}</div>
+                <div class="info">
+                    <h6>${displayName}</h6>
+                    <p>Active now</p>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="switchMessagingTab('threads')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+            
+            <div class="message-conversation" id="messageThread">
+        `;
+        
+        if (messages && messages.length > 0) {
+            messages.forEach(msg => {
+                const bubbleClass = msg.direction === 'sent' ? 'sent' : 'received';
+                const messageText = msg.message || msg.reply_text || '';
+                
+                html += `
+                    <div class="message-bubble ${bubbleClass}">
+                        ${messageText ? `<div>${messageText}</div>` : ''}
+                        ${msg.attachments && msg.attachments.length > 0 ? `
+                            <div class="message-attachments mt-2">
+                                ${msg.attachments.map(att => `
+                                    <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded" 
+                                         style="background: rgba(255, 255, 255, 0.2); color: white;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
+                                            <span class="small" style="color: white;">${att.filename}</span>
+                                        </div>
+                                        <a href="/api/messaging/download-attachment/${msg.message_id}/${att.index}" 
+                                           class="btn btn-sm btn-outline-light" 
+                                           title="Download ${att.filename}">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="message-time">${formatDateTime(msg.created_at)}</div>
+                    </div>
+                `;
+                
+                // Show replies if any
+                if (msg.replies && msg.replies.length > 0) {
+                    msg.replies.forEach(reply => {
+                        const replyBubbleClass = reply.sender_id === currentUser.id ? 'sent' : 'received';
+                        html += `
+                            <div class="message-bubble ${replyBubbleClass}">
+                                ${reply.reply_text ? `<div>${reply.reply_text}</div>` : ''}
+                                ${reply.attachments && reply.attachments.length > 0 ? `
+                                    <div class="message-attachments mt-2">
+                                        ${reply.attachments.map(att => `
+                                            <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded" 
+                                                 style="background: rgba(255, 255, 255, 0.2); color: white;">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
+                                                    <span class="small" style="color: white;">${att.filename}</span>
+                                                </div>
+                                                <a href="/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}" 
+                                                   class="btn btn-sm btn-outline-light" 
+                                                   title="Download ${att.filename}">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                                <div class="message-time">${formatDateTime(reply.created_at)}</div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+        } else {
+            html += `<div class="text-center text-muted py-4">No messages in this conversation yet</div>`;
+        }
+        
+        html += `</div>`;
+        
+        html += `
+            <div class="quick-reply-area">
+                <textarea id="threadReplyText" placeholder="Type your reply..." onfocus="showEmojiPicker()"></textarea>
+                <div id="threadAttachmentPreview"></div>
+                <div class="d-flex gap-2 mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('threadAttachment').click()">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="file" id="threadAttachment" style="display: none;" multiple onchange="handleAttachmentUpload(this, 'thread')">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEmojiPicker()">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary ms-auto" onclick="sendThreadReply()">
+                        <i class="fas fa-paper-plane me-1"></i> Send
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        content.innerHTML = html;
+        
+        // Scroll to bottom of conversation
+        const threadDiv = document.getElementById('messageThread');
+        if (threadDiv) {
+            threadDiv.scrollTop = threadDiv.scrollHeight;
+        }
+        
+        // Initialize emoji picker
+        initEmojiPicker();
+    }
+
+    function initEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        const textarea = document.getElementById('threadReplyText');
+        
+        if (!emojiPicker || !textarea) return;
+        
+        // Position emoji picker near the textarea
+        const textareaRect = textarea.getBoundingClientRect();
+        emojiPicker.style.position = 'absolute';
+        emojiPicker.style.bottom = '100px';
+        emojiPicker.style.right = '20px';
+    }
+
+    function toggleEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        emojiPicker.classList.toggle('active');
+    }
+
+    function showEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        if (emojiPicker.classList.contains('active')) {
+            emojiPicker.classList.remove('active');
+        }
+    }
+
+    function insertEmoji(emoji) {
+        const textarea = document.getElementById('threadReplyText');
+        if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            textarea.value = text.substring(0, start) + emoji + text.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+            textarea.focus();
+        }
+        
+        // Hide emoji picker after insertion
+        document.getElementById('emojiPicker').classList.remove('active');
+    }
+
+    function sendThreadReply() {
+        const replyText = document.getElementById('threadReplyText').value;
+        
+        if (!replyText.trim() && threadAttachments.length === 0) {
+            showAlert('warning', 'Please enter a message or attach a file');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('recipient_id', currentConversationId);
+        formData.append('subject', `Re: Conversation with ${currentConversationId}`);
+        formData.append('message', replyText);
+        formData.append('priority', 'normal');
+        formData.append('thread_context', 'reply');
+        
+        // Add attachments
+        threadAttachments.forEach((file, index) => {
+            formData.append('attachments', file);
+        });
+        
+        // Show loading state
+        const sendBtn = document.querySelector('.quick-reply-area .btn-primary');
+        const originalText = sendBtn.innerHTML;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
+        sendBtn.disabled = true;
+        
+        fetch('/api/messaging/quick-send', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            sendBtn.innerHTML = originalText;
+            sendBtn.disabled = false;
+            
+            if (data.success) {
+                showAlert('success', 'Reply sent successfully!');
+                // Clear form
+                document.getElementById('threadReplyText').value = '';
+                threadAttachments = [];
+                document.getElementById('threadAttachmentPreview').innerHTML = '';
+                document.getElementById('threadAttachment').value = '';
+                
+                // Reload the thread to show the new message
+                openMessageThread(currentConversationId, 'Loading...');
+            } else {
+                showAlert('danger', `Error sending reply: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            sendBtn.innerHTML = originalText;
+            sendBtn.disabled = false;
+            showAlert('danger', 'Network error sending reply: ' + error.message);
+        });
+    }
+
+    function quickSearchUsers(query) {
+        const searchResults = document.getElementById('quickUserSearchResults');
+        
+        if (!query || query.trim().length < 2) {
+            searchResults.style.display = 'none';
+            searchResults.innerHTML = '';
+            return;
+        }
+        
+        clearTimeout(userSearchTimeout);
+        userSearchTimeout = setTimeout(() => {
+            fetch(`/api/messaging/search-users?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.users.length > 0) {
+                        searchResults.innerHTML = '';
+                        data.users.forEach(user => {
+                            const item = document.createElement('div');
+                            item.className = 'user-search-item';
+                            item.innerHTML = `
+                                <div class="avatar">
+                                    ${user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                                </div>
+                                <div class="info">
+                                    <div class="name">${user.full_name}</div>
+                                    <div class="details">${user.email} • ${user.role}</div>
+                                </div>
+                            `;
+                            item.onclick = () => selectQuickUser(user.user_id, user.full_name);
+                            searchResults.appendChild(item);
+                        });
+                        searchResults.style.display = 'block';
+                    } else {
+                        searchResults.innerHTML = '<div class="user-search-item">No users found</div>';
+                        searchResults.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    searchResults.innerHTML = '<div class="user-search-item">Search error</div>';
+                    searchResults.style.display = 'block';
+                });
+        }, 300);
+    }
+
+    function selectQuickUser(userId, userName) {
+        document.getElementById('quickTo').value = userName;
+        document.getElementById('quickTo').dataset.userId = userId;
+        document.getElementById('quickUserSearchResults').style.display = 'none';
+    }
+
+    function sendQuickMessage() {
+        const toField = document.getElementById('quickTo');
+        const userId = toField.dataset.userId;
+        const userName = toField.value;
+        const subject = document.getElementById('quickSubject').value;
+        const message = document.getElementById('quickMessage').value;
+        const priority = document.getElementById('quickPriority').value;
+        
+        if (!userId && !userName.includes('@')) {
+            showAlert('warning', 'Please select a user from the dropdown or enter a valid email');
+            return;
+        }
+        
+        if (!subject.trim()) {
+            showAlert('warning', 'Please enter a subject');
+            return;
+        }
+        
+        if (!message.trim() && messageAttachments.length === 0) {
+            showAlert('warning', 'Please enter a message or attach a file');
+            return;
+        }
+        
+        const formData = new FormData();
+        
+        if (userId) {
+            formData.append('user_id', userId);
+        } else {
+            formData.append('email', userName);
+        }
+        formData.append('subject', subject);
+        formData.append('message', message);
+        formData.append('priority', priority);
+        
+        // Add attachments
+        messageAttachments.forEach((file, index) => {
+            formData.append('attachments', file);
+        });
+        
+        // Show loading state
+        const sendBtn = document.querySelector('#quickComposeForm .btn-primary');
+        const originalText = sendBtn.innerHTML;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
+        sendBtn.disabled = true;
+        
+        fetch('/api/messaging/quick-send', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            sendBtn.innerHTML = originalText;
+            sendBtn.disabled = false;
+            
+            if (data.success) {
+                showAlert('success', 'Message sent successfully!');
+                // Clear form
+                document.getElementById('quickComposeForm').reset();
+                toField.dataset.userId = '';
+                toField.value = '';
+                messageAttachments = [];
+                document.getElementById('composeAttachmentPreview').innerHTML = '';
+                // Switch to inbox
+                switchMessagingTab('inbox');
+                // Reload unread count
+                loadUnreadCount();
+            } else {
+                showAlert('danger', `Error sending message: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            sendBtn.innerHTML = originalText;
+            sendBtn.disabled = false;
+            showAlert('danger', 'Network error sending message: ' + error.message);
+        });
+    }
+
+    function saveAsDraft() {
+        showAlert('info', 'Draft saved (demo)');
+    }
+
+    function openUserSearchModal() {
+        showAlert('info', 'Please use the full messaging center for advanced user search');
+    }
+
+    function openMessageDetail(messageId) {
+        // Mark as read first
+        fetch(`/api/messaging/mark-read/${messageId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload unread count
+                loadUnreadCount();
+                // Load message details
+                return fetch(`/api/messaging/message/${messageId}`);
+            }
+            throw new Error('Failed to mark as read');
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show message in modal
+                const modal = new bootstrap.Modal(document.getElementById('messageDetailModal'));
+                const content = document.getElementById('messageDetailContent');
+                
+                const message = data.message;
+                let html = `
+                    <div class="message-detail">
+                        <div class="mb-3">
+                            <h6>From: ${message.sender_name}</h6>
+                            <small class="text-muted">${formatDateTime(message.created_at)}</small>
+                        </div>
+                        <div class="mb-3">
+                            <h5>${message.title}</h5>
+                        </div>
+                        <div class="mb-4">
+                            <p>${message.message}</p>
+                        </div>
+                `;
+                
+                if (message.attachments && message.attachments.length > 0) {
+                    html += `<div class="mb-3">
+                        <h6>Attachments:</h6>
+                        <ul class="list-group">`;
+                    message.attachments.forEach((att, index) => {
+                        html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${att.filename}
+                            <a href="/api/messaging/download-attachment/${messageId}/${index}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </li>`;
+                    });
+                    html += `</ul></div>`;
+                }
+                
+                if (message.allow_replies && message.message_type === 'message') {
+                    html += `
+                        <div class="reply-section mt-4">
+                            <h6>Reply:</h6>
+                            <textarea class="form-control mb-2" id="replyText" rows="3" placeholder="Type your reply..."></textarea>
+                            <button class="btn btn-primary" onclick="sendReply('${messageId}')">
+                                <i class="fas fa-paper-plane me-1"></i> Send Reply
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                html += `</div>`;
+                content.innerHTML = html;
+                modal.show();
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Error loading message details');
+        });
+    }
+
+    function sendReply(messageId) {
+        const replyText = document.getElementById('replyText').value;
+        
+        if (!replyText.trim()) {
+            showAlert('warning', 'Please enter a reply');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('message_id', messageId);
+        formData.append('reply_text', replyText);
+        
+        fetch('/api/messaging/reply', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Reply sent successfully!');
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('messageDetailModal'));
+                modal.hide();
+                // Reload inbox
+                loadMessagingTab(currentTab);
+            } else {
+                showAlert('danger', `Error sending reply: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Network error sending reply');
+        });
+    }
+
+    // ==================== EXISTING MESSAGING FUNCTIONS ====================
+
+    // Initialize messaging system
+    function initMessaging() {
+        // Load unread count
+        loadUnreadCount();
+        
+        // Refresh unread count every 30 seconds
+        setInterval(loadUnreadCount, 30000);
+        
+        // Set up keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'm') {
+                e.preventDefault();
+                toggleMessagingPanel();
+            }
+        });
+        
+        // Close emoji picker when clicking outside
+        document.addEventListener('click', function(e) {
+            const emojiPicker = document.getElementById('emojiPicker');
+            if (emojiPicker && !emojiPicker.contains(e.target) && 
+                !e.target.classList.contains('fa-smile') && 
+                !e.target.parentElement.classList.contains('fa-smile')) {
+                emojiPicker.classList.remove('active');
+            }
+        });
+    }
+
+    // Load unread message count
+    function loadUnreadCount() {
+        fetch('/api/messaging/unread-count')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const navbarBadge = document.getElementById('navbarUnreadCount');
+                    const floatingBadge = document.getElementById('floatingUnreadCount');
+                    
+                    if (navbarBadge && data.count > 0) {
+                        navbarBadge.textContent = data.count;
+                        navbarBadge.style.display = 'inline-block';
+                    } else if (navbarBadge) {
+                        navbarBadge.style.display = 'none';
+                    }
+                    
+                    if (floatingBadge && data.count > 0) {
+                        floatingBadge.textContent = data.count;
+                        floatingBadge.style.display = 'inline-block';
+                    } else if (floatingBadge) {
+                        floatingBadge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(error => console.error('Error loading unread count:', error));
+    }
+
+    // ==================== UTILITY FUNCTIONS ====================
+
+    // Format time ago with real-time accuracy
+    function formatTimeAgo(dateString) {
+        if (!dateString) return 'Unknown';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Invalid date';
+            
+            const now = new Date();
+            const diffMs = now - date;
+            
+            // Handle negative differences (future dates)
+            if (diffMs < 0) return 'Just now';
+            
+            const diffSecs = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffSecs < 10) return 'Just now';
+            if (diffSecs < 60) return `${diffSecs} sec${diffSecs > 1 ? 's' : ''} ago`;
+            if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            return date.toLocaleDateString();
+        } catch (e) {
+            console.error('Error formatting time:', e, dateString);
+            return 'Unknown';
+        }
+    }
+
+    // Format date time with real-time accuracy
+    function formatDateTime(dateString) {
+        if (!dateString) return 'Unknown';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Invalid date';
+            
+            const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second: '2-digit'});
+            const dateStr = date.toLocaleDateString();
+            return `${timeStr} ${dateStr}`;
+        } catch (e) {
+            console.error('Error formatting datetime:', e, dateString);
+            return 'Unknown';
+        }
+    }
+    
+    // Update timestamps in real-time (call this periodically)
+    function updateTimestamps() {
+        document.querySelectorAll('[data-timestamp]').forEach(element => {
+            const timestamp = element.getAttribute('data-timestamp');
+            if (timestamp) {
+                element.textContent = formatTimeAgo(timestamp);
+            }
+        });
+    }
+    
+    // Update timestamps every 30 seconds
+    setInterval(updateTimestamps, 30000);
+
+    // Show alert message
+    function showAlert(type, message) {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert.position-fixed');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                <div>${message}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // ==================== EXISTING BASE.HTML FUNCTIONS ====================
+
+    // Load notifications
+    function loadNotifications() {
+        fetch('/api/notifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const list = document.getElementById('notificationList');
+                    const count = document.getElementById('notificationCount');
+                    
+                    // Count unread notifications
+                    const unreadCount = data.notifications.filter(n => !n.is_read).length;
+                    if (unreadCount > 0) {
+                        count.textContent = unreadCount;
+                        count.style.display = 'inline-block';
+                    } else {
+                        count.style.display = 'none';
+                    }
+                    
+                    if (data.notifications.length > 0) {
+                        
+                        let html = '';
+                        data.notifications.forEach(notif => {
+                            const icon = notif.type === 'danger' ? 'exclamation-circle' :
+                                       notif.type === 'warning' ? 'exclamation-triangle' :
+                                       notif.type === 'success' ? 'check-circle' : 'info-circle';
+                            const isUnread = !notif.is_read;
+                            const unreadClass = isUnread ? 'fw-bold' : '';
+                            const unreadBadge = isUnread ? '<span class="badge bg-danger ms-2">New</span>' : '';
+                            
+                            html += `
+                                <div class="mb-2 p-2 border-start border-3 border-${notif.type} bg-light rounded notification-item ${isUnread ? 'notification-unread' : ''}" 
+                                     style="cursor: pointer; transition: all 0.2s;" 
+                                     onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                                     onmouseout="this.style.backgroundColor=''" 
+                                     onclick="viewNotificationDetails(${notif.id})">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center">
+                                                <strong class="${unreadClass}">
+                                                    <i class="fas fa-${icon} me-1 text-${notif.type}"></i>
+                                                    ${notif.title}
+                                                </strong>
+                                                ${unreadBadge}
+                                            </div>
+                                            <p class="mb-1 small text-truncate" style="max-width: 250px;">${notif.message}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>${formatTimeAgo(notif.timestamp || notif.created_at)}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        list.innerHTML = html;
+                    } else {
+                        list.innerHTML = `
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-bell-slash fa-2x mb-2"></i>
+                                <p>No notifications</p>
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+            });
+    }
+
+    // View notification details
+    function viewNotificationDetails(notificationId) {
+        fetch(`/api/notification/${notificationId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const notif = data.notification;
+                    showNotificationModal(notif);
+                    // Reload notifications to update read status
+                    setTimeout(() => loadNotifications(), 500);
+                } else {
+                    showAlert('danger', data.error || 'Failed to load notification details');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notification:', error);
+                showAlert('danger', 'Error loading notification details');
+            });
+    }
+
+    // Show notification detail modal
+    function showNotificationModal(notification) {
+        const icon = notification.type === 'danger' ? 'exclamation-circle' :
+                    notification.type === 'warning' ? 'exclamation-triangle' :
+                    notification.type === 'success' ? 'check-circle' : 'info-circle';
+        
+        const modalHtml = `
+            <div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationDetailModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-${notification.type}" style="border-top-width: 4px !important;">
+                            <h5 class="modal-title" id="notificationDetailModalLabel">
+                                <i class="fas fa-${icon} me-2 text-${notification.type}"></i>
+                                ${notification.title}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    ${formatDateTime(notification.created_at)}
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <p class="mb-0" style="white-space: pre-wrap;">${notification.message}</p>
+                            </div>
+                            ${notification.action_url && notification.action_url !== '#' ? `
+                                <div class="alert alert-info">
+                                    <i class="fas fa-link me-2"></i>
+                                    <strong>Related Action:</strong> This notification is related to a specific item or page.
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            ${notification.action_url && notification.action_url !== '#' ? `
+                                <button type="button" class="btn btn-${notification.type}" data-action-url="${notification.action_url.replace(/"/g, '&quot;')}" onclick="navigateToNotificationPage(this.dataset.actionUrl)">
+                                    <i class="fas fa-external-link-alt me-1"></i> Go to Related Page
+                                </button>
+                            ` : ''}
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('notificationDetailModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
+        modal.show();
+        
+        // Remove modal from DOM when hidden
+        document.getElementById('notificationDetailModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+
+    // Navigate to notification related page
+    function navigateToNotificationPage(actionUrl) {
+        if (!actionUrl || actionUrl === '#') {
+            return;
+        }
+        
+        // Close the modal first
+        const modalElement = document.getElementById('notificationDetailModal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
+        
+        // Wait a bit for modal to close, then navigate
+        setTimeout(() => {
+            try {
+                // Handle different URL formats
+                let targetUrl = actionUrl;
+                
+                // If it's a relative path, ensure it starts with /
+                if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://') && !targetUrl.startsWith('/')) {
+                    targetUrl = '/' + targetUrl;
+                }
+                
+                // Handle query parameters - they should already be in the URL
+                // Navigate to the page
+                window.location.href = targetUrl;
+            } catch (error) {
+                console.error('Error navigating to notification page:', error);
+                showAlert('warning', 'Could not navigate to the related page. Please use the navigation menu.');
+                // Fallback to dashboard
+                window.location.href = '/dashboard';
+            }
+        }, 300);
+    }
+
+    // Profile Picture Upload Functions
+    // Theme Management System with Event Dispatch
+    function setTheme(themeName) {
+        // Add smooth transition effect
+        document.documentElement.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+        
+        // Remove all theme attributes
+        document.documentElement.removeAttribute('data-theme');
+        
+        // Set new theme
+        if (themeName && themeName !== 'purple') {
+            document.documentElement.setAttribute('data-theme', themeName);
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('selectedTheme', themeName || 'purple');
+        
+        // Update active state in dropdown
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.remove('active');
+            if (option.dataset.theme === themeName) {
+                option.classList.add('active');
+            }
+        });
+        
+        // Dispatch custom event for any child templates listening for theme changes
+        const themeChangeEvent = new CustomEvent('themeChanged', {
+            detail: { theme: themeName || 'purple' },
+            bubbles: true,
+            cancelable: false
+        });
+        document.dispatchEvent(themeChangeEvent);
+        
+        // Reset transition after it completes
+        setTimeout(() => {
+            document.documentElement.style.transition = '';
+        }, 300);
+        
+        // Log theme change for debugging
+        console.log('✅ Theme changed to:', themeName || 'purple');
+    }
+    
+    function loadTheme() {
+        const savedTheme = localStorage.getItem('selectedTheme') || 'purple';
+        // Apply theme immediately without transition on page load
+        document.documentElement.removeAttribute('data-theme');
+        if (savedTheme && savedTheme !== 'purple') {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+        // Update active state in dropdown
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.remove('active');
+            if (option.dataset.theme === savedTheme) {
+                option.classList.add('active');
+            }
+        });
+    }
+    
+    // Sidebar collapse/expand function (like DeepSeek AI)
+    function toggleSidebarCollapse() {
+        const sidebar = document.getElementById('sidebar');
+        const body = document.body;
+        const toggleIcon = document.getElementById('sidebarToggleIcon');
+        
+        if (sidebar) {
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            // Don't toggle body padding since header always stays visible
+            // body.classList.toggle('sidebar-collapsed', isCollapsed);
+            
+            // Rotate icon
+            if (toggleIcon) {
+                if (isCollapsed) {
+                    toggleIcon.classList.remove('fa-chevron-left');
+                    toggleIcon.classList.add('fa-chevron-right');
+                } else {
+                    toggleIcon.classList.remove('fa-chevron-right');
+                    toggleIcon.classList.add('fa-chevron-left');
+                }
+            }
+            
+            // Save state to localStorage
+            localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
+        }
+    }
+    
+    // Load sidebar state on page load
+    function loadSidebarState() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleIcon = document.getElementById('sidebarToggleIcon');
+        const savedState = localStorage.getItem('sidebarCollapsed');
+        
+        if (sidebar && savedState === 'true') {
+            sidebar.classList.add('collapsed');
+            // Don't add body padding class since header always stays visible
+            // body.classList.add('sidebar-collapsed');
+            
+            if (toggleIcon) {
+                toggleIcon.classList.remove('fa-chevron-left');
+                toggleIcon.classList.add('fa-chevron-right');
+            }
+        }
+    }
+    
+    // Sidebar toggle function for mobile (show/hide)
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar && overlay) {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggle = document.getElementById('sidebarToggle');
+        
+        if (window.innerWidth <= 768 && sidebar && overlay) {
+            if (!sidebar.contains(event.target) && 
+                !toggle?.contains(event.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        }
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load saved theme
+        loadTheme();
+        // Load sidebar state
+        loadSidebarState();
+        // Image preview functionality
+        const profilePicFile = document.getElementById('profilePicFile');
+        if (profilePicFile) {
+            profilePicFile.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const uploadButton = document.getElementById('uploadButton');
+                const previewContainer = document.getElementById('imagePreviewContainer');
+                const previewImage = document.getElementById('imagePreview');
+                
+                if (file) {
+                    // Validate file type
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+                    if (!validTypes.includes(file.type)) {
+                        showMessage('Please select a valid image file (JPG, PNG, GIF).', 'danger');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Validate file size (15MB max)
+                    if (file.size > 15 * 1024 * 1024) {
+                        showMessage('File size exceeds 15MB limit.', 'danger');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        previewImage.src = event.target.result;
+                        previewContainer.style.display = 'block';
+                        uploadButton.disabled = false;
+                        clearMessage();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewContainer.style.display = 'none';
+                    uploadButton.disabled = true;
+                }
+            });
+        }
+        
+        // Initialize messaging system
+        initMessaging();
+        
+        // Load notifications and update counts
+        loadNotifications();
+        loadUnreadCount();
+        
+        // Refresh notifications every 30 seconds
+        setInterval(loadNotifications, 30000);
+        
+        // Fix body padding for fixed navbar and footer
+        document.body.style.paddingTop = '70px';
+        document.body.style.paddingBottom = '80px';
+    });
+
+    function cancelUpload() {
+        document.getElementById('profilePicFile').value = '';
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+        document.getElementById('uploadButton').disabled = true;
+        clearMessage();
+    }
+
+    function uploadProfilePicture() {
+        const fileInput = document.getElementById('profilePicFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            showMessage('Please select a file first.', 'warning');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('profile_pic', file);
+        
+        // Show progress bar
+        const progressContainer = document.getElementById('uploadProgressContainer');
+        const progressBar = document.getElementById('uploadProgressBar');
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+        
+        // Disable upload button
+        document.getElementById('uploadButton').disabled = true;
+        
+        // Create XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percentComplete + '%';
+                progressBar.textContent = percentComplete + '%';
+            }
+        });
+        
+        xhr.addEventListener('load', function() {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                
+                if (response.success) {
+                    showMessage('Profile picture updated successfully!', 'success');
+                    
+                    // Update the current profile picture preview in modal
+                    const currentPic = document.getElementById('currentProfilePic');
+                    const previewImage = document.getElementById('imagePreview');
+                    if (currentPic.tagName === 'IMG' && previewImage.src) {
+                        // Use the preview image as new current image
+                        currentPic.src = previewImage.src;
+                    }
+                    
+                    // Update the navbar profile picture
+                    const navProfilePic = document.querySelector('#userDropdown img');
+                    if (navProfilePic && previewImage.src) {
+                        navProfilePic.src = previewImage.src;
+                    } else if (navProfilePic) {
+                        // Add timestamp to prevent caching if we don't have preview
+                        navProfilePic.src = navProfilePic.src.split('?')[0] + '?' + new Date().getTime();
+                    }
+                    
+                    // Reset form and hide progress
+                    setTimeout(() => {
+                        cancelUpload();
+                        progressContainer.style.display = 'none';
+                        document.getElementById('uploadButton').disabled = false;
+                        
+                        // Close modal after 2 seconds
+                        setTimeout(() => {
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('uploadProfilePicModal'));
+                            if (modal) {
+                                modal.hide();
+                            }
+                        }, 2000);
+                    }, 1000);
+                } else {
+                    showMessage('Error: ' + (response.error || 'Upload failed'), 'danger');
+                    document.getElementById('uploadButton').disabled = false;
+                    progressContainer.style.display = 'none';
+                }
+            } catch (error) {
+                showMessage('Error parsing server response', 'danger');
+                document.getElementById('uploadButton').disabled = false;
+                progressContainer.style.display = 'none';
+            }
+        });
+        
+        xhr.addEventListener('error', function() {
+            showMessage('Upload failed. Please check your connection.', 'danger');
+            document.getElementById('uploadButton').disabled = false;
+            progressContainer.style.display = 'none';
+        });
+        
+        xhr.open('POST', '/api/update-profile-pic');
+        xhr.send(formData);
+    }
+
+    function showMessage(text, type) {
+        const messageDiv = document.getElementById('uploadMessage');
+        messageDiv.textContent = text;
+        messageDiv.className = `alert alert-${type}`;
+        messageDiv.style.display = 'block';
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    function clearMessage() {
+        document.getElementById('uploadMessage').style.display = 'none';
+    }
+
+    function printProfile() {
+        if (window.location.pathname.includes('/profile')) {
+            return;
+        }
+        window.location.href = '/profile';
+    }
+    </script>
+    
+    <!-- Theme System Script -->
+    <script src="{{ url_for('static', filename='js/theme-system.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

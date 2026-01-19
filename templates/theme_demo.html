@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Theme System Demo - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; border-radius: 12px;">
+                <div class="card-body">
+                    <h1 class="mb-2"><i class="fas fa-palette me-3"></i>Theme System Demo</h1>
+                    <p class="mb-0">Experience the dynamic theme system. Change the theme from the navbar and watch all colors update in real-time!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-3 mb-3">
+            <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
+                <div class="card-header" style="background-color: var(--primary-color); color: white;">
+                    <h6 class="mb-0"><i class="fas fa-palette me-2"></i>Current Theme</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Theme Name:</strong></p>
+                    <p id="currentTheme" style="color: var(--primary-color); font-size: 1.2rem; font-weight: 600;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 mb-3">
+            <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
+                <div class="card-header" style="background-color: var(--primary-color); color: white;">
+                    <h6 class="mb-0"><i class="fas fa-cube me-2"></i>Primary Color</h6>
+                </div>
+                <div class="card-body">
+                    <div id="primaryColorBox" style="width: 100%; height: 60px; border-radius: 8px; margin-bottom: 10px;"></div>
+                    <p id="primaryColorValue" style="font-family: monospace; font-size: 0.9rem;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 mb-3">
+            <div class="card h-100" style="border-left: 4px solid var(--secondary-color);">
+                <div class="card-header" style="background-color: var(--secondary-color); color: white;">
+                    <h6 class="mb-0"><i class="fas fa-cube me-2"></i>Secondary Color</h6>
+                </div>
+                <div class="card-body">
+                    <div id="secondaryColorBox" style="width: 100%; height: 60px; border-radius: 8px; margin-bottom: 10px;"></div>
+                    <p id="secondaryColorValue" style="font-family: monospace; font-size: 0.9rem;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 mb-3">
+            <div class="card h-100" style="border-left: 4px solid var(--accent-color);">
+                <div class="card-header" style="background-color: var(--accent-color); color: white;">
+                    <h6 class="mb-0"><i class="fas fa-cube me-2"></i>Accent Color</h6>
+                </div>
+                <div class="card-body">
+                    <div id="accentColorBox" style="width: 100%; height: 60px; border-radius: 8px; margin-bottom: 10px;"></div>
+                    <p id="accentColorValue" style="font-family: monospace; font-size: 0.9rem;">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Colors -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Status Colors</h4>
+        </div>
+        <div class="col-lg-3 mb-3">
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Success:</strong> Operation completed successfully
+            </div>
+        </div>
+        <div class="col-lg-3 mb-3">
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> Please review this information
+            </div>
+        </div>
+        <div class="col-lg-3 mb-3">
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-times-circle me-2"></i>
+                <strong>Danger:</strong> Critical issue requires attention
+            </div>
+        </div>
+        <div class="col-lg-3 mb-3">
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Info:</strong> Here is some useful information
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Button Styles</h4>
+        </div>
+        <div class="col-lg-2 mb-2">
+            <button class="btn btn-primary w-100"><i class="fas fa-check me-1"></i> Primary</button>
+        </div>
+        <div class="col-lg-2 mb-2">
+            <button class="btn btn-secondary w-100"><i class="fas fa-link me-1"></i> Secondary</button>
+        </div>
+        <div class="col-lg-2 mb-2">
+            <button class="btn btn-success w-100"><i class="fas fa-plus me-1"></i> Success</button>
+        </div>
+        <div class="col-lg-2 mb-2">
+            <button class="btn btn-warning w-100"><i class="fas fa-star me-1"></i> Warning</button>
+        </div>
+        <div class="col-lg-2 mb-2">
+            <button class="btn btn-danger w-100"><i class="fas fa-trash me-1"></i> Danger</button>
+        </div>
+        <div class="col-lg-2 mb-2">
+            <button class="btn btn-info w-100"><i class="fas fa-info me-1"></i> Info</button>
+        </div>
+    </div>
+
+    <!-- Color Palette -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Color Palette Variants</h4>
+        </div>
+        <div class="col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-header" style="background-color: var(--primary-color); color: white;">
+                    Primary Palette
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p class="small text-muted">Light</p>
+                        <div id="primaryLight" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="mb-3">
+                        <p class="small text-muted">Normal</p>
+                        <div id="primaryNormal" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="mb-0">
+                        <p class="small text-muted">Dark</p>
+                        <div id="primaryDark" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-header" style="background-color: var(--secondary-color); color: white;">
+                    Secondary Palette
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p class="small text-muted">Light</p>
+                        <div id="secondaryLight" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="mb-3">
+                        <p class="small text-muted">Normal</p>
+                        <div id="secondaryNormal" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="mb-0">
+                        <p class="small text-muted">Dark</p>
+                        <div id="secondaryDark" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-header" style="background-color: var(--accent-color); color: white;">
+                    Accent Palette
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p class="small text-muted">Light</p>
+                        <div id="accentLight" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="mb-3">
+                        <p class="small text-muted">Normal</p>
+                        <div id="accentNormal" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="mb-0">
+                        <p class="small text-muted">Dark</p>
+                        <div id="accentDark" style="height: 30px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card" style="border-left: 4px solid var(--info-blue);">
+                <div class="card-header" style="background-color: var(--info-blue); color: white;">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>How to Use</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li><strong>Change Theme:</strong> Click on "Settings" in the top-right corner</li>
+                        <li><strong>Select Theme:</strong> Choose from 7 beautiful themes (Purple, Blue Ocean, Teal Marine, Emerald, Indigo, Rose, Amber)</li>
+                        <li><strong>Watch Colors Update:</strong> All colors on this page update instantly!</li>
+                        <li><strong>Automatic Save:</strong> Your theme preference is saved automatically</li>
+                        <li><strong>Persistent Across Pages:</strong> Your theme choice persists across all pages in the system</li>
+                        <li><strong>View Console:</strong> Open browser console (F12) to see theme change logs</li>
+                    </ol>
+                    <hr>
+                    <p class="mb-0"><small class="text-muted">
+                        <i class="fas fa-code me-2"></i>
+                        The theme system uses CSS custom properties and JavaScript event listeners to provide real-time color updates throughout the entire application.
+                    </small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize and update the theme display
+function updateThemeDisplay() {
+    const theme = getCurrentTheme();
+    const colors = getThemeColors();
+    const palette = getThemePalette();
+    
+    // Update current theme
+    document.getElementById('currentTheme').textContent = theme;
+    
+    // Update primary color
+    document.getElementById('primaryColorBox').style.backgroundColor = colors.primary;
+    document.getElementById('primaryColorValue').textContent = colors.primary;
+    
+    // Update secondary color
+    document.getElementById('secondaryColorBox').style.backgroundColor = colors.secondary;
+    document.getElementById('secondaryColorValue').textContent = colors.secondary;
+    
+    // Update accent color
+    document.getElementById('accentColorBox').style.backgroundColor = colors.accent;
+    document.getElementById('accentColorValue').textContent = colors.accent;
+    
+    // Update color palettes
+    document.getElementById('primaryLight').style.backgroundColor = palette.light.primary;
+    document.getElementById('primaryNormal').style.backgroundColor = palette.normal.primary;
+    document.getElementById('primaryDark').style.backgroundColor = palette.dark.primary;
+    
+    document.getElementById('secondaryLight').style.backgroundColor = palette.light.secondary;
+    document.getElementById('secondaryNormal').style.backgroundColor = palette.normal.secondary;
+    document.getElementById('secondaryDark').style.backgroundColor = palette.dark.secondary;
+    
+    document.getElementById('accentLight').style.backgroundColor = palette.light.accent;
+    document.getElementById('accentNormal').style.backgroundColor = palette.normal.accent;
+    document.getElementById('accentDark').style.backgroundColor = palette.dark.accent;
+}
+
+// Update on page load
+document.addEventListener('DOMContentLoaded', updateThemeDisplay);
+
+// Update when theme changes
+onThemeChange(() => {
+    updateThemeDisplay();
+});
+</script>
+{% endblock %}

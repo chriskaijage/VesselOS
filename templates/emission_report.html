@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}Emission Report - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-cloud-exclamation fa-2x me-3"></i>
+                        <div>
+                            <h2 class="mb-0">Fuel Oil Consumption Report</h2>
+                            <p class="mb-0">IMO DCS / SEEMP Part II - Annual Fuel Oil Data Collection & Reporting</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMO DCS/SEEMP Compliance Alert -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-danger border-2 border-danger">
+                <h6 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>IMO DCS / SEEMP Part II Compliance Requirements</h6>
+                <ul class="mb-0 small">
+                    <li><strong>Mandatory Reporting:</strong> All ships ≥5,000 GT must collect and report fuel consumption data as per IMO DCS rules</li>
+                    <li><strong>Aggregated Annual Data:</strong> Submit combined data for all fuel types consumed during calendar year (Jan 1 - Dec 31)</li>
+                    <li><strong>Fuel Type Classification:</strong> Report by fuel type (VLSFO, LSMGO, HFO) with corresponding specifications</li>
+                    <li><strong>Fuel Oil Properties:</strong> Record density (at 15°C in kg/m³) and sulfur content (%m/m) from BDN or supplier documentation</li>
+                    <li><strong>Consumption Breakdown:</strong> Log consumption by use (main engines, auxiliary engines, boilers, inert gas generators)</li>
+                    <li><strong>Data Collection Methods:</strong> Document measurement methods (BDN, flow meters, tank soundings) for each fuel type</li>
+                    <li><strong>Operational Hours:</strong> Record total hours underway and distance travelled for annual efficiency analysis</li>
+                    <li><strong>Master's Attestation:</strong> Report must be attested by the Master and submitted via SEEMP Part II document</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <form id="emissionReportForm">
+                <!-- Vessel Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-ship me-2"></i> Vessel Identification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vessel Name *</label>
+                                <input type="text" class="form-control" name="vessel_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IMO Number *</label>
+                                <input type="text" class="form-control" name="imo_number" placeholder="IMO1234567" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Gross Tonnage (GT) *</label>
+                                <input type="number" class="form-control" name="gross_tonnage" min="0" step="0.1" placeholder="e.g., 25000" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ship Type *</label>
+                                <select class="form-select" name="ship_type" required>
+                                    <option value="">-- Select Ship Type --</option>
+                                    <option value="bulk_carrier">Bulk Carrier</option>
+                                    <option value="container_ship">Container Ship</option>
+                                    <option value="general_cargo">General Cargo Ship</option>
+                                    <option value="tanker">Tanker</option>
+                                    <option value="ro_ro_ship">RoRo Ship</option>
+                                    <option value="refrigerated_cargo">Refrigerated Cargo Ship</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporting Period -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Reporting Period (Calendar Year)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Report aggregate annual data for calendar year (January 1 - December 31). All data must be for the same 12-month period.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Reporting Year *</label>
+                                <input type="number" class="form-control" name="reporting_year" min="2020" max="2099" placeholder="e.g., 2024" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Report Submission Date *</label>
+                                <input type="date" class="form-control" name="submission_date" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Fuel Oil Consumption by Type -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-droplet me-2"></i> Total Fuel Oil Consumption (Annual Aggregated Data)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Report total consumption for each fuel type consumed during the calendar year. Include only fuels actually consumed by the vessel.</p>
+                        
+                        <!-- VLSFO -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-droplet me-2" style="color: #ff6b6b;"></i> VLSFO (Very Low Sulfur Fuel Oil)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">VLSFO - Total Mass Consumed (tonnes) *</label>
+                                    <input type="number" class="form-control" name="vlsfo_mass_consumed" min="0" step="0.01" placeholder="0.00" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">VLSFO - Density at 15°C (kg/m³)</label>
+                                    <input type="number" class="form-control" name="vlsfo_density" min="0" step="0.1" placeholder="e.g., 860" value="860">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">VLSFO - Sulfur Content (%m/m) *</label>
+                                <input type="number" class="form-control" name="vlsfo_sulfur_content" min="0" max="5" step="0.01" placeholder="e.g., 0.50" required>
+                                <small class="text-muted">From BDN (Bunker Delivery Note) or supplier documentation. Max 0.5% for VLSFO.</small>
+                            </div>
+                        </div>
+
+                        <!-- LSMGO -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-droplet me-2" style="color: #ffa94d;"></i> LSMGO (Low Sulfur Marine Gas Oil)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">LSMGO - Total Mass Consumed (tonnes)</label>
+                                    <input type="number" class="form-control" name="lsmgo_mass_consumed" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">LSMGO - Density at 15°C (kg/m³)</label>
+                                    <input type="number" class="form-control" name="lsmgo_density" min="0" step="0.1" placeholder="e.g., 840" value="840">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">LSMGO - Sulfur Content (%m/m)</label>
+                                <input type="number" class="form-control" name="lsmgo_sulfur_content" min="0" max="5" step="0.01" placeholder="e.g., 1.50">
+                                <small class="text-muted">From BDN or supplier documentation.</small>
+                            </div>
+                        </div>
+
+                        <!-- HFO -->
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-droplet me-2" style="color: #8b4513;"></i> HFO (Heavy Fuel Oil)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">HFO - Total Mass Consumed (tonnes)</label>
+                                    <input type="number" class="form-control" name="hfo_mass_consumed" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">HFO - Density at 15°C (kg/m³)</label>
+                                    <input type="number" class="form-control" name="hfo_density" min="0" step="0.1" placeholder="e.g., 900" value="900">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">HFO - Sulfur Content (%m/m)</label>
+                                <input type="number" class="form-control" name="hfo_sulfur_content" min="0" max="5" step="0.01" placeholder="e.g., 3.50">
+                                <small class="text-muted">From BDN or supplier documentation. Typically higher for HFO.</small>
+                            </div>
+                        </div>
+
+                        <!-- Other Fuels -->
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="mb-3"><i class="fas fa-droplet me-2" style="color: #4c6ef5;"></i> Other Fuels (LNG, Biofuel, etc.)</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Fuel Type Name</label>
+                                    <input type="text" class="form-control" name="other_fuel_type" placeholder="e.g., LNG, Methanol, Biofuel">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Other Fuel - Total Mass Consumed (tonnes)</label>
+                                    <input type="number" class="form-control" name="other_fuel_mass_consumed" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Other Fuel - Density at 15°C (kg/m³)</label>
+                                    <input type="number" class="form-control" name="other_fuel_density" min="0" step="0.1" placeholder="e.g., 780">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Other Fuel - Sulfur Content (%m/m)</label>
+                                    <input type="number" class="form-control" name="other_fuel_sulfur_content" min="0" step="0.01" placeholder="e.g., 0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fuel Consumption by Use Category -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> Fuel Consumption by Use Category (Annual Total)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Breakdown of fuel consumption for different systems/engines during the calendar year.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Main Engines (tonnes) *</label>
+                                <input type="number" class="form-control" name="consumption_main_engines" min="0" step="0.01" placeholder="0.00" required>
+                                <small class="text-muted">Propulsion machinery fuel consumption</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Auxiliary Engines (tonnes) *</label>
+                                <input type="number" class="form-control" name="consumption_auxiliary_engines" min="0" step="0.01" placeholder="0.00" required>
+                                <small class="text-muted">Power generation and ship services</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Boilers (tonnes)</label>
+                                <input type="number" class="form-control" name="consumption_boilers" min="0" step="0.01" placeholder="0.00">
+                                <small class="text-muted">Steam generation for heating/cargo operations</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Inert Gas Generators (tonnes)</label>
+                                <input type="number" class="form-control" name="consumption_igg" min="0" step="0.01" placeholder="0.00">
+                                <small class="text-muted">IGG systems for tank safety (mainly tankers)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Collection Methods -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i> Data Collection Methods</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Document the measurement methods used for fuel consumption data. Ensure consistency for all fuel types.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Primary Data Collection Method *</label>
+                                <select class="form-select" name="data_collection_method" required>
+                                    <option value="">-- Select Method --</option>
+                                    <option value="bdn">BDN (Bunker Delivery Note) - Supplier Documentation</option>
+                                    <option value="flow_meters">Flow Meters - Installed Fuel Flow Measurement</option>
+                                    <option value="tank_soundings">Tank Soundings - Manual/Automatic Tank Level Readings</option>
+                                    <option value="combined">Combined Method (multiple measurement systems)</option>
+                                    <option value="other">Other Method</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Data Quality Rating *</label>
+                                <select class="form-select" name="data_quality_rating" required>
+                                    <option value="">-- Select Quality --</option>
+                                    <option value="a">Grade A (Direct measurement - Flow meters ±2%)</option>
+                                    <option value="b">Grade B (BDN-based, cross-checked with tank soundings ±5%)</option>
+                                    <option value="c">Grade C (Tank soundings only, estimated ±10%)</option>
+                                    <option value="d">Grade D (Estimated from consumption records ±15%)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Data Collection Notes</label>
+                            <textarea class="form-control" name="data_collection_notes" rows="2" placeholder="Explain data collection methodology, accuracy measures, equipment used, or any deviations from normal procedures"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operational Hours & Distance Data -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-route me-2"></i> Operational Data (Annual Total)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i> Total distance travelled and hours underway during the calendar year for efficiency benchmarking.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total Distance Travelled (nautical miles) *</label>
+                                <input type="number" class="form-control" name="total_distance_nm" min="0" step="0.1" placeholder="0.0" required>
+                                <small class="text-muted">Distance through water for all voyages during reporting year</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total Hours Underway (hours) *</label>
+                                <input type="number" class="form-control" name="total_hours_underway" min="0" step="1" placeholder="0" required>
+                                <small class="text-muted">Total engine running time during reporting year</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Officer Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i> Master / Responsible Officer</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Officer Name (Auto-filled)</label>
+                                <input type="text" class="form-control" id="officer_name" readonly value="{{ current_user.first_name }} {{ current_user.last_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Officer Rank/Position *</label>
+                                <input type="text" class="form-control" name="officer_rank" placeholder="Master / Chief Engineer" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remarks & Observations -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i> Remarks & Observations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">General Remarks</label>
+                            <textarea class="form-control" name="remarks" rows="3" placeholder="Observations about fuel consumption, operational challenges, efficiency measures implemented, weather impacts, etc."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" name="additional_notes" rows="3" placeholder="Supporting information, deviations from standard operations, scheduled maintenance impacts, or other relevant data"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Master's Signature & SEEMP Attestation -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-pen-fancy me-2"></i> Master's Signature & SEEMP Attestation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="border rounded p-3" style="background-color: #f8f9fa; min-height: 150px;">
+                            <canvas id="signatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
+                        </div>
+                        <div class="mt-2 mb-3">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="clearSignature()">Clear Signature</button>
+                        </div>
+                        <div class="alert alert-danger small mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Attestation & Certification:</strong> I hereby certify that the above fuel oil consumption data is true, accurate, and complete to the best of my knowledge. This report complies with IMO Data Collection System (DCS) requirements and is submitted via the Ship Energy Efficiency Management Plan (SEEMP) Part II. All fuel type information is sourced from Bunker Delivery Notes (BDN) or verified measurement systems. This aggregated annual data is for the calendar year as stated and will be maintained as per flag state regulations.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-danger btn-lg w-100">
+                            <i class="fas fa-check me-2"></i> Submit Fuel Oil Consumption Report
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Signature Canvas Setup
+let signatureCanvas = document.getElementById('signatureCanvas');
+let canvasContext = signatureCanvas.getContext('2d');
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+
+function resizeCanvas() {
+    signatureCanvas.width = signatureCanvas.offsetWidth;
+    signatureCanvas.height = 150;
+    canvasContext.strokeStyle = '#000';
+    canvasContext.lineWidth = 2;
+    canvasContext.lineCap = 'round';
+    canvasContext.lineJoin = 'round';
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+signatureCanvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    canvasContext.beginPath();
+    canvasContext.moveTo(lastX, lastY);
+    canvasContext.lineTo(e.offsetX, e.offsetY);
+    canvasContext.stroke();
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
+signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+function clearSignature() {
+    canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+}
+
+// Form Submission
+document.getElementById('emissionReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    data.signature_data = signatureCanvas.toDataURL();
+    
+    fetch('/api/emission-report', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', `Fuel Oil Consumption Report ${result.report_id} submitted successfully!`);
+            setTimeout(() => window.location.href = '/emission-reports_list', 2000);
+        } else {
+            showAlert('danger', result.error || 'Failed to submit report');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error.message);
+    });
+});
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+document.querySelector('input[name="submission_date"]').valueAsDate = new Date();
+</script>
+{% endblock %}
