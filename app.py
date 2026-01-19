@@ -9658,7 +9658,12 @@ def init_db():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (qo_id, 'quality@marine.com', hashed_password, 'Sarah', 'Johnson', 'Quality Officer',
                   'quality_officer', end_date, 1, 1))
-            print("✅ Sample quality officer created")
+            conn.commit()
+            print("✅ Sample quality officer created: quality@marine.com / Quality@2025")
+        else:
+            # Update existing quality officer to ensure credentials are correct
+            c.execute("UPDATE users SET is_approved = 1, is_active = 1 WHERE role = 'quality_officer'")
+            conn.commit()
         
         # Create a sample harbour master
         c.execute("SELECT COUNT(*) FROM users WHERE role = 'harbour_master'")
@@ -9666,11 +9671,16 @@ def init_db():
             hm_id = 'HM001'
             hashed_password = generate_password_hash('Maintenance@2025')
             c.execute('''
-                INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (hm_id, 'harbour_master@marine.com', hashed_password, 'Robert', 'Wilson',
-                  'Harbour Master', 'harbour_master', 1))
-            print("✅ Sample harbour master created")
+                  'Harbour Master', 'harbour_master', 1, 1))
+            conn.commit()
+            print("✅ Sample harbour master created: harbour_master@marine.com / Maintenance@2025")
+        else:
+            # Update existing harbour master
+            c.execute("UPDATE users SET is_approved = 1, is_active = 1 WHERE role = 'harbour_master'")
+            conn.commit()
         
         # Create a sample emergency request
         c.execute("SELECT COUNT(*) FROM emergency_requests")
@@ -9684,10 +9694,30 @@ def init_db():
             ''', (emergency_id, 'Atlantic Voyager', 'Engine Failure', 'critical',
                   'Complete engine failure during voyage, ship adrift',
                   'Dispatch rescue team, send tugboat, evacuate if necessary',
-                  'Tugboat, rescue team, emergency supplies', 'MM001', 'pending'))
+                  'Tugboat, rescue team, emergency supplies', 'PE001', 'pending'))
+            conn.commit()
             print("✅ Sample emergency request created")
         
         conn.commit()
+        
+        # Print login information
+        print("\n" + "="*70)
+        print("✅ ALL DEMO ACCOUNTS READY FOR LOGIN")
+        print("="*70)
+        print("\n👤 Demo Account 1 - Port Engineer (Admin):")
+        print("   Email: port_engineer@marine.com")
+        print("   Password: Admin@2025")
+        print("   Role: Full system access")
+        print("\n👤 Demo Account 2 - Quality Officer:")
+        print("   Email: quality@marine.com")
+        print("   Password: Quality@2025")
+        print("   Role: Inspection and compliance")
+        print("\n👤 Demo Account 3 - Harbour Master:")
+        print("   Email: harbour_master@marine.com")
+        print("   Password: Maintenance@2025")
+        print("   Role: Port operations management")
+        print("="*70 + "\n")
+
     except Exception as e:
         print(f"❌ Error initializing database: {e}")
     finally:
@@ -11123,6 +11153,42 @@ def internal_error(error):
 @app.errorhandler(413)
 def too_large(error):
     return jsonify({'success': False, 'error': 'File too large'}), 413
+
+# ==================== INITIALIZATION ROUTE ====================
+
+@app.route('/init')
+def initialize():
+    """Initialize database and create demo accounts"""
+    init_db()
+    return jsonify({
+        'status': 'success',
+        'message': 'Database initialized successfully',
+        'demo_accounts': [
+            {'email': 'port_engineer@marine.com', 'password': 'Admin@2025', 'role': 'Port Engineer'},
+            {'email': 'quality@marine.com', 'password': 'Quality@2025', 'role': 'Quality Officer'},
+            {'email': 'harbour_master@marine.com', 'password': 'Maintenance@2025', 'role': 'Harbour Master'}
+        ]
+    }), 200
+
+# Automatically initialize database on first request
+@app.before_request
+def before_first_request_func():
+    """Initialize database if not already done"""
+    if not hasattr(app, 'db_initialized'):
+        try:
+            # Check if database exists and has tables
+            conn = get_db_connection()
+            c = conn.cursor()
+            c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+            if c.fetchone() is None:
+                conn.close()
+                init_db()
+            else:
+                conn.close()
+            app.db_initialized = True
+        except Exception as e:
+            print(f"⚠️  Warning during database check: {e}")
+            app.db_initialized = True
 
 # ==================== MAIN APPLICATION ====================
 
