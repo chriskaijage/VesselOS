@@ -5,7 +5,7 @@ flask-login==0.6.3
 python-dotenv==1.0.0
 Pillow>=11.0.0
 reportlab==4.0.9
-pandas==2.2.0
+pandas==2.2.3
 openpyxl==3.1.2
 flask-limiter==3.5.1
 gunicorn==21.2.0
