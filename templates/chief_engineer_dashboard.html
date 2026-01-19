@@ -228,8 +228,9 @@
 {% block scripts %}
 <script>
 let chiefEngineerData = null;
+let chiefRefreshIntervals = {};
 
-// Load chief engineer dashboard data
+// Load chief engineer dashboard data with auto-refresh every 5 seconds
 function loadChiefEngineerData() {
     fetch('/api/chief-engineer/dashboard-data')
         .then(response => response.json())
@@ -247,13 +248,122 @@ function loadChiefEngineerData() {
                 loadMyRequests();
                 loadPendingApproval();
                 loadRecentActivity();
+                
+                // Setup auto-refresh on first load
+                if (Object.keys(chiefRefreshIntervals).length === 0) {
+                    setupChiefAutoRefresh();
+                }
             }
         })
         .catch(error => {
             console.error('Error loading dashboard data:', error);
-            // Load with sample data
             loadSampleData();
         });
+}
+
+// Setup auto-refresh for chief engineer dashboard every 5 seconds
+function setupChiefAutoRefresh() {
+    console.log('🚀 Chief Engineer Dashboard: Starting real-time updates every 5 seconds');
+    
+    // Auto-refresh my requests every 5 seconds
+    chiefRefreshIntervals.requests = setInterval(() => {
+        fetch('/api/chief-engineer/my-requests')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateRequestsTable(data.requests);
+                }
+            })
+            .catch(error => console.error('Requests refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh pending approvals every 5 seconds
+    chiefRefreshIntervals.pending = setInterval(() => {
+        fetch('/api/chief-engineer/pending-approval')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.requests.length > 0) {
+                    updatePendingApprovalList(data.requests);
+                }
+            })
+            .catch(error => console.error('Pending approval refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh recent activity every 5 seconds
+    chiefRefreshIntervals.activity = setInterval(() => {
+        fetch('/api/chief-engineer/recent-activity')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateRecentActivityDisplay(data.activities);
+                }
+            })
+            .catch(error => console.error('Activity refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh stats every 5 seconds
+    chiefRefreshIntervals.stats = setInterval(() => {
+        fetch('/api/chief-engineer/dashboard-data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const oldTotal = document.getElementById('totalRequests').textContent;
+                    const newTotal = data.data.total_requests || 0;
+                    if (oldTotal !== String(newTotal)) {
+                        document.getElementById('totalRequests').textContent = newTotal;
+                    }
+                }
+            })
+            .catch(error => console.error('Stats refresh error:', error));
+    }, 5000);
+    
+    console.log('✅ Chief Engineer Dashboard auto-refresh intervals set up');
+}
+
+function updatePendingApprovalList(requests) {
+    if (requests.length > 0) {
+        document.getElementById('pendingApprovalSection').style.display = 'block';
+        let html = '';
+        requests.forEach(req => {
+            html += `
+                <div class="alert alert-warning">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="alert-heading">${req.ship_name}</h6>
+                            <p class="mb-1">${req.request_type || req.maintenance_type || 'Maintenance Request'}</p>
+                            <small class="text-muted">Request ID: ${req.request_id}</small>
+                        </div>
+                        <button class="btn btn-sm btn-warning" onclick="viewRequestDetails('${req.request_id}')">
+                            <i class="fas fa-eye me-1"></i> View
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('pendingApprovalList').innerHTML = html;
+    } else {
+        document.getElementById('pendingApprovalSection').style.display = 'none';
+    }
+}
+
+function updateRecentActivityDisplay(activities) {
+    if (!activities || activities.length === 0) {
+        document.getElementById('recentActivity').innerHTML = '<p class="text-muted small">No recent activity</p>';
+    } else {
+        let html = '';
+        activities.forEach((activity, index) => {
+            const animationClass = index === 0 ? 'animate__animated animate__fadeInUp' : '';
+            html += `
+                <div class="border-bottom pb-2 mb-2 ${animationClass}" style="animation-duration: 0.3s;">
+                    <small class="text-muted d-block mb-1">
+                        <i class="fas fa-clock me-1"></i>${activity.timestamp || 'Just now'}
+                    </small>
+                    <p class="mb-0 small">${activity.description || activity.activity || 'Activity recorded'}</p>
+                </div>
+            `;
+        });
+        document.getElementById('recentActivity').innerHTML = html;
+    }
 }
 
 function loadMyRequests() {
@@ -332,25 +442,7 @@ function loadPendingApproval() {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.requests.length > 0) {
-                document.getElementById('pendingApprovalSection').style.display = 'block';
-                let html = '';
-                data.requests.forEach(req => {
-                    html += `
-                        <div class="alert alert-warning">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="alert-heading">${req.ship_name}</h6>
-                                    <p class="mb-1">${req.request_type || req.maintenance_type || 'Maintenance Request'}</p>
-                                    <small class="text-muted">Request ID: ${req.request_id}</small>
-                                </div>
-                                <button class="btn btn-sm btn-warning" onclick="viewRequestDetails('${req.request_id}')">
-                                    <i class="fas fa-eye me-1"></i> View
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-                document.getElementById('pendingApprovalList').innerHTML = html;
+                updatePendingApprovalList(data.requests);
             } else {
                 document.getElementById('pendingApprovalSection').style.display = 'none';
             }
@@ -362,16 +454,7 @@ function loadRecentActivity() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                let html = '';
-                data.activities.forEach(activity => {
-                    html += `
-                        <div class="border-bottom pb-2 mb-2">
-                            <small class="text-muted">${activity.timestamp}</small>
-                            <p class="mb-0 small">${activity.description}</p>
-                        </div>
-                    `;
-                });
-                document.getElementById('recentActivity').innerHTML = html || '<p class="text-muted small">No recent activity</p>';
+                updateRecentActivityDisplay(data.activities);
             }
         });
 }
@@ -449,10 +532,32 @@ function loadSampleRequests() {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Chief Engineer Dashboard initialized - Starting real-time updates every 5 seconds');
+    
     loadChiefEngineerData();
     
-    // Auto-refresh every 30 seconds
-    setInterval(loadChiefEngineerData, 30000);
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        Object.values(chiefRefreshIntervals).forEach(interval => {
+            if (interval) clearInterval(interval);
+        });
+        console.log('✅ Chief Engineer Dashboard auto-refresh intervals cleared');
+    });
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            Object.values(chiefRefreshIntervals).forEach(interval => {
+                if (interval) clearInterval(interval);
+            });
+            console.log('⏸️ Chief Engineer Dashboard updates paused (page hidden)');
+        } else {
+            loadChiefEngineerData();
+            console.log('▶️ Chief Engineer Dashboard updates resumed (page visible)');
+        }
+    });
+    
+    console.log('✅ Chief Engineer Dashboard fully initialized');
 });
 </script>
 {% endblock %}

@@ -228,8 +228,9 @@
 <script>
 let captainData = null;
 let currentRequestId = null;
+let captainRefreshIntervals = {};
 
-// Load captain dashboard data
+// Load captain dashboard data with auto-refresh every 5 seconds
 function loadCaptainData() {
     fetch('/api/captain/dashboard-data')
         .then(response => response.json())
@@ -247,12 +248,77 @@ function loadCaptainData() {
                 loadPendingApproval();
                 loadVesselRequests();
                 loadRecentActivity();
+                
+                // Setup auto-refresh on first load
+                if (Object.keys(captainRefreshIntervals).length === 0) {
+                    setupCaptainAutoRefresh();
+                }
             }
         })
         .catch(error => {
             console.error('Error loading dashboard data:', error);
             loadSampleData();
         });
+}
+
+// Setup auto-refresh for captain dashboard every 5 seconds
+function setupCaptainAutoRefresh() {
+    console.log('🚀 Captain Dashboard: Starting real-time updates every 5 seconds');
+    
+    // Auto-refresh pending approvals every 5 seconds
+    captainRefreshIntervals.pending = setInterval(() => {
+        fetch('/api/captain/pending-approval')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updatePendingApprovalList(data.requests);
+                }
+            })
+            .catch(error => console.error('Pending approval refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh vessel requests every 5 seconds
+    captainRefreshIntervals.vessels = setInterval(() => {
+        fetch('/api/captain/vessel-requests')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateVesselRequestsTable(data.requests);
+                }
+            })
+            .catch(error => console.error('Vessel requests refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh recent activity every 5 seconds
+    captainRefreshIntervals.activity = setInterval(() => {
+        fetch('/api/captain/recent-activity')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateRecentActivityDisplay(data.activities);
+                }
+            })
+            .catch(error => console.error('Activity refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh dashboard stats every 5 seconds
+    captainRefreshIntervals.stats = setInterval(() => {
+        fetch('/api/captain/dashboard-data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Only update if values changed to avoid flickering
+                    const oldPending = document.getElementById('pendingApproval').textContent;
+                    const newPending = data.data.pending_approval || 0;
+                    if (oldPending !== String(newPending)) {
+                        document.getElementById('pendingApproval').textContent = newPending;
+                    }
+                }
+            })
+            .catch(error => console.error('Stats refresh error:', error));
+    }, 5000);
+    
+    console.log('✅ Captain Dashboard auto-refresh intervals set up');
 }
 
 function loadPendingApproval() {
@@ -386,18 +452,31 @@ function loadRecentActivity() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                let html = '';
-                data.activities.forEach(activity => {
-                    html += `
-                        <div class="border-bottom pb-2 mb-2">
-                            <small class="text-muted">${activity.timestamp}</small>
-                            <p class="mb-0 small">${activity.description}</p>
-                        </div>
-                    `;
-                });
-                document.getElementById('recentActivity').innerHTML = html || '<p class="text-muted small">No recent activity</p>';
+                updateRecentActivityDisplay(data.activities);
             }
         });
+}
+
+function updateRecentActivityDisplay(activities) {
+    const container = document.getElementById('recentActivity');
+    
+    if (!activities || activities.length === 0) {
+        container.innerHTML = '<p class="text-muted small">No recent activity</p>';
+    } else {
+        let html = '';
+        activities.forEach((activity, index) => {
+            const animationClass = index === 0 ? 'animate__animated animate__fadeInUp' : '';
+            html += `
+                <div class="border-bottom pb-2 mb-2 ${animationClass}" style="animation-duration: 0.3s;">
+                    <small class="text-muted d-block mb-1">
+                        <i class="fas fa-clock me-1"></i>${activity.timestamp || 'Just now'}
+                    </small>
+                    <p class="mb-0 small">${activity.description || activity.activity || 'Activity recorded'}</p>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
 }
 
 function reviewRequest(requestId) {
@@ -531,10 +610,32 @@ function loadSampleVesselRequests() {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Captain Dashboard initialized - Starting real-time updates every 5 seconds');
+    
     loadCaptainData();
     
-    // Auto-refresh every 30 seconds
-    setInterval(loadCaptainData, 30000);
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        Object.values(captainRefreshIntervals).forEach(interval => {
+            if (interval) clearInterval(interval);
+        });
+        console.log('✅ Captain Dashboard auto-refresh intervals cleared');
+    });
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            Object.values(captainRefreshIntervals).forEach(interval => {
+                if (interval) clearInterval(interval);
+            });
+            console.log('⏸️ Captain Dashboard updates paused (page hidden)');
+        } else {
+            loadCaptainData();
+            console.log('▶️ Captain Dashboard updates resumed (page visible)');
+        }
+    });
+    
+    console.log('✅ Captain Dashboard fully initialized');
 });
 </script>
 {% endblock %}

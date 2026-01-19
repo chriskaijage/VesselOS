@@ -601,7 +601,10 @@
 <script>
 // ==================== PORT ENGINEER DASHBOARD FUNCTIONS ====================
 
-// Load port engineer data
+// Real-time auto-refresh intervals
+let refreshIntervals = {};
+
+// Load port engineer data with auto-refresh every 5 seconds
 function loadManagerData() {
     fetch('/api/manager/dashboard-data')
         .then(response => response.json())
@@ -618,6 +621,90 @@ function loadManagerData() {
                 loadMessagingStats();
             }
         });
+    
+    // Set up auto-refresh intervals
+    setupAutoRefresh();
+}
+
+// Setup auto-refresh for all dashboard components every 5 seconds
+function setupAutoRefresh() {
+    // Clear existing intervals
+    Object.values(refreshIntervals).forEach(interval => clearInterval(interval));
+    refreshIntervals = {};
+    
+    // Auto-refresh main dashboard data every 5 seconds
+    refreshIntervals.dashboard = setInterval(() => {
+        fetch('/api/manager/dashboard-data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateManagerStats(data.data);
+                }
+            })
+            .catch(error => console.error('Dashboard refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh recent activity every 5 seconds
+    refreshIntervals.activity = setInterval(() => {
+        fetch('/api/manager/recent-activity')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateRecentActivity(data.activities);
+                }
+            })
+            .catch(error => console.error('Activity refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh pending users every 5 seconds
+    refreshIntervals.users = setInterval(() => {
+        fetch('/api/manager/pending-users')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updatePendingUsersTable(data.users);
+                }
+            })
+            .catch(error => console.error('Users refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh maintenance requests every 5 seconds
+    refreshIntervals.maintenance = setInterval(() => {
+        fetch('/api/manager/pending-maintenance')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateMaintenanceTable(data.requests);
+                }
+            })
+            .catch(error => console.error('Maintenance refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh emergency requests every 5 seconds
+    refreshIntervals.emergency = setInterval(() => {
+        fetch('/api/manager/emergency-requests')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateEmergencyTable(data.emergencies);
+                }
+            })
+            .catch(error => console.error('Emergency refresh error:', error));
+    }, 5000);
+    
+    // Auto-refresh messaging stats every 5 seconds
+    refreshIntervals.messaging = setInterval(() => {
+        fetch('/api/messaging/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('unreadMessages').textContent = data.unread_count || 0;
+                    document.getElementById('activeThreads').textContent = data.active_threads || 0;
+                    document.getElementById('dashboardUnreadCount').textContent = data.unread_count || 0;
+                }
+            })
+            .catch(error => console.error('Messaging refresh error:', error));
+    }, 5000);
 }
 
 function updateManagerStats(data) {
@@ -1129,14 +1216,18 @@ function loadRecentActivity() {
         .then(data => {
             if (data.success) {
                 updateRecentActivity(data.activities);
+                showActivityRefreshIndicator();
             }
+        })
+        .catch(error => {
+            console.error('Activity load error:', error);
         });
 }
 
 function updateRecentActivity(activities) {
     const container = document.getElementById('recentActivity');
     
-    if (activities.length === 0) {
+    if (!activities || activities.length === 0) {
         container.innerHTML = `
             <div class="text-center py-3">
                 <i class="fas fa-history fa-3x text-muted mb-3"></i>
@@ -1145,25 +1236,54 @@ function updateRecentActivity(activities) {
         `;
     } else {
         let html = '';
-        activities.forEach(activity => {
+        activities.forEach((activity, index) => {
             const timeAgo = getTimeAgo(new Date(activity.timestamp));
             
+            // Determine icon based on activity type
+            let icon = 'history';
+            if (activity.activity) {
+                if (activity.activity.includes('approved') || activity.activity.includes('Approved')) icon = 'check-circle';
+                else if (activity.activity.includes('created') || activity.activity.includes('Created')) icon = 'plus-circle';
+                else if (activity.activity.includes('updated') || activity.activity.includes('Updated')) icon = 'edit';
+                else if (activity.activity.includes('rejected') || activity.activity.includes('Rejected')) icon = 'times-circle';
+                else if (activity.activity.includes('emergency') || activity.activity.includes('Emergency')) icon = 'exclamation-triangle';
+                else if (activity.activity.includes('maintenance') || activity.activity.includes('Maintenance')) icon = 'wrench';
+            }
+            
+            // Add animation for new activities
+            const animationClass = index === 0 ? 'animate__animated animate__fadeInUp' : '';
+            
             html += `
-                <div class="border-bottom pb-2 mb-2">
+                <div class="border-bottom pb-2 mb-2 ${animationClass}" style="animation-duration: 0.3s;">
                     <div class="d-flex align-items-start">
                         <div class="me-3">
-                            <i class="fas fa-${activity.icon || 'history'} text-primary"></i>
+                            <i class="fas fa-${icon} text-primary" style="font-size: 1.1em;"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <small class="text-muted">${timeAgo}</small>
-                            <p class="mb-0 small">${activity.activity}</p>
-                            ${activity.details ? `<small class="text-muted">${activity.details}</small>` : ''}
+                            <small class="text-muted d-block mb-1">
+                                <i class="fas fa-clock me-1"></i>${timeAgo}
+                            </small>
+                            <p class="mb-0 small fw-500">${activity.activity}</p>
+                            ${activity.details ? `<small class="text-muted d-block mt-1"><strong>Details:</strong> ${activity.details}</small>` : ''}
                         </div>
                     </div>
                 </div>
             `;
         });
         container.innerHTML = html;
+    }
+}
+
+// Show visual indicator that data was just refreshed
+function showActivityRefreshIndicator() {
+    const header = document.querySelector('h5');
+    if (header && header.textContent.includes('Recent Port Engineer Activity')) {
+        // Add a brief flash effect
+        const originalHTML = header.innerHTML;
+        header.innerHTML = '<i class="fas fa-sync-alt fa-spin me-2"></i>' + originalHTML;
+        setTimeout(() => {
+            header.innerHTML = originalHTML;
+        }, 500);
     }
 }
 
@@ -1728,13 +1848,19 @@ function generateSystemReport() {
 // ==================== EVENT LISTENERS ====================
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Port Engineer Dashboard initialized - Starting real-time updates every 5 seconds');
+    
+    // Initial data load
     loadManagerData();
     
-    // Auto-refresh every 30 seconds
-    setInterval(loadManagerData, 30000);
-    
-    // Auto-refresh messaging stats every 60 seconds
-    setInterval(loadMessagingStats, 60000);
+    // Cleanup function for page unload
+    window.addEventListener('beforeunload', function() {
+        // Clear all auto-refresh intervals when leaving page
+        Object.values(refreshIntervals).forEach(interval => {
+            if (interval) clearInterval(interval);
+        });
+        console.log('✅ Auto-refresh intervals cleared');
+    });
     
     // Show/hide role selection based on notification type
     document.getElementById('notificationType').addEventListener('change', function() {
@@ -1748,6 +1874,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize messaging system from base.html
     if (typeof initMessaging === 'function') {
         initMessaging();
+    }
+    
+    console.log('✅ Dashboard fully initialized with 5-second real-time updates');
+});
+
+// Cleanup on page visibility change
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Pause updates when page is hidden
+        Object.values(refreshIntervals).forEach(interval => {
+            if (interval) clearInterval(interval);
+        });
+        console.log('⏸️ Dashboard updates paused (page hidden)');
+    } else {
+        // Resume updates when page becomes visible
+        setupAutoRefresh();
+        console.log('▶️ Dashboard updates resumed (page visible)');
     }
 });
 </script>
