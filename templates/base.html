@@ -550,7 +550,7 @@ function showFilePreview(fileUrl, fileName) {
         
         /* When sidebar is collapsed, reduce padding */
         body.sidebar-collapsed {
-            padding-left: 80px;
+            padding-left: 0;
         }
         
         /* On mobile (≤1024px), remove sidebar padding from body */
@@ -4659,8 +4659,8 @@ function showFilePreview(fileUrl, fileName) {
         
         if (sidebar) {
             const isCollapsed = sidebar.classList.toggle('collapsed');
-            // Don't toggle body padding since header always stays visible
-            // body.classList.toggle('sidebar-collapsed', isCollapsed);
+            // Toggle body padding to slide sidebar completely out on desktop
+            body.classList.toggle('sidebar-collapsed', isCollapsed);
             
             // Rotate icon
             if (toggleIcon) {
