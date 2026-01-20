@@ -33,7 +33,7 @@ function showFilePreview(fileUrl, fileName) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1024px, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>{% block title %}Marine Service Center{% endblock %}</title>
     
     <!-- Theme Initialization Script (runs before rendering) -->
@@ -244,10 +244,6 @@ function showFilePreview(fileUrl, fileName) {
             image-rendering: -webkit-optimize-contrast;
             image-rendering: auto;
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-            /* Maintain desktop layout on all devices */
-            min-width: 1024px;
-            width: 100%;
-            overflow-x: auto;
         }
         
         * {
@@ -287,7 +283,6 @@ function showFilePreview(fileUrl, fileName) {
             background: var(--bg-primary);
             color: var(--text-primary-readable);
             min-height: 100vh;
-            min-width: 1024px;
             display: flex;
             flex-direction: column;
             padding-left: 320px; /* Add padding for sidebar */
@@ -1743,14 +1738,85 @@ function showFilePreview(fileUrl, fileName) {
             color: var(--primary-color);
         }
         
-        /* Responsive */
+        /* Responsive Design for Mobile */
         @media (max-width: 768px) {
-            /* Mobile responsive layout disabled - maintain desktop appearance on all devices */
-            /* Desktop layout will be preserved with horizontal scrolling if needed */
-            
-            /* Only keep essential mobile fixes */
             body {
-                min-width: 1024px; /* Minimum width to maintain desktop layout */
+                padding-left: 0;
+                padding-top: 70px;
+            }
+            
+            /* Hide sidebar on mobile - show as drawer instead */
+            .sidebar {
+                position: fixed;
+                left: -320px;
+                width: 320px;
+                height: 100vh;
+                z-index: 999;
+                transition: left 0.3s ease-in-out;
+                overflow-y: auto;
+                bottom: 0;
+                top: 0;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            /* Top navbar adjustments for mobile */
+            .top-navbar {
+                justify-content: space-between;
+                padding: 0.5rem 1rem;
+            }
+            
+            /* Main content adjustments */
+            main {
+                margin-left: 0;
+                margin-top: 0;
+                padding: 1rem 0.75rem;
+            }
+            
+            /* Card spacing on mobile */
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            /* Table responsive */
+            .table {
+                font-size: 0.85rem;
+            }
+            
+            .table thead {
+                font-size: 0.8rem;
+            }
+            
+            /* Form inputs full width on mobile */
+            .form-control, .form-select, .btn {
+                font-size: 16px; /* Prevents zoom on focus */
+            }
+            
+            /* Footer adjustments for mobile */
+            .footer {
+                padding: 1rem 0.75rem;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: auto;
+            }
+            
+            /* Grid columns for mobile */
+            .col-md-6, .col-lg-4, .col-lg-3 {
+                width: 100%;
+            }
+            
+            /* Modal adjustments */
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+            
+            /* Reduced padding on mobile */
+            .container, .container-fluid {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
             }
         }
         
