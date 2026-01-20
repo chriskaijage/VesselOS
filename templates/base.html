@@ -1834,12 +1834,17 @@ function showFilePreview(fileUrl, fileName) {
             
             .footer-content {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: flex-end;
                 gap: 0.75rem;
             }
             
             .footer .text-end {
-                text-align: left !important;
+                text-align: right !important;
+                width: 100%;
+            }
+            
+            .footer-content > div:first-child {
+                text-align: right;
                 width: 100%;
             }
         }
