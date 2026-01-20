@@ -9222,8 +9222,30 @@ def ensure_port_engineer_account(c, conn):
         import traceback
         traceback.print_exc()
 
-def init_db():
-    conn = get_db_connection()
+# Always update demo accounts to correct credentials and status
+    
+    # Quality Officer
+    qo_email = 'quality@marine.com'
+    qo_password = generate_password_hash('Quality@2025')
+    end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
+    c.execute("SELECT user_id FROM users WHERE email = ?", (qo_email,))
+    qo_user = c.fetchone()
+    if qo_user:
+        c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1, survey_end_date = ? WHERE email = ?", (qo_password, end_date, qo_email))
+    else:
+        c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'Sarah', 'Johnson', 'Quality Officer', 'quality_officer', end_date, 1, 1))
+    
+    # Harbour Master
+    hm_email = 'harbour_master@marine.com'
+    hm_password = generate_password_hash('Maintenance@2025')
+    c.execute("SELECT user_id FROM users WHERE email = ?", (hm_email,))
+    hm_user = c.fetchone()
+    if hm_user:
+        c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1 WHERE email = ?", (hm_password, hm_email))
+    else:
+        c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('HM001', hm_email, hm_password, 'Robert', 'Wilson', 'Harbour Master', 'harbour_master', 1, 1))
+    
+    conn.commit()
     try:
         c = conn.cursor()
 
