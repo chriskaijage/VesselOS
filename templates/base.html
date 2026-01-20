@@ -3298,11 +3298,16 @@ function showFilePreview(fileUrl, fileName) {
     function switchMessagingTab(tabName) {
         currentTab = tabName;
         
-        // Update tab buttons
+        // Update tab buttons - remove active from all tabs
         document.querySelectorAll('.messaging-tab').forEach(tab => {
             tab.classList.remove('active');
         });
-        event.target.classList.add('active');
+        
+        // Add active to the tab being switched to
+        const targetTab = document.querySelector(`.messaging-tab[onclick*="'${tabName}'"]`);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
         
         loadMessagingTab(tabName);
     }
@@ -3733,23 +3738,33 @@ function showFilePreview(fileUrl, fileName) {
             </div>
         `;
         
+        console.log(`📬 Fetching thread for user: ${otherPartyId}`);
         fetch(`/api/messaging/thread/${otherPartyId}`)
             .then(response => {
+                console.log(`Response status: ${response.status}, ok: ${response.ok}`);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
+                console.log('Thread data received:', data);
                 if (data.success) {
+                    console.log(`✅ Loaded ${data.messages.length} messages`);
                     renderMessageThread(content, data.messages, userName);
                 } else {
+                    console.error('API error:', data.error);
                     content.innerHTML = `<div class="alert alert-danger">Error loading conversation: ${data.error || 'Unknown error'}</div>`;
                 }
             })
             .catch(error => {
-                console.error('Error loading thread:', error);
-                content.innerHTML = `<div class="alert alert-danger">Network error loading conversation</div>`;
+                console.error('❌ Error loading thread:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                content.innerHTML = `<div class="alert alert-danger">Network error loading conversation: ${error.message}</div>`;
             });
     }
 
@@ -3968,6 +3983,7 @@ function showFilePreview(fileUrl, fileName) {
         
         const sendStartTime = Date.now();
         console.log('📤 Sending thread reply at', new Date().toLocaleTimeString());
+        console.log('Form data:', { recipient_id: currentConversationId });
         
         fetch('/api/messaging/quick-send', {
             method: 'POST',
@@ -3977,6 +3993,7 @@ function showFilePreview(fileUrl, fileName) {
         .then(data => {
             const sendDuration = Date.now() - sendStartTime;
             console.log(`✅ Message sent in ${sendDuration}ms`);
+            console.log('Send response:', data);
             
             sendBtn.innerHTML = originalText;
             sendBtn.disabled = false;
@@ -4000,15 +4017,21 @@ function showFilePreview(fileUrl, fileName) {
                     openMessageThread(currentConversationId, displayName);
                 }, 300);
             } else {
+                console.error('Send failed:', data.error);
                 showAlert('danger', `Error sending reply: ${data.error}`);
             }
         })
         .catch(error => {
+            console.error('❌ Send error:', error);
             sendBtn.innerHTML = originalText;
             sendBtn.disabled = false;
             textarea.disabled = false;
             showAlert('danger', 'Network error sending reply: ' + error.message);
-            console.error('Send error:', error);
+            console.error('Full error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
         });
     }
 
@@ -4070,6 +4093,8 @@ function showFilePreview(fileUrl, fileName) {
         const message = document.getElementById('quickMessage').value;
         const priority = document.getElementById('quickPriority').value;
         
+        console.log('📧 Preparing to send message:', { userId, userName, subject });
+        
         if (!userId && !userName.includes('@')) {
             showAlert('warning', 'Please select a user from the dropdown or enter a valid email');
             return;
@@ -4089,8 +4114,10 @@ function showFilePreview(fileUrl, fileName) {
         
         if (userId) {
             formData.append('user_id', userId);
+            console.log('Sending to user ID:', userId);
         } else {
             formData.append('email', userName);
+            console.log('Sending to email:', userName);
         }
         formData.append('subject', subject);
         formData.append('message', message);
@@ -4099,6 +4126,7 @@ function showFilePreview(fileUrl, fileName) {
         // Add attachments
         messageAttachments.forEach((file, index) => {
             formData.append('attachments', file);
+            console.log(`Attaching file ${index + 1}:`, file.name);
         });
         
         // Show loading state
@@ -4107,12 +4135,17 @@ function showFilePreview(fileUrl, fileName) {
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
         sendBtn.disabled = true;
         
+        console.log('📤 Sending quick message...');
         fetch('/api/messaging/quick-send', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response received:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('✅ Send response:', data);
             sendBtn.innerHTML = originalText;
             sendBtn.disabled = false;
             
@@ -4129,10 +4162,17 @@ function showFilePreview(fileUrl, fileName) {
                 // Reload unread count
                 loadUnreadCount();
             } else {
+                console.error('Send failed:', data.error);
                 showAlert('danger', `Error sending message: ${data.error}`);
             }
         })
         .catch(error => {
+            console.error('❌ Send error:', error);
+            console.error('Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
             sendBtn.innerHTML = originalText;
             sendBtn.disabled = false;
             showAlert('danger', 'Network error sending message: ' + error.message);
@@ -4276,10 +4316,13 @@ function showFilePreview(fileUrl, fileName) {
         // Close emoji picker when clicking outside
         document.addEventListener('click', function(e) {
             const emojiPicker = document.getElementById('emojiPicker');
-            if (emojiPicker && !emojiPicker.contains(e.target) && 
-                !e.target.classList.contains('fa-smile') && 
-                !e.target.parentElement.classList.contains('fa-smile')) {
-                emojiPicker.classList.remove('active');
+            if (emojiPicker && !emojiPicker.contains(e.target)) {
+                // Safe checks for target and parentElement
+                const isSmileIcon = e.target?.classList?.contains('fa-smile') || 
+                                   e.target?.parentElement?.classList?.contains('fa-smile');
+                if (!isSmileIcon) {
+                    emojiPicker.classList.remove('active');
+                }
             }
         });
     }
