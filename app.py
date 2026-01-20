@@ -9222,30 +9222,8 @@ def ensure_port_engineer_account(c, conn):
         import traceback
         traceback.print_exc()
 
-# Always update demo accounts to correct credentials and status
-    
-    # Quality Officer
-    qo_email = 'quality@marine.com'
-    qo_password = generate_password_hash('Quality@2025')
-    end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
-    c.execute("SELECT user_id FROM users WHERE email = ?", (qo_email,))
-    qo_user = c.fetchone()
-    if qo_user:
-        c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1, survey_end_date = ? WHERE email = ?", (qo_password, end_date, qo_email))
-    else:
-        c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'Sarah', 'Johnson', 'Quality Officer', 'quality_officer', end_date, 1, 1))
-    
-    # Harbour Master
-    hm_email = 'harbour_master@marine.com'
-    hm_password = generate_password_hash('Maintenance@2025')
-    c.execute("SELECT user_id FROM users WHERE email = ?", (hm_email,))
-    hm_user = c.fetchone()
-    if hm_user:
-        c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1 WHERE email = ?", (hm_password, hm_email))
-    else:
-        c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('HM001', hm_email, hm_password, 'Robert', 'Wilson', 'Harbour Master', 'harbour_master', 1, 1))
-    
-    conn.commit()
+def init_db():
+    conn = get_db_connection()
     try:
         c = conn.cursor()
 
@@ -9864,12 +9842,13 @@ def ensure_port_engineer_account(c, conn):
                 FOREIGN KEY (sender_id) REFERENCES users (user_id),
                 FOREIGN KEY (parent_message_id) REFERENCES messaging_system (message_id)
             )
-                -- Performance indexes for messaging
-                CREATE INDEX IF NOT EXISTS idx_messaging_recipient_id ON messaging_system (recipient_id);
-                CREATE INDEX IF NOT EXISTS idx_messaging_sender_id ON messaging_system (sender_id);
-                CREATE INDEX IF NOT EXISTS idx_messaging_created_at ON messaging_system (created_at);
-                CREATE INDEX IF NOT EXISTS idx_messaging_is_read ON messaging_system (is_read);
         ''')
+        
+        # Create indexes for messaging_system table
+        c.execute("CREATE INDEX IF NOT EXISTS idx_messaging_recipient_id ON messaging_system (recipient_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_messaging_sender_id ON messaging_system (sender_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_messaging_created_at ON messaging_system (created_at)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_messaging_is_read ON messaging_system (is_read)")
         
         # Create message_replies table
         c.execute('''
@@ -10023,41 +10002,31 @@ def ensure_port_engineer_account(c, conn):
         # Ensure port engineer account exists and is properly configured
         ensure_port_engineer_account(c, conn)
         
-        # Create a sample quality officer for testing
-        c.execute("SELECT COUNT(*) FROM users WHERE role = 'quality_officer'")
-        if c.fetchone()[0] == 0:
-            qo_id = 'QO001'
-            hashed_password = generate_password_hash('Quality@2025')
-            end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
-            c.execute('''
-                INSERT INTO users (user_id, email, password, first_name, last_name, rank, role,
-                                 survey_end_date, is_approved, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (qo_id, 'quality@marine.com', hashed_password, 'Sarah', 'Johnson', 'Quality Officer',
-                  'quality_officer', end_date, 1, 1))
-            conn.commit()
-            print("✅ Sample quality officer created: quality@marine.com / Quality@2025")
+        # Always update demo accounts to correct credentials and status
+        # Quality Officer
+        qo_email = 'quality@marine.com'
+        qo_password = generate_password_hash('Quality@2025')
+        end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
+        c.execute("SELECT user_id FROM users WHERE email = ?", (qo_email,))
+        qo_user = c.fetchone()
+        if qo_user:
+            c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1, survey_end_date = ? WHERE email = ?", (qo_password, end_date, qo_email))
         else:
-            # Update existing quality officer to ensure credentials are correct
-            c.execute("UPDATE users SET is_approved = 1, is_active = 1 WHERE role = 'quality_officer'")
-            conn.commit()
+            c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'Sarah', 'Johnson', 'Quality Officer', 'quality_officer', end_date, 1, 1))
+        conn.commit()
+        print("✅ Quality Officer ensured: quality@marine.com / Quality@2025")
         
-        # Create a sample harbour master
-        c.execute("SELECT COUNT(*) FROM users WHERE role = 'harbour_master'")
-        if c.fetchone()[0] == 0:
-            hm_id = 'HM001'
-            hashed_password = generate_password_hash('Maintenance@2025')
-            c.execute('''
-                INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (hm_id, 'harbour_master@marine.com', hashed_password, 'Robert', 'Wilson',
-                  'Harbour Master', 'harbour_master', 1, 1))
-            conn.commit()
-            print("✅ Sample harbour master created: harbour_master@marine.com / Maintenance@2025")
+        # Always update Harbour Master
+        hm_email = 'harbour_master@marine.com'
+        hm_password = generate_password_hash('Maintenance@2025')
+        c.execute("SELECT user_id FROM users WHERE email = ?", (hm_email,))
+        hm_user = c.fetchone()
+        if hm_user:
+            c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1 WHERE email = ?", (hm_password, hm_email))
         else:
-            # Update existing harbour master
-            c.execute("UPDATE users SET is_approved = 1, is_active = 1 WHERE role = 'harbour_master'")
-            conn.commit()
+            c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('HM001', hm_email, hm_password, 'Robert', 'Wilson', 'Harbour Master', 'harbour_master', 1, 1))
+        conn.commit()
+        print("✅ Harbour Master ensured: harbour_master@marine.com / Maintenance@2025")
         
         # Create a sample emergency request
         c.execute("SELECT COUNT(*) FROM emergency_requests")
