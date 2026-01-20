@@ -4927,6 +4927,9 @@ function showFilePreview(fileUrl, fileName) {
     <!-- Theme System Script -->
     <script src="{{ url_for('static', filename='js/theme-system.js') }}"></script>
     
+    <!-- Tab Manager Script - Auto-refresh tabs every 3 seconds -->
+    <script src="{{ url_for('static', filename='js/tab-manager.js') }}"></script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

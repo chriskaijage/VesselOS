@@ -1379,6 +1379,137 @@ function displayEmergencyDetailsModal(emergency) {
     }, 500);
 }
 
+// ============ TAB REFRESH FUNCTIONS FOR AUTO-REFRESH ============
+
+// Refresh Details Tab
+async function refreshDetailsTab() {
+    if (!selectedEmergencyId) return;
+    const emergencyDetailsContent = document.getElementById('emergencyDetailsContent');
+    if (!emergencyDetailsContent) return;
+    
+    try {
+        const response = await fetch(`/api/emergency/${selectedEmergencyId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const emergency = data.emergency;
+            let html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Emergency ID:</strong> ${emergency.emergency_id}</p>
+                        <p><strong>Ship Name:</strong> ${emergency.ship_name}</p>
+                        <p><strong>Emergency Type:</strong> <span class="badge bg-danger">${emergency.emergency_type}</span></p>
+                        <p><strong>Severity:</strong> <span class="badge bg-warning">${emergency.severity_level}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> <span class="badge bg-info">${emergency.status}</span></p>
+                        <p><strong>Reported By:</strong> ${emergency.reported_by}</p>
+                        <p><strong>Reported At:</strong> ${new Date(emergency.reported_at).toLocaleString()}</p>
+                    </div>
+                </div>
+                <hr>
+                <h6>Description</h6>
+                <p>${emergency.description}</p>
+                <h6>Immediate Actions</h6>
+                <p>${emergency.immediate_actions}</p>
+                <h6>Resources Required</h6>
+                <p>${emergency.resources_required}</p>
+            `;
+            emergencyDetailsContent.innerHTML = html;
+        }
+    } catch (error) {
+        console.error('Error refreshing details tab:', error);
+    }
+}
+
+// Refresh Timeline Tab
+async function refreshTimelineTab() {
+    if (!selectedEmergencyId) return;
+    try {
+        await loadEmergencyTimeline(selectedEmergencyId);
+    } catch (error) {
+        console.error('Error refreshing timeline tab:', error);
+    }
+}
+
+// Refresh Status Tab
+async function refreshStatusTab() {
+    if (!selectedEmergencyId) return;
+    try {
+        const response = await fetch(`/api/emergency/${selectedEmergencyId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const emergency = data.emergency;
+            const statusContent = document.getElementById('emergencyDetailsContent')?.parentElement?.querySelector('#status');
+            if (statusContent) {
+                let html = `
+                    <div class="alert alert-info">
+                        <h6>Current Status: <span class="badge bg-info">${emergency.status}</span></h6>
+                        <p class="mb-0">Last Updated: ${new Date(emergency.updated_at).toLocaleString()}</p>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Severity Level</h6>
+                            <p><span class="badge bg-warning">${emergency.severity_level}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Emergency Type</h6>
+                            <p><span class="badge bg-danger">${emergency.emergency_type}</span></p>
+                        </div>
+                    </div>
+                `;
+                statusContent.innerHTML = html;
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing status tab:', error);
+    }
+}
+
+// Refresh Location Tab
+async function refreshLocationTab() {
+    if (!selectedEmergencyId) return;
+    try {
+        const response = await fetch(`/api/emergency/${selectedEmergencyId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const emergency = data.emergency;
+            const locationContent = document.getElementById('emergencyDetailsContent')?.parentElement?.querySelector('#location');
+            if (locationContent) {
+                let html = `<p>${emergency.location || 'Location information not available'}</p>`;
+                if (emergency.latitude && emergency.longitude) {
+                    html += `<p><small>Coordinates: ${emergency.latitude}, ${emergency.longitude}</small></p>`;
+                }
+                locationContent.innerHTML = html;
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing location tab:', error);
+    }
+}
+
+// Refresh Messages Tab
+async function refreshMessagesTab() {
+    if (!selectedEmergencyId) return;
+    try {
+        await loadEmergencyMessages(selectedEmergencyId);
+    } catch (error) {
+        console.error('Error refreshing messages tab:', error);
+    }
+}
+
+// Refresh Resources Tab  
+async function refreshResourcesTab() {
+    if (!selectedEmergencyId) return;
+    try {
+        await loadEmergencyResources(selectedEmergencyId);
+    } catch (error) {
+        console.error('Error refreshing resources tab:', error);
+    }
+}
+
 // ==================== TIMELINE & STATUS HELPERS ====================
 
 function loadEmergencyTimeline(emergencyId) {
