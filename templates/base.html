@@ -839,6 +839,28 @@ function showFilePreview(fileUrl, fileName) {
         
         .sidebar-toggle {
             display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary-light);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-toggle:hover {
+            color: var(--primary-color);
+        }
+        
+        /* Show toggle on mobile screens */
+        @media (max-width: 1024px) {
+            .sidebar-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                order: -1; /* Place before other navbar items */
+            }
         }
         
         .sidebar .nav-profile-img,
