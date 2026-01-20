@@ -279,6 +279,94 @@ function showFilePreview(fileUrl, fileName) {
             display: inline-block;
         }
         
+        /* Responsive Icon Sizing - Mobile Optimization */
+        @media (max-width: 1024px) {
+            /* Navbar icons - larger on mobile for touch */
+            .top-navbar .nav-link i,
+            .top-navbar .nav-link .fas,
+            .top-navbar .nav-link .fa,
+            .top-navbar .nav-link .bi {
+                font-size: 1.5rem !important;
+                width: 1.5rem;
+                height: 1.5rem;
+            }
+            
+            /* Sidebar navigation icons */
+            .sidebar-nav .nav-link i,
+            .sidebar-nav .nav-link .fas,
+            .sidebar-nav .nav-link .fa,
+            .sidebar-nav .nav-link .bi {
+                font-size: 1.25rem !important;
+                width: 1.25rem;
+                height: 1.25rem;
+                margin-right: 0.5rem;
+            }
+            
+            /* Tab icons */
+            .nav-tabs .nav-link i,
+            .nav-tabs .nav-link .fas,
+            .nav-tabs .nav-link .fa,
+            .nav-tabs .nav-link .bi {
+                font-size: 1.25rem !important;
+                width: 1.25rem;
+                height: 1.25rem;
+                margin-right: 0.5rem;
+            }
+            
+            /* Card header icons */
+            .card-header i,
+            .card-header .fas,
+            .card-header .fa,
+            .card-header .bi {
+                font-size: 1.2rem !important;
+                width: 1.2rem;
+                height: 1.2rem;
+                margin-right: 0.5rem;
+            }
+            
+            /* Dropdown menu icons */
+            .dropdown-menu .dropdown-item i,
+            .dropdown-menu .dropdown-item .fas,
+            .dropdown-menu .dropdown-item .fa,
+            .dropdown-menu .dropdown-item .bi {
+                font-size: 1.1rem !important;
+                width: 1.1rem;
+                height: 1.1rem;
+                margin-right: 0.5rem;
+            }
+            
+            /* Button icons */
+            .btn i,
+            .btn .fas,
+            .btn .fa,
+            .btn .bi {
+                font-size: 1rem !important;
+                width: 1rem;
+                height: 1rem;
+            }
+            
+            /* Table action icons */
+            .table i,
+            .table .fas,
+            .table .fa,
+            .table .bi {
+                font-size: 1.1rem !important;
+                width: 1.1rem;
+                height: 1.1rem;
+            }
+            
+            /* List icons */
+            .list-group-item i,
+            .list-group-item .fas,
+            .list-group-item .fa,
+            .list-group-item .bi {
+                font-size: 1.1rem !important;
+                width: 1.1rem;
+                height: 1.1rem;
+                margin-right: 0.5rem;
+            }
+        }
+        
         body {
             background: var(--bg-primary);
             color: var(--text-primary-readable);
