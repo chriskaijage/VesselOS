@@ -838,7 +838,10 @@ function showFilePreview(fileUrl, fileName) {
         }
         
         .sidebar-toggle {
-            display: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            order: -1; /* Place before other navbar items */
             background: none;
             border: none;
             color: var(--text-primary-light);
@@ -851,16 +854,6 @@ function showFilePreview(fileUrl, fileName) {
         
         .sidebar-toggle:hover {
             color: var(--primary-color);
-        }
-        
-        /* Show toggle on mobile screens */
-        @media (max-width: 1024px) {
-            .sidebar-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                order: -1; /* Place before other navbar items */
-            }
         }
         
         .sidebar .nav-profile-img,
