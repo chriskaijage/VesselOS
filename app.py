@@ -5262,13 +5262,19 @@ def api_messaging_threads():
             return jsonify({'success': True, 'threads': threads})
 
         except Exception as e:
-            app.logger.error(f"Error getting threads: {e}")
+            import traceback
+            tb_str = traceback.format_exc()
+            app.logger.error(f"Error getting threads: {e}\n{tb_str}")
+            print(f"THREADS ERROR: {e}\n{tb_str}")
             return jsonify({'success': False, 'error': str(e)})
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in threads: {e}")
+        import traceback
+        tb_str = traceback.format_exc()
+        app.logger.error(f"Error in threads: {e}\n{tb_str}")
+        print(f"THREADS OUTER ERROR: {e}\n{tb_str}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/messaging/thread/<other_party_id>')
@@ -5425,13 +5431,19 @@ def api_messaging_thread(other_party_id):
             return jsonify({'success': True, 'messages': messages})
 
         except Exception as e:
-            app.logger.error(f"Error getting thread: {e}", exc_info=True)
+            import traceback
+            tb_str = traceback.format_exc()
+            app.logger.error(f"Error getting thread: {e}\n{tb_str}")
+            print(f"THREAD DETAIL ERROR: {e}\n{tb_str}")
             return jsonify({'success': False, 'error': str(e)})
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in thread: {e}", exc_info=True)
+        import traceback
+        tb_str = traceback.format_exc()
+        app.logger.error(f"Error in thread: {e}\n{tb_str}")
+        print(f"THREAD DETAIL OUTER ERROR: {e}\n{tb_str}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/messaging/conversations')
