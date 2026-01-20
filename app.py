@@ -9121,16 +9121,25 @@ def api_create_maintenance_request():
                 if current_user.role in ['chief_engineer', 'captain']:
                     initial_status = 'submitted'  # Will be assessed and routed by system
 
-            # Insert maintenance request WITH SEVERITY ASSESSMENT
+            # Insert maintenance request WITH SEVERITY ASSESSMENT AND ALL FORM DATA
             c.execute("""
                 INSERT INTO maintenance_requests
                 (request_id, ship_name, maintenance_type, request_type, priority, criticality, description,
                  location, estimated_duration, resources_needed, requested_by,
-                 status, severity, assessment_details, workflow_status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 status, severity, assessment_details, workflow_status, created_at, updated_at,
+                 part_number, part_name, part_category, quantity, manufacturer,
+                 requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
+                 imo_number, vessel_type, company, eta)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?)
             """, (request_id, ship_name, request_type, request_type, priority, criticality, description,
                   location, 'To be determined', 'To be assessed', requested_by_email or requester_id,
-                  initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now()))
+                  initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now(),
+                  part_number, part_name, part_category, quantity, manufacturer,
+                  requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
+                  imo_number, vessel_type, company, eta))
 
             # Log initial submission
             log_workflow_action(request_id, 'submitted', requester_id, 
@@ -9165,6 +9174,99 @@ def api_create_maintenance_request():
     except Exception as e:
         app.logger.error(f"Error in create maintenance request: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/maintenance-requests/<request_id>/attachments/upload', methods=['POST'])
+def api_upload_maintenance_attachments(request_id):
+    """Upload one or more attachments for a maintenance request. Allows access for request creators and assigned staff."""
+    if 'files' not in request.files and 'file' not in request.files:
+        return jsonify(success=False, error='No files uploaded'), 400
+
+    files = request.files.getlist('files') or request.files.getlist('file')
+    saved = []
+
+    # Create target folder for this request
+    safe_request_id = secure_filename(request_id)
+    target_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'maintenance_requests', safe_request_id)
+    os.makedirs(target_folder, exist_ok=True)
+
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        
+        # Verify request exists
+        c.execute("SELECT request_id FROM maintenance_requests WHERE request_id = ?", (request_id,))
+        if not c.fetchone():
+            return jsonify(success=False, error='Maintenance request not found'), 404
+
+        for f in files:
+            if f and f.filename:
+                if not allowed_file(f.filename):
+                    continue
+                    
+                orig = f.filename
+                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                stored_name = f"{timestamp}_{secure_filename(orig)}"
+                save_path = os.path.join(target_folder, stored_name)
+                f.save(save_path)
+                file_size = os.path.getsize(save_path)
+
+                attachment_id = generate_id('ATT')
+                uploader_id = current_user.id if current_user.is_authenticated else None
+                
+                c.execute('''
+                    INSERT INTO maintenance_request_attachments 
+                    (id, request_id, original_filename, stored_filename, file_size, uploader_id, uploaded_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (attachment_id, request_id, orig, 
+                      os.path.join('maintenance_requests', safe_request_id, stored_name), 
+                      file_size, uploader_id, datetime.now()))
+                
+                saved.append({
+                    'id': attachment_id,
+                    'original_filename': orig,
+                    'stored_filename': stored_name,
+                    'file_size': file_size
+                })
+
+        conn.commit()
+        return jsonify(success=True, saved=saved, message=f'Uploaded {len(saved)} files')
+    
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error uploading maintenance request attachments: {e}")
+        return jsonify(success=False, error=str(e)), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/maintenance-requests/<request_id>/attachments', methods=['GET'])
+def api_get_maintenance_attachments(request_id):
+    """Get all attachments for a maintenance request."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        
+        # Verify request exists
+        c.execute("SELECT request_id FROM maintenance_requests WHERE request_id = ?", (request_id,))
+        if not c.fetchone():
+            return jsonify(success=False, error='Maintenance request not found'), 404
+
+        c.execute('''
+            SELECT id, original_filename, stored_filename, file_size, uploaded_at, uploader_id
+            FROM maintenance_request_attachments
+            WHERE request_id = ?
+            ORDER BY uploaded_at DESC
+        ''', (request_id,))
+        
+        attachments = [dict(row) for row in c.fetchall()]
+        return jsonify(success=True, attachments=attachments)
+    
+    except Exception as e:
+        app.logger.error(f"Error fetching maintenance request attachments: {e}")
+        return jsonify(success=False, error=str(e)), 500
+    finally:
+        conn.close()
 
 # ==================== DATABASE INITIALIZATION ====================
 
@@ -9636,6 +9738,73 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+        # Add part information columns
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN part_number TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN part_name TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN part_category TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN quantity INTEGER")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN manufacturer TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        # Add contact information columns
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN requested_by_name TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN requested_by_email TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN requested_by_phone TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN emergency_contact TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN imo_number TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN vessel_type TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN company TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN eta TEXT")
+        except sqlite3.OperationalError:
+            pass
+
         # Create maintenance_workflow_log table for tracking all actions
         c.execute('''
             CREATE TABLE IF NOT EXISTS maintenance_workflow_log (
@@ -9647,6 +9816,21 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (request_id) REFERENCES maintenance_requests (request_id),
                 FOREIGN KEY (actor_id) REFERENCES users (user_id)
+            )
+        ''')
+        
+        # Create maintenance_request_attachments table for storing files
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS maintenance_request_attachments (
+                id TEXT PRIMARY KEY,
+                request_id TEXT NOT NULL,
+                original_filename TEXT NOT NULL,
+                stored_filename TEXT NOT NULL,
+                file_size INTEGER,
+                uploader_id TEXT,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (request_id) REFERENCES maintenance_requests (request_id),
+                FOREIGN KEY (uploader_id) REFERENCES users (user_id)
             )
         ''')
         
@@ -10083,7 +10267,10 @@ def api_get_maintenance_request(request_id):
                    description, location, estimated_duration, resources_needed, requested_by,
                    status, assigned_to, approved, approved_by, approved_at, captain_comments,
                    rejection_reason, rejected_by, rejected_at, completed_at, created_at, updated_at, notes,
-                   severity, assessment_details, workflow_status, assigned_pm, pm_approval_at
+                   severity, assessment_details, workflow_status, assigned_pm, pm_approval_at,
+                   part_number, part_name, part_category, quantity, manufacturer,
+                   requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
+                   imo_number, vessel_type, company, eta
             FROM maintenance_requests
             WHERE request_id = ?
         """, (request_id,))
@@ -10094,8 +10281,8 @@ def api_get_maintenance_request(request_id):
         
         request_dict = dict(request_data)
         
-        # Get requester name if available
-        if request_dict.get('requested_by'):
+        # Use stored requester name/email if available, otherwise try to fetch from users table
+        if not request_dict.get('requested_by_name') and request_dict.get('requested_by'):
             c.execute("""
                 SELECT first_name, last_name, email 
                 FROM users 
@@ -10105,12 +10292,12 @@ def api_get_maintenance_request(request_id):
             user = c.fetchone()
             if user:
                 request_dict['requested_by_name'] = f"{user['first_name']} {user['last_name']}"
-                request_dict['requester_name'] = request_dict['requested_by_name']
-                request_dict['requester_email'] = user.get('email', request_dict['requested_by'])
-            else:
-                request_dict['requested_by_name'] = None
-                request_dict['requester_name'] = None
-                request_dict['requester_email'] = request_dict['requested_by'] if '@' in str(request_dict['requested_by']) else None
+                if not request_dict.get('requested_by_email'):
+                    request_dict['requested_by_email'] = user.get('email', '')
+        
+        # Set requester_name for backwards compatibility
+        request_dict['requester_name'] = request_dict.get('requested_by_name')
+        request_dict['requester_email'] = request_dict.get('requested_by_email')
         
         # Get assigned to info if assigned_to exists
         if request_dict.get('assigned_to'):

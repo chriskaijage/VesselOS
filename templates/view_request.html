@@ -74,7 +74,7 @@
                 </div>
                 
                 <!-- Part Details -->
-                <div class="mt-4" id="partDetailsSection">
+                <div class="mt-4" id="partDetailsSection" style="display: none;">
                     <h6>Part Information:</h6>
                     <div class="table-responsive">
                         <table class="table table-sm">
@@ -88,20 +88,6 @@
                                 </tr>
                             </thead>
                             <tbody id="partDetails">
-                                <tr>
-                                    <td>ENG-001-2024</td>
-                                    <td>Cylinder Liner</td>
-                                    <td>Engine Parts</td>
-                                    <td>2</td>
-                                    <td>MAN Diesel & Turbo</td>
-                                </tr>
-                                <tr>
-                                    <td>ENG-002-2024</td>
-                                    <td>Piston Ring Set</td>
-                                    <td>Engine Parts</td>
-                                    <td>1</td>
-                                    <td>Wärtsilä</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -111,19 +97,22 @@
                 <div class="row mt-4">
                     <div class="col-md-6">
                         <h6><i class="fas fa-map-marker-alt me-2"></i> Location Information</h6>
-                        <div class="alert alert-info">
-                            <p class="mb-1"><strong>Current Location:</strong> Port of Singapore</p>
-                            <p class="mb-1"><strong>ETA at Port:</strong> 2024-01-16 08:00</p>
-                            <p class="mb-0"><strong>Berth:</strong> Terminal 4, Berth 12</p>
+                        <div class="alert alert-info" id="locationInfoSection" style="display: none;">
+                            <p class="mb-1"><strong>Location:</strong> <span id="displayLocation">Not provided</span></p>
+                        </div>
+                        <div class="alert alert-light" id="noLocationMsg">
+                            <p class="mb-0 text-muted">No location information provided</p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <h6><i class="fas fa-address-card me-2"></i> Contact Information</h6>
-                        <div class="alert alert-secondary">
-                            <p class="mb-1"><strong>Contact Person:</strong> Captain John Davis</p>
-                            <p class="mb-1"><strong>Email:</strong> captain.davis@oceancarrier.com</p>
-                            <p class="mb-1"><strong>Phone:</strong> +65 9876 5432</p>
-                            <p class="mb-0"><strong>Emergency Contact:</strong> +65 9876 5433 (24/7)</p>
+                        <div class="alert alert-secondary" id="contactInfoSection" style="display: none;">
+                            <p class="mb-1" id="contactPersonDisplay"></p>
+                            <p class="mb-1" id="contactEmailDisplay"></p>
+                            <p class="mb-0" id="contactPhoneDisplay"></p>
+                        </div>
+                        <div class="alert alert-light" id="noContactMsg">
+                            <p class="mb-0 text-muted">No contact information provided</p>
                         </div>
                     </div>
                 </div>
@@ -144,38 +133,9 @@
                 <h5 class="mb-0"><i class="fas fa-history me-2"></i> Service History</h5>
             </div>
             <div class="card-body">
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-success"></div>
-                        <div class="timeline-content">
-                            <h6>Request Created</h6>
-                            <p class="mb-1">Maintenance request submitted by Captain John Davis</p>
-                            <small class="text-muted">2024-01-15 14:30:21</small>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-primary"></div>
-                        <div class="timeline-content">
-                            <h6>Assigned to Maintenance</h6>
-                            <p class="mb-1">Request assigned to Maria Garcia (Harbour Master)</p>
-                            <small class="text-muted">2024-01-15 14:45:00</small>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-warning"></div>
-                        <div class="timeline-content">
-                            <h6>Initial Assessment</h6>
-                            <p class="mb-1">Technician dispatched for initial assessment</p>
-                            <small class="text-muted">2024-01-15 15:30:00</small>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-info"></div>
-                        <div class="timeline-content">
-                            <h6>Parts Ordered</h6>
-                            <p class="mb-1">Required parts ordered from supplier</p>
-                            <small class="text-muted">2024-01-15 16:15:00</small>
-                        </div>
+                <div class="timeline" id="serviceHistoryTimeline">
+                    <div class="text-center text-muted py-3">
+                        <p>Loading service history...</p>
                     </div>
                 </div>
             </div>
@@ -214,9 +174,8 @@
                     <h6><i class="fas fa-info-circle me-2"></i> Quick Info</h6>
                     <div class="alert alert-light">
                         <p class="mb-1"><strong>Assigned To:</strong> <span id="assignedTo">Not Assigned</span></p>
-                        <p class="mb-1"><strong>Estimated Cost:</strong> <span id="estimatedCost">$4,500 - $6,000</span></p>
-                        <p class="mb-1"><strong>Time Estimate:</strong> <span id="timeEstimate">2-3 days</span></p>
-                        <p class="mb-0"><strong>Required Skills:</strong> Engine Specialist, Hydraulics</p>
+                        <p class="mb-1" id="estimatedDurationRow" style="display: none;"><strong>Estimated Duration:</strong> <span id="estimatedDuration">-</span></p>
+                        <p class="mb-0" id="resourcesNeededRow" style="display: none;"><strong>Resources Needed:</strong> <span id="resourcesNeeded">-</span></p>
                     </div>
                 </div>
 
@@ -280,28 +239,15 @@
         </div>
         
         <!-- Related Requests -->
-        <div class="card mt-4">
+        <div class="card mt-4" id="relatedRequestsCard" style="display: none;">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-link me-2"></i> Related Requests</h5>
             </div>
             <div class="card-body">
-                <div class="list-group">
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">MR-20240110-092315</h6>
-                            <small class="text-success">Completed</small>
-                        </div>
-                        <p class="mb-1">Routine engine maintenance</p>
-                        <small>SQI: 88.5</small>
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">MR-20231215-142045</h6>
-                            <small class="text-warning">In Progress</small>
-                        </div>
-                        <p class="mb-1">Cooling system upgrade</p>
-                        <small>Estimated: 5 days</small>
-                    </a>
+                <div class="list-group" id="relatedRequestsList">
+                    <div class="text-center text-muted py-3">
+                        <p>No related requests found</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -393,6 +339,13 @@
 
 {% block scripts %}
 <script>
+// Utility function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Load request details from API
 function loadRequestDetails() {
     // Get request ID from URL path
@@ -495,48 +448,10 @@ function fetchRequestDetails(requestId) {
 }
 
 function updateRequestDisplay(request) {
-        // Render attachments
-        const attachmentsList = document.getElementById('attachmentsList');
-        const noAttachmentsMsg = document.getElementById('noAttachmentsMsg');
-        if (attachmentsList) {
-            attachmentsList.innerHTML = '';
-            if (request.attachments && request.attachments.length > 0) {
-                request.attachments.forEach(att => {
-                    const fileIcon = att.filename.match(/\.(pdf)$/i) ? 'fa-file-pdf text-danger' :
-                                     att.filename.match(/\.(jpg|jpeg|png|gif)$/i) ? 'fa-file-image text-success' :
-                                     att.filename.match(/\.(zip|rar)$/i) ? 'fa-file-archive text-warning' :
-                                     'fa-file text-secondary';
-                    const fileSizeMB = att.size ? (att.size / 1024 / 1024).toFixed(2) : '';
-                    const fileUrl = att.url || att.path || '';
-                    const fileName = att.filename;
-                    const listItem = document.createElement('div');
-                    listItem.className = 'list-group-item';
-                    listItem.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas ${fileIcon} me-2"></i>
-                                <span class="attachment-filename">${fileName}</span>
-                            </div>
-                            <div>
-                                ${fileSizeMB ? `<small class='text-muted me-3'>${fileSizeMB} MB</small>` : ''}
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="showFilePreview('${fileUrl.replace(/'/g, '\'')}', '${fileName.replace(/'/g, '\'')}')">
-                                    <i class="fas fa-eye"></i> Preview
-                                </button>
-                                <a class="btn btn-sm btn-outline-primary" href="${fileUrl}" download>
-                                    <i class="fas fa-download"></i>
-                                </a>
-                            </div>
-                        </div>
-                    `;
-                    attachmentsList.appendChild(listItem);
-                });
-            } else {
-                const noMsg = document.createElement('div');
-                noMsg.className = 'text-muted small px-3 py-2';
-                noMsg.textContent = 'No attachments uploaded for this request.';
-                attachmentsList.appendChild(noMsg);
-            }
-        }
+        // Load attachments from API
+        loadAttachments(request.request_id);
+        
+        // Render rest of request data
     // Hide loading indicator and show content
     const loadingIndicator = document.getElementById('loadingIndicator');
     const requestContent = document.getElementById('requestContent');
@@ -642,6 +557,83 @@ function updateRequestDisplay(request) {
     // Load workflow history and actions
     loadWorkflowHistory();
     
+    // Load evaluation data if available
+    loadEvaluationData(request.request_id);
+    
+    // Load related requests if available
+    loadRelatedRequests(request.ship_name);
+    
+    // Update part details (show only if parts were provided in request)
+    const hasPartDetails = request.part_number || request.part_name;
+    if (document.getElementById('partDetailsSection')) {
+        if (hasPartDetails) {
+            document.getElementById('partDetailsSection').style.display = 'block';
+            const partDetailsBody = document.getElementById('partDetails');
+            partDetailsBody.innerHTML = '';
+            const partRow = document.createElement('tr');
+            partRow.innerHTML = `
+                <td>${request.part_number || '-'}</td>
+                <td>${request.part_name || '-'}</td>
+                <td>${request.part_category || '-'}</td>
+                <td>${request.quantity || '-'}</td>
+                <td>${request.manufacturer || '-'}</td>
+            `;
+            partDetailsBody.appendChild(partRow);
+        } else {
+            document.getElementById('partDetailsSection').style.display = 'none';
+        }
+    }
+
+    // Update location information (show only if location was provided)
+    if (request.location) {
+        document.getElementById('locationInfoSection').style.display = 'block';
+        document.getElementById('noLocationMsg').style.display = 'none';
+        document.getElementById('displayLocation').textContent = request.location;
+    } else {
+        document.getElementById('locationInfoSection').style.display = 'none';
+        document.getElementById('noLocationMsg').style.display = 'block';
+    }
+
+    // Update contact information (show only if contact info was provided)
+    if (document.getElementById('requesterName')) {
+        const requesterName = request.requester_name || request.requested_by_name || 'Unknown';
+        const requesterEmail = request.requester_email;
+        const requesterPhone = request.emergency_contact;
+        
+        if (requesterEmail || requesterPhone) {
+            document.getElementById('contactInfoSection').style.display = 'block';
+            document.getElementById('noContactMsg').style.display = 'none';
+            if (requesterName) {
+                document.getElementById('contactPersonDisplay').innerHTML = `<strong>Contact Person:</strong> ${requesterName}`;
+            } else {
+                document.getElementById('contactPersonDisplay').style.display = 'none';
+            }
+            if (requesterEmail) {
+                document.getElementById('contactEmailDisplay').innerHTML = `<strong>Email:</strong> ${requesterEmail}`;
+            } else {
+                document.getElementById('contactEmailDisplay').style.display = 'none';
+            }
+            if (requesterPhone) {
+                document.getElementById('contactPhoneDisplay').innerHTML = `<strong>Phone:</strong> ${requesterPhone}`;
+            } else {
+                document.getElementById('contactPhoneDisplay').style.display = 'none';
+            }
+        } else {
+            document.getElementById('contactInfoSection').style.display = 'none';
+            document.getElementById('noContactMsg').style.display = 'block';
+        }
+    }
+
+    // Update estimated duration and resources (show only if provided)
+    if (request.estimated_duration && request.estimated_duration !== 'To be determined') {
+        document.getElementById('estimatedDurationRow').style.display = 'block';
+        document.getElementById('estimatedDuration').textContent = request.estimated_duration;
+    }
+    if (request.resources_needed && request.resources_needed !== 'To be assessed') {
+        document.getElementById('resourcesNeededRow').style.display = 'block';
+        document.getElementById('resourcesNeeded').textContent = request.resources_needed;
+    }
+
     // Update assigned to
     if (document.getElementById('assignedTo')) {
         if (request.assigned_to_name) {
@@ -1025,13 +1017,144 @@ function loadWorkflowHistory() {
     .then(data => {
         if (data.success && data.actions) {
             displayWorkflowHistory(data.actions);
+            displayServiceHistory(data.actions);
             displayWorkflowActions(data.request);
         }
     })
     .catch(error => {
         console.error('Error loading workflow history:', error);
-        showAlert('danger', 'Failed to load workflow history');
+        // Don't show alert for workflow history, just silently fail
     });
+}
+
+// Load attachments from API
+function loadAttachments(requestId) {
+    const attachmentsList = document.getElementById('attachmentsList');
+    if (!attachmentsList) return;
+    
+    // Clear and show loading state
+    attachmentsList.innerHTML = '<div class="text-muted small px-3 py-2"><i class="fas fa-spinner fa-spin me-2"></i>Loading attachments...</div>';
+    
+    fetch(`/api/maintenance-requests/${encodeURIComponent(requestId)}/attachments`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        attachmentsList.innerHTML = '';
+        
+        if (data.success && data.attachments && data.attachments.length > 0) {
+            data.attachments.forEach(att => {
+                const fileIcon = att.original_filename.match(/\.(pdf)$/i) ? 'fa-file-pdf text-danger' :
+                                 att.original_filename.match(/\.(jpg|jpeg|png|gif)$/i) ? 'fa-file-image text-success' :
+                                 att.original_filename.match(/\.(zip|rar|7z)$/i) ? 'fa-file-archive text-warning' :
+                                 att.original_filename.match(/\.(doc|docx)$/i) ? 'fa-file-word text-primary' :
+                                 att.original_filename.match(/\.(xls|xlsx)$/i) ? 'fa-file-excel text-success' :
+                                 'fa-file text-secondary';
+                const fileSizeMB = att.file_size ? (att.file_size / 1024 / 1024).toFixed(2) : '0';
+                const fileName = att.original_filename;
+                const fileUrl = `/uploads/${att.stored_filename}`;
+                
+                const listItem = document.createElement('div');
+                listItem.className = 'list-group-item';
+                listItem.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                            <i class="fas ${fileIcon} me-2"></i>
+                            <span class="attachment-filename">${escapeHtml(fileName)}</span>
+                            <small class="text-muted ms-2">(${fileSizeMB} MB)</small>
+                        </div>
+                        <div>
+                            <a class="btn btn-sm btn-outline-primary" href="${fileUrl}" download="${fileName}" title="Download file">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                attachmentsList.appendChild(listItem);
+            });
+        } else {
+            const noMsg = document.createElement('div');
+            noMsg.className = 'text-muted small px-3 py-2';
+            noMsg.textContent = 'No attachments uploaded for this request.';
+            attachmentsList.appendChild(noMsg);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading attachments:', error);
+        attachmentsList.innerHTML = '<div class="text-muted small px-3 py-2">Error loading attachments.</div>';
+    });
+}
+
+// Display service history in the main timeline section
+function displayServiceHistory(actions) {
+    const timelineDiv = document.getElementById('serviceHistoryTimeline');
+    if (!timelineDiv) return;
+    
+    if (!actions || actions.length === 0) {
+        timelineDiv.innerHTML = `
+            <div class="text-center text-muted py-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <p>No service history available</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let timelineHTML = '<div class="timeline">';
+    
+    actions.forEach((action, index) => {
+        const date = new Date(action.created_at);
+        const timeStr = date.toLocaleString();
+        
+        // Color code based on action type
+        let markerColor = 'bg-secondary';
+        if (action.action === 'submitted') markerColor = 'bg-info';
+        else if (action.action === 'pm_approved' || action.action === 'approved') markerColor = 'bg-success';
+        else if (action.action === 'executing' || action.action === 'in_progress') markerColor = 'bg-warning';
+        else if (action.action === 'resolved' || action.action === 'completed') markerColor = 'bg-success';
+        else if (action.action === 'rejected' || action.action === 'cancelled') markerColor = 'bg-danger';
+        
+        const actionLabel = action.action.replace(/_/g, ' ').toUpperCase();
+        
+        timelineHTML += `
+            <div class="timeline-item">
+                <div class="timeline-marker ${markerColor}"></div>
+                <div class="timeline-content">
+                    <h6>${actionLabel}</h6>
+                    <p class="mb-1">${action.notes || action.description || 'Action performed'}</p>
+                    <small class="text-muted">${timeStr}</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    timelineHTML += '</div>';
+    timelineDiv.innerHTML = timelineHTML;
+}
+
+// Load evaluation data for this request
+function loadEvaluationData(requestId) {
+    // Since evaluations are associated with service evaluations table, 
+    // we would need an API endpoint for this.
+    // For now, just show the default "no evaluation" message
+    // This can be extended when the API is available
+}
+
+// Load related requests for the same vessel
+function loadRelatedRequests(shipName) {
+    if (!shipName) return;
+    
+    // This would fetch related requests from the same vessel
+    // For now, we'll hide the section since there's no data provided in the form
+    const relatedRequestsCard = document.getElementById('relatedRequestsCard');
+    if (relatedRequestsCard) {
+        relatedRequestsCard.style.display = 'none';
+    }
 }
 
 function displayWorkflowHistory(actions) {
