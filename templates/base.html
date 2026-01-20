@@ -33,7 +33,7 @@ function showFilePreview(fileUrl, fileName) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=600px, initial-scale=0.67, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=1024px, initial-scale=1.0, user-scalable=yes">
     <title>{% block title %}Marine Service Center{% endblock %}</title>
     
     <!-- Theme Initialization Script (runs before rendering) -->
@@ -244,6 +244,10 @@ function showFilePreview(fileUrl, fileName) {
             image-rendering: -webkit-optimize-contrast;
             image-rendering: auto;
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+            /* Maintain desktop layout on all devices */
+            min-width: 1024px;
+            width: 100%;
+            overflow-x: auto;
         }
         
         * {
@@ -283,6 +287,7 @@ function showFilePreview(fileUrl, fileName) {
             background: var(--bg-primary);
             color: var(--text-primary-readable);
             min-height: 100vh;
+            min-width: 1024px;
             display: flex;
             flex-direction: column;
             padding-left: 320px; /* Add padding for sidebar */
@@ -1740,112 +1745,12 @@ function showFilePreview(fileUrl, fileName) {
         
         /* Responsive */
         @media (max-width: 768px) {
-            .metric-value {
-                font-size: 2rem;
-            }
+            /* Mobile responsive layout disabled - maintain desktop appearance on all devices */
+            /* Desktop layout will be preserved with horizontal scrolling if needed */
             
-            .card {
-                margin-bottom: 1rem;
-            }
-            
+            /* Only keep essential mobile fixes */
             body {
-                padding-left: 0;
-                padding-top: 60px;
-                padding-bottom: 120px;
-            }
-            
-            .sidebar {
-                width: 320px !important;
-                top: 0; /* Start from top to allow header overlap */
-                bottom: 90px; /* End above footer */
-                transform: translateX(-100%);
-                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                overflow: hidden; /* Prevent overflow beyond bounds */
-                max-height: calc(100vh - 90px); /* Ensure sidebar doesn't exceed viewport minus footer */
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .sidebar.collapsed {
-                width: 320px !important;
-            }
-            
-            .top-navbar {
-                left: 0 !important;
-            }
-            
-            body.sidebar-collapsed {
-                padding-left: 0 !important;
-            }
-            
-            .footer {
-                left: 0 !important;
-            }
-            
-            body.sidebar-collapsed .footer {
-                left: 0 !important;
-            }
-            
-            .sidebar-toggle {
-                display: block !important;
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                z-index: 1040;
-                background: rgba(var(--primary-rgb), 0.9);
-                border: none;
-                color: white;
-                padding: 0.5rem;
-                border-radius: 6px;
-                font-size: 1.2rem;
-            }
-            
-            .sidebar-toggle-btn {
-                display: none !important;
-            }
-            
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 1025;
-            }
-            
-            .sidebar-overlay.active {
-                display: block;
-            }
-            
-            .footer {
-                min-height: 100px;
-                height: auto;
-                padding: 1rem 0;
-                left: 0;
-            }
-            
-            .navbar-custom {
-                display: none;
-            }
-            
-            .footer-content {
-                flex-direction: column;
-                align-items: flex-end;
-                gap: 0.75rem;
-            }
-            
-            .footer .text-end {
-                text-align: right !important;
-                width: 100%;
-            }
-            
-            .footer-content > div:first-child {
-                text-align: right;
-                width: 100%;
+                min-width: 1024px; /* Minimum width to maintain desktop layout */
             }
         }
         
@@ -2657,240 +2562,29 @@ function showFilePreview(fileUrl, fileName) {
             cursor: pointer;
         }
         
-        /* For mobile responsiveness */
+        /* For mobile responsiveness - DISABLED to maintain desktop appearance */
         @media (max-width: 768px) {
-            .messaging-panel {
-                width: 100%;
-                right: -100%;
-                top: 60px;
-                bottom: 90px; /* End above footer on mobile */
-                height: auto; /* Let bottom constraint control height */
-                border-radius: 0;
-            }
-            
-            .messaging-panel.active {
-                right: 0;
-            }
-            
-            .messaging-toggle-btn {
-                right: 0;
-                padding: 10px 5px;
-                font-size: 0.9rem;
-                writing-mode: horizontal-tb; /* Horizontal on mobile maybe better */
-                flex-direction: row;
-                border-radius: 8px 0 0 8px;
-            }
-            
-            .messaging-toggle-btn.active {
-                right: 100%; /* Push off screen or overlay */
-                display: none; /* Hide when open on mobile */
-            }
+            /* All messaging panel mobile changes disabled - desktop layout maintained */
         }
         
-        /* Mobile Responsive Fixes */
+        /* Mobile Responsive Fixes - DISABLED to maintain desktop appearance */
         @media (max-width: 700px) {
-            html, body {
-                font-size: 15px;
-                -webkit-text-size-adjust: 100%;
-                -ms-text-size-adjust: 100%;
-            }
-            
-            .container-fluid {
-                padding-left: 10px;
-                padding-right: 10px;
-            }
-            
-            .card {
-                margin-bottom: 1rem;
-                border-radius: 10px;
-            }
-            
-            .card-header {
-                padding: 0.65rem;
-            }
-            
-            .card-body {
-                padding: 0.9rem;
-            }
-            
-            h1, h2, h3, h4, h5, h6 {
-                line-height: 1.3;
-            }
-            
-            h4 {
-                font-size: 1.15rem !important;
-            }
-            
-            h6 {
-                font-size: 0.95rem !important;
-            }
-            
-            .btn {
-                padding: 0.55rem 1rem;
-                font-size: 0.95rem;
-                border-radius: 6px;
-            }
-            
-            .btn-lg {
-                padding: 0.65rem 1.2rem;
-                font-size: 1.05rem;
-            }
-            
-            .form-control, .input-group-text {
-                font-size: 1rem;
-                padding: 0.55rem 0.75rem;
-                border-radius: 6px;
-            }
-            
-            .form-label {
-                font-size: 0.95rem;
-                margin-bottom: 0.4rem;
-                font-weight: 500;
-            }
-            
-            .small, small {
-                font-size: 0.85rem;
-            }
-            
-            .mb-3 {
-                margin-bottom: 0.8rem !important;
-            }
-            
-            .mb-4 {
-                margin-bottom: 1.1rem !important;
-            }
-            
-            .mt-4 {
-                margin-top: 1.1rem !important;
-            }
-            
-            .my-4 {
-                margin-top: 1.1rem !important;
-                margin-bottom: 1.1rem !important;
-            }
-            
-            .py-3 {
-                padding-top: 0.7rem !important;
-                padding-bottom: 0.7rem !important;
-            }
-            
-            .py-4 {
-                padding-top: 0.9rem !important;
-                padding-bottom: 0.9rem !important;
-            }
-            
-            .alert {
-                padding: 0.8rem;
-                font-size: 0.95rem;
-                border-radius: 6px;
-            }
-            
-            .row {
-                row-gap: 0.8rem;
-            }
-            
-            .row > * {
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
-            }
-            
-            /* Prevent zoom on input focus for iOS */
-            input, select, textarea {
-                font-size: 16px !important;
-            }
-            
-            /* Login page specific fixes */
-            .login-logo {
-                max-width: 50px !important;
-                height: auto !important;
-            }
-            
-            /* Mobile button fixes */
-            .d-grid > .btn {
-                width: 100%;
-            }
-            
-            /* Ensure input groups don't overflow */
-            .input-group {
-                display: flex;
-                flex-wrap: wrap;
-            }
-            
-            .input-group .form-control {
-                min-width: 0;
-                flex: 1 1 auto;
-            }
-            
-            /* Better spacing for mobile forms */
-            .mb-2 {
-                margin-bottom: 0.6rem !important;
-            }
-            
-            .p-3 {
-                padding: 0.85rem !important;
-            }
-            
-            .p-4 {
-                padding: 1rem !important;
-            }
-            
-            /* Dashboard and content optimization */
-            .container {
-                max-width: 100% !important;
-                padding-left: 10px !important;
-                padding-right: 10px !important;
-            }
-            
-            /* Better readability for zoomed-out view */
-            .navbar {
-                padding: 0.5rem 0;
-            }
-            
-            .nav-link {
-                padding: 0.5rem 0.7rem !important;
-            }
-            
-            /* Icon sizing for better balance */
-            .fa, .fas, .far, .fal {
-                margin-right: 0.4rem;
-            }
+            /* All responsive changes disabled - desktop layout maintained */
         }
         
-        /* Tablet and above adjustments */
+        /* Tablet and above adjustments - DISABLED */
         @media (min-width: 700px) and (max-width: 900px) {
-            .container-fluid {
-                padding-left: 16px;
-                padding-right: 16px;
-            }
-            
-            html, body {
-                font-size: 15px;
-            }
+            /* All responsive changes disabled - desktop layout maintained */
         }
         
-        /* Desktop and larger */
+        /* Desktop and larger - DISABLED */
         @media (min-width: 900px) {
-            html, body {
-                font-size: 16px;
-            }
-            
-            .form-control, .input-group-text {
-                font-size: 1rem;
-                padding: 0.6rem 0.85rem;
-            }
+            /* Desktop styles already applied by default */
         }
         
-        /* Ensure viewport doesn't allow problematic zoom */
+        /* Ensure viewport doesn't allow problematic zoom - DISABLED */
         @media (max-width: 650px) {
-            body {
-                position: relative;
-                width: 100vw;
-                overflow-x: hidden;
-            }
-            
-            input:focus, textarea:focus, select:focus {
-                font-size: 16px;
-            }
+            /* All responsive changes disabled - desktop layout maintained */
         }
     </style>
     
