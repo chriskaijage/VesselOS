@@ -134,6 +134,10 @@ def inject_current_user_profile():
 def get_db_connection():
     conn = sqlite3.connect(app.config['DATABASE'], timeout=20)
     conn.row_factory = sqlite3.Row
+    # Enable WAL mode for better concurrency and durability
+    conn.execute('PRAGMA journal_mode=WAL')
+    # Ensure foreign keys are enforced
+    conn.execute('PRAGMA foreign_keys=ON')
     return conn
 
 # ==================== USER MODEL ====================
@@ -4987,6 +4991,8 @@ def api_messaging_send():
             conn.commit()
 
             log_activity('message_sent', f'Sent {message_type} to {len(recipients)} recipients')
+            print(f"✅ MESSAGE SENT: {base_message_id} to {len(recipients)} recipients")
+            app.logger.info(f"Message sent successfully: {base_message_id} to {len(recipients)} recipients")
 
             return jsonify({
                 'success': True,
@@ -9166,13 +9172,19 @@ def api_create_maintenance_request():
 
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Error creating maintenance request: {e}")
+            import traceback
+            tb_str = traceback.format_exc()
+            app.logger.error(f"Error creating maintenance request: {e}\n{tb_str}")
+            print(f"ERROR: {e}\n{tb_str}")
             return jsonify({'success': False, 'error': 'Database error: ' + str(e)}), 500
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in create maintenance request: {e}")
+        import traceback
+        tb_str = traceback.format_exc()
+        app.logger.error(f"Error in create maintenance request: {e}\n{tb_str}")
+        print(f"ERROR: {e}\n{tb_str}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
