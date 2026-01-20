@@ -131,35 +131,8 @@
                 <!-- Attachments -->
                 <div class="mt-4">
                     <h6><i class="fas fa-paperclip me-2"></i> Attachments</h6>
-                    <div class="list-group">
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="fas fa-file-pdf text-danger me-2"></i>
-                                    Engine_Temperature_Log.pdf
-                                </div>
-                                <div>
-                                    <small class="text-muted me-3">2.5 MB</small>
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="fas fa-file-image text-success me-2"></i>
-                                    Engine_Compartment_Photos.zip
-                                </div>
-                                <div>
-                                    <small class="text-muted me-3">15.8 MB</small>
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                    <div id="attachmentsList" class="list-group">
+                        <div class="text-muted small px-3 py-2" id="noAttachmentsMsg">No attachments uploaded for this request.</div>
                     </div>
                 </div>
             </div>
@@ -522,6 +495,48 @@ function fetchRequestDetails(requestId) {
 }
 
 function updateRequestDisplay(request) {
+        // Render attachments
+        const attachmentsList = document.getElementById('attachmentsList');
+        const noAttachmentsMsg = document.getElementById('noAttachmentsMsg');
+        if (attachmentsList) {
+            attachmentsList.innerHTML = '';
+            if (request.attachments && request.attachments.length > 0) {
+                request.attachments.forEach(att => {
+                    const fileIcon = att.filename.match(/\.(pdf)$/i) ? 'fa-file-pdf text-danger' :
+                                     att.filename.match(/\.(jpg|jpeg|png|gif)$/i) ? 'fa-file-image text-success' :
+                                     att.filename.match(/\.(zip|rar)$/i) ? 'fa-file-archive text-warning' :
+                                     'fa-file text-secondary';
+                    const fileSizeMB = att.size ? (att.size / 1024 / 1024).toFixed(2) : '';
+                    const fileUrl = att.url || att.path || '';
+                    const fileName = att.filename;
+                    const listItem = document.createElement('div');
+                    listItem.className = 'list-group-item';
+                    listItem.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas ${fileIcon} me-2"></i>
+                                <span class="attachment-filename">${fileName}</span>
+                            </div>
+                            <div>
+                                ${fileSizeMB ? `<small class='text-muted me-3'>${fileSizeMB} MB</small>` : ''}
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="showFilePreview('${fileUrl.replace(/'/g, '\'')}', '${fileName.replace(/'/g, '\'')}')">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                                <a class="btn btn-sm btn-outline-primary" href="${fileUrl}" download>
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    attachmentsList.appendChild(listItem);
+                });
+            } else {
+                const noMsg = document.createElement('div');
+                noMsg.className = 'text-muted small px-3 py-2';
+                noMsg.textContent = 'No attachments uploaded for this request.';
+                attachmentsList.appendChild(noMsg);
+            }
+        }
     // Hide loading indicator and show content
     const loadingIndicator = document.getElementById('loadingIndicator');
     const requestContent = document.getElementById('requestContent');

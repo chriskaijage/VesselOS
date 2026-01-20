@@ -1,3 +1,34 @@
+<!-- File Preview Modal -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filePreviewModalLabel">File Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="filePreviewContent" style="min-height:400px; text-align:center;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showFilePreview(fileUrl, fileName) {
+    const ext = fileName.split('.').pop().toLowerCase();
+    let content = '';
+    if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+        content = `<img src="${fileUrl}" alt="${fileName}" style="max-width:100%;max-height:70vh;">`;
+    } else if (ext === "pdf") {
+        content = `<iframe src="https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fileUrl)}" width="100%" height="600px" style="border:none;"></iframe>`;
+    } else if (["doc","docx","xls","xlsx","ppt","pptx"].includes(ext)) {
+        content = `<iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(location.origin + fileUrl)}" width="100%" height="600px" frameborder="0"></iframe>`;
+    } else {
+        content = `<a href="${fileUrl}" target="_blank" class="btn btn-primary">Download & Open</a>`;
+    }
+    document.getElementById('filePreviewContent').innerHTML = content;
+    const modal = new bootstrap.Modal(document.getElementById('filePreviewModal'));
+    modal.show();
+}
+</script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
