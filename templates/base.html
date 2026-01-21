@@ -3304,14 +3304,32 @@ function showFilePreview(fileUrl, fileName) {
     // ==================== FLOATING PANEL FUNCTIONS ====================
 
     function toggleMessagingPanel() {
-        const panel = document.getElementById('messagingPanel');
-        const toggleBtn = document.getElementById('messagingToggleBtn');
-        
-        panel.classList.toggle('active');
-        toggleBtn.classList.toggle('active');
-        
-        if (panel.classList.contains('active')) {
-            loadMessagingTab(currentTab);
+        try {
+            const panel = document.getElementById('messagingPanel');
+            const toggleBtn = document.getElementById('messagingToggleBtn');
+            
+            if (!panel) {
+                console.error('❌ messagingPanel not found');
+                return;
+            }
+            
+            if (!toggleBtn) {
+                console.error('❌ messagingToggleBtn not found');
+                return;
+            }
+            
+            console.log('🔄 Toggling messaging panel...');
+            panel.classList.toggle('active');
+            toggleBtn.classList.toggle('active');
+            
+            if (panel.classList.contains('active')) {
+                console.log('📨 Panel opened, loading tab:', currentTab);
+                loadMessagingTab(currentTab);
+            } else {
+                console.log('📭 Panel closed');
+            }
+        } catch (error) {
+            console.error('❌ Error toggling messaging panel:', error);
         }
     }
 
@@ -3333,22 +3351,37 @@ function showFilePreview(fileUrl, fileName) {
     }
 
     function loadMessagingTab(tabName) {
-        const content = document.getElementById('messagingContent');
-        
-        switch(tabName) {
-            case 'inbox':
-                loadInboxTab(content);
-                break;
-            case 'compose':
-                loadComposeTab(content);
-                break;
-            case 'threads':
-                loadThreadsTab(content);
-                break;
+        try {
+            const content = document.getElementById('messagingContent');
+            
+            if (!content) {
+                console.error('❌ messagingContent element not found');
+                return;
+            }
+            
+            console.log('📑 Loading tab:', tabName);
+            
+            switch(tabName) {
+                case 'inbox':
+                    loadInboxTab(content);
+                    break;
+                case 'compose':
+                    loadComposeTab(content);
+                    break;
+                case 'threads':
+                    loadThreadsTab(content);
+                    break;
+                default:
+                    console.error('❌ Unknown tab:', tabName);
+                    return;
+            }
+            
+            // Move quick-reply-area to footer if it exists in content
+            moveQuickReplyToFooter();
+            console.log('✅ Tab loaded successfully');
+        } catch (error) {
+            console.error('❌ Error loading messaging tab:', error);
         }
-        
-        // Move quick-reply-area to footer if it exists in content
-        moveQuickReplyToFooter();
     }
     
     // Function to ensure content structure is correct
@@ -4403,6 +4436,21 @@ function showFilePreview(fileUrl, fileName) {
 
     // Initialize messaging system
     function initMessaging() {
+        console.log('🚀 Initializing messaging system...');
+        
+        // Verify required elements exist
+        const msgPanel = document.getElementById('messagingPanel');
+        const msgToggle = document.getElementById('messagingToggleBtn');
+        const msgContent = document.getElementById('messagingContent');
+        
+        if (!msgPanel) console.error('❌ messagingPanel not found');
+        if (!msgToggle) console.error('❌ messagingToggleBtn not found');
+        if (!msgContent) console.error('❌ messagingContent not found');
+        
+        if (msgPanel && msgToggle && msgContent) {
+            console.log('✅ All messaging elements found');
+        }
+        
         // Load unread count
         loadUnreadCount();
         
@@ -4413,6 +4461,7 @@ function showFilePreview(fileUrl, fileName) {
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'm') {
                 e.preventDefault();
+                console.log('⌨️ Ctrl+M pressed - toggling messaging panel');
                 toggleMessagingPanel();
             }
         });
@@ -4429,6 +4478,8 @@ function showFilePreview(fileUrl, fileName) {
                 }
             }
         });
+        
+        console.log('✅ Messaging system initialized');
     }
 
     // Load unread message count
