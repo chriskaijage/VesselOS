@@ -7482,8 +7482,8 @@ def api_manager_pending_maintenance():
     try:
         c = conn.cursor()
         c.execute("""
-            SELECT id, request_number, title, status, priority, created_by, 
-                   created_at, scheduled_date
+            SELECT request_id, ship_name, maintenance_type, priority, status, requested_by, 
+                   created_at, description
             FROM maintenance_requests
             WHERE status IN ('pending', 'approved')
             ORDER BY created_at DESC
@@ -7507,8 +7507,8 @@ def api_manager_emergency_requests():
     try:
         c = conn.cursor()
         c.execute("""
-            SELECT id, request_number, title, status, priority, created_by,
-                   created_at, scheduled_date
+            SELECT request_id, ship_name, maintenance_type, priority, status, requested_by,
+                   created_at, description
             FROM maintenance_requests
             WHERE priority = 'emergency' AND status IN ('pending', 'approved')
             ORDER BY created_at DESC
@@ -10476,6 +10476,28 @@ def init_db():
                 FOREIGN KEY (sender_id) REFERENCES users (user_id)
             )
         ''')
+        
+        # Create messages table for user-to-user messaging
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS messages (
+                message_id TEXT PRIMARY KEY,
+                sender_id TEXT NOT NULL,
+                recipient_id TEXT NOT NULL,
+                subject TEXT,
+                body TEXT NOT NULL,
+                is_read INTEGER DEFAULT 0,
+                attachment_path TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                read_at TIMESTAMP,
+                FOREIGN KEY (sender_id) REFERENCES users (user_id),
+                FOREIGN KEY (recipient_id) REFERENCES users (user_id)
+            )
+        ''')
+        
+        # Create indexes for messages table
+        c.execute("CREATE INDEX IF NOT EXISTS idx_messages_recipient_id ON messages (recipient_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages (sender_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_messages_is_read ON messages (is_read)")
         
         # ==================== PROCUREMENT SYSTEM TABLES ====================
         
