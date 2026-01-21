@@ -2776,19 +2776,19 @@ function showFilePreview(fileUrl, fileName) {
                 <i class="fas fa-comments"></i>
                 Messaging Center
             </h5>
-            <button class="btn btn-sm btn-light" onclick="toggleMessagingPanel()">
+            <button class="btn btn-sm btn-light" onclick="window.toggleMessagingPanel && window.toggleMessagingPanel()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
         <div class="messaging-tabs">
-            <button class="messaging-tab active" onclick="switchMessagingTab('inbox')">
+            <button class="messaging-tab active" onclick="window.switchMessagingTab && window.switchMessagingTab('inbox')">
                 <i class="fas fa-inbox"></i> Inbox
             </button>
-            <button class="messaging-tab" onclick="switchMessagingTab('compose')">
+            <button class="messaging-tab" onclick="window.switchMessagingTab && window.switchMessagingTab('compose')">
                 <i class="fas fa-pen"></i> Compose
             </button>
-            <button class="messaging-tab" onclick="switchMessagingTab('threads')">
+            <button class="messaging-tab" onclick="window.switchMessagingTab && window.switchMessagingTab('threads')">
                 <i class="fas fa-comments"></i> Threads
             </button>
         </div>
@@ -2812,18 +2812,18 @@ function showFilePreview(fileUrl, fileName) {
     
     <!-- Emoji Picker -->
     <div class="emoji-picker" id="emojiPicker">
-        <div class="emoji-item" onclick="insertEmoji('😊')">😊</div>
-        <div class="emoji-item" onclick="insertEmoji('😀')">😀</div>
-        <div class="emoji-item" onclick="insertEmoji('😂')">😂</div>
-        <div class="emoji-item" onclick="insertEmoji('😍')">😍</div>
-        <div class="emoji-item" onclick="insertEmoji('😎')">😎</div>
-        <div class="emoji-item" onclick="insertEmoji('👍')">👍</div>
-        <div class="emoji-item" onclick="insertEmoji('👌')">👌</div>
-        <div class="emoji-item" onclick="insertEmoji('❤️')">❤️</div>
-        <div class="emoji-item" onclick="insertEmoji('😉')">😉</div>
-        <div class="emoji-item" onclick="insertEmoji('🤔')">🤔</div>
-        <div class="emoji-item" onclick="insertEmoji('😅')">😅</div>
-        <div class="emoji-item" onclick="insertEmoji('😢')">😢</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😊')">😊</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😀')">😀</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😂')">😂</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😍')">😍</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😎')">😎</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('👍')">👍</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('👌')">👌</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('❤️')">❤️</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😉')">😉</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('🤔')">🤔</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😅')">😅</div>
+        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😢')">😢</div>
     </div>
     
     <!-- Sidebar Navigation -->
@@ -3064,7 +3064,7 @@ function showFilePreview(fileUrl, fileName) {
         
         <!-- Messaging Inbox Link -->
         <div class="dropdown">
-            <a href="#" class="nav-link dropdown-toggle position-relative" onclick="toggleMessagingPanel(); return false;">
+            <a href="#" class="nav-link dropdown-toggle position-relative" onclick="window.toggleMessagingPanel && window.toggleMessagingPanel(); return false;">
                 <i class="fas fa-inbox"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" id="navbarUnreadCount" style="display: none;">
                     0
