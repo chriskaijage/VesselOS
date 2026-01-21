@@ -3301,6 +3301,22 @@ function showFilePreview(fileUrl, fileName) {
     let currentTab = 'inbox';
     let threadAttachments = [];
 
+    // ==================== GLOBAL MESSAGING FUNCTION STUBS ====================
+    // These are defined here so they're globally available immediately
+    // They will be properly defined later in this script
+    
+    window.toggleMessagingPanel = function() { console.warn('toggleMessagingPanel called before initialization'); };
+    window.switchMessagingTab = function(tab) { console.warn('switchMessagingTab called before initialization'); };
+    window.sendQuickMessage = function() { console.warn('sendQuickMessage called before initialization'); };
+    window.openComposeTab = function() { console.warn('openComposeTab called before initialization'); };
+    window.toggleEmojiPicker = function() { console.warn('toggleEmojiPicker called before initialization'); };
+    window.insertEmoji = function(emoji) { console.warn('insertEmoji called before initialization'); };
+    window.openMessageThread = function(id, name) { console.warn('openMessageThread called before initialization'); };
+    window.sendReply = function(id) { console.warn('sendReply called before initialization'); };
+    window.openMessageDetail = function(id) { console.warn('openMessageDetail called before initialization'); };
+    window.loadMessagingTab = function(tab) { console.warn('loadMessagingTab called before initialization'); };
+    window.loadUnreadCount = function() { console.warn('loadUnreadCount called before initialization'); };
+
     // ==================== FLOATING PANEL FUNCTIONS ====================
 
     function toggleMessagingPanel() {
@@ -4519,13 +4535,20 @@ function showFilePreview(fileUrl, fileName) {
     function initMessaging() {
         console.log('🚀 Initializing messaging system...');
         
-        // Make functions globally accessible for testing
+        // Make functions globally accessible for testing and cross-template access
         window.toggleMessagingPanel = toggleMessagingPanel;
         window.switchMessagingTab = switchMessagingTab;
         window.sendQuickMessage = sendQuickMessage;
         window.openComposeTab = openComposeTab;
         window.toggleEmojiPicker = toggleEmojiPicker;
         window.insertEmoji = insertEmoji;
+        window.openMessageThread = openMessageThread;
+        window.sendReply = sendReply;
+        window.openMessageDetail = openMessageDetail;
+        window.loadMessagingTab = loadMessagingTab;
+        window.loadUnreadCount = loadUnreadCount;
+        
+        console.log('✅ All messaging functions exposed globally');
         
         // Verify required elements exist
         const msgPanel = document.getElementById('messagingPanel');
@@ -4575,6 +4598,7 @@ function showFilePreview(fileUrl, fileName) {
         
         // Test logging - remove after debugging
         console.log('🧪 Testing: window.toggleMessagingPanel exists?', typeof window.toggleMessagingPanel === 'function');
+        console.log('🧪 Testing: window.openComposeTab exists?', typeof window.openComposeTab === 'function');
         console.log('🧪 Testing: messagingToggleBtn onclick?', document.getElementById('messagingToggleBtn')?.getAttribute('onclick'));
     }
     
