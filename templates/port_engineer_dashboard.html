@@ -51,12 +51,12 @@ function formatDateTime(dateString) {
     }
     
     /* Port Engineer Dashboard Header Button */
-    .btn-outline-primary[onclick="openComposeTab()"] {
+    .btn-outline-primary[onclick*="openComposeTab"] {
         border-color: var(--primary-color, #5a4fcf) !important;
         color: var(--primary-color, #5a4fcf) !important;
     }
     
-    .btn-outline-primary[onclick="openComposeTab()"]:hover {
+    .btn-outline-primary[onclick*="openComposeTab"]:hover {
         background: var(--primary-color, #5a4fcf) !important;
         border-color: var(--primary-color, #5a4fcf) !important;
         color: white !important;

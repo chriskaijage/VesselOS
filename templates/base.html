@@ -4984,7 +4984,7 @@ function showFilePreview(fileUrl, fileName) {
                                      style="cursor: pointer; transition: all 0.2s;" 
                                      onmouseover="this.style.backgroundColor='#f8f9fa'" 
                                      onmouseout="this.style.backgroundColor=''" 
-                                     onclick="viewNotificationDetails(${notif.id})">
+                                     onclick="window.viewNotificationDetails && window.viewNotificationDetails(${notif.id})">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
                                             <div class="d-flex align-items-center">
@@ -5076,7 +5076,7 @@ function showFilePreview(fileUrl, fileName) {
                         </div>
                         <div class="modal-footer">
                             ${notification.action_url && notification.action_url !== '#' ? `
-                                <button type="button" class="btn btn-${notification.type}" data-action-url="${notification.action_url.replace(/"/g, '&quot;')}" onclick="navigateToNotificationPage(this.dataset.actionUrl)">
+                                <button type="button" class="btn btn-${notification.type}" data-action-url="${notification.action_url.replace(/"/g, '&quot;')}" onclick="window.navigateToNotificationPage && window.navigateToNotificationPage(this.dataset.actionUrl)">
                                     <i class="fas fa-external-link-alt me-1"></i> Go to Related Page
                                 </button>
                             ` : ''}
