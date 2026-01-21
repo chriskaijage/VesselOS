@@ -3881,59 +3881,21 @@ function showFilePreview(fileUrl, fileName) {
         const displayName = userName || 'Unknown';
         const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         
-        // Fetch user status
-        fetch(`/api/user/status/${currentConversationId}`)
-            .then(response => response.json())
-            .then(statusData => {
-                if (statusData.success) {
-                    const userStatus = statusData.user;
-                    const statusIndicator = userStatus.is_online 
-                        ? '<span class="badge bg-success ms-2">Online</span>'
-                        : `<span class="badge bg-secondary ms-2">Last seen ${userStatus.last_seen_time}</span>`;
-                    
-                    const profilePicUrl = userStatus.profile_pic 
-                        ? `/uploads/profile_pics/${userStatus.profile_pic}`
-                        : null;
-                    
-                    // Update header with profile picture and status
-                    let headerHtml = `
-                        <div class="conversation-header" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
-                            <div class="position-relative">
-                    `;
-                    
-                    if (profilePicUrl) {
-                        headerHtml += `<img src="${profilePicUrl}" alt="${displayName}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">`;
-                    } else {
-                        headerHtml += `<div class="avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">${initials}</div>`;
-                    }
-                    
-                    if (userStatus.is_online) {
-                        headerHtml += `<span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle" style="width: 12px; height: 12px;"></span>`;
-                    }
-                    
-                    headerHtml += `
-                            </div>
-                            <div class="info">
-                                <h6 style="margin: 0; cursor: pointer;" class="text-decoration-none">${displayName}</h6>
-                                <p style="margin: 0; font-size: 0.85rem;">
-                                    ${userStatus.is_online ? '<span class="text-success fw-bold">● Online</span>' : `<span class="text-muted">Last seen ${userStatus.last_seen_time}</span>`}
-                                </p>
-                            </div>
-                            <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="switchMessagingTab('threads')">
-                                <i class="fas fa-arrow-left"></i>
-                            </button>
-                        </div>
-                    `;
-                    
-                    // Insert header into content
-                    const headerDiv = document.createElement('div');
-                    headerDiv.innerHTML = headerHtml;
-                    content.insertBefore(headerDiv, content.firstChild);
-                }
-            })
-            .catch(error => console.error('Error fetching user status:', error));
-        
+        // Build initial HTML with placeholder header
         let html = `
+            <div class="conversation-header" id="threadHeader" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
+                <div class="position-relative">
+                    <div class="avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">${initials}</div>
+                </div>
+                <div class="info">
+                    <h6 style="margin: 0;" class="text-decoration-none">${displayName}</h6>
+                    <p style="margin: 0; font-size: 0.85rem;"><span class="text-muted">Loading status...</span></p>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="event.stopPropagation(); switchMessagingTab('threads')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+            
             <div class="message-conversation" id="messageThread">
         `;
         
@@ -4024,6 +3986,52 @@ function showFilePreview(fileUrl, fileName) {
         `;
         
         content.innerHTML = html;
+        
+        // Fetch and update header with profile picture and real status
+        fetch(`/api/user/status/${currentConversationId}`)
+            .then(response => response.json())
+            .then(statusData => {
+                if (statusData.success) {
+                    const userStatus = statusData.user;
+                    const profilePicUrl = userStatus.profile_pic 
+                        ? `/uploads/profile_pics/${userStatus.profile_pic}`
+                        : null;
+                    
+                    const threadHeader = document.getElementById('threadHeader');
+                    if (threadHeader) {
+                        // Update header with profile picture and status
+                        let headerHtml = `
+                            <div class="position-relative" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
+                        `;
+                        
+                        if (profilePicUrl) {
+                            headerHtml += `<img src="${profilePicUrl}" alt="${displayName}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">`;
+                        } else {
+                            headerHtml += `<div class="avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">${initials}</div>`;
+                        }
+                        
+                        if (userStatus.is_online) {
+                            headerHtml += `<span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle" style="width: 12px; height: 12px;"></span>`;
+                        }
+                        
+                        headerHtml += `</div>`;
+                        
+                        const avatarDiv = threadHeader.querySelector('.position-relative');
+                        if (avatarDiv) {
+                            avatarDiv.replaceWith(new DOMParser().parseFromString(headerHtml, 'text/html').body.firstChild);
+                        }
+                        
+                        // Update status text
+                        const statusP = threadHeader.querySelector('.info p');
+                        if (statusP) {
+                            statusP.innerHTML = userStatus.is_online 
+                                ? '<span class="text-success fw-bold">● Online</span>' 
+                                : `<span class="text-muted">Last seen ${userStatus.last_seen_time}</span>`;
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching user status:', error));
         
         // Scroll to bottom of conversation
         const threadDiv = document.getElementById('messageThread');
