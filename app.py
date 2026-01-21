@@ -5786,12 +5786,6 @@ def api_messaging_quick_reply():
                           f"Re: {message['title']}", reply_text, 'message', 'normal',
                           0, message_id, datetime.now()))
 
-                # Create notification for original sender
-                create_notification(
-                    message['sender_id'],
-                    'New Reply to Your Message',
-                    f"{current_user.get_full_name()} replied to your message: '{message['title']}'",
-                    'info',
             conn.commit()
             log_activity('quick_reply_sent', f'Replied to message {message_id}')
 
