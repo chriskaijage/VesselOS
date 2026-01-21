@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Quality Officer Dashboard - Marine Service Center{% endblock %}
+{% block title %}DMPO HQ Dashboard - Marine Service Center{% endblock %}
 
 {% block content %}
 {% if current_user_profile.profile_pic_url %}
@@ -23,7 +23,7 @@
                         <i class="fas fa-clipboard-check fa-3x" style="color: #28a745;"></i>
                     </div>
                     <div>
-                        <h1 class="mb-1">Quality Officer Dashboard</h1>
+                        <h1 class="mb-1">DMPO HQ Dashboard</h1>
                         <p class="lead mb-0">Conduct service quality evaluations and monitor performance metrics</p>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
     </div>
 </div>
 
-<!-- Quality Officer Stats -->
+<!-- DMPO HQ Stats -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6">
         <div class="card metric-card border-start border-5 border-primary">
@@ -319,7 +319,7 @@
 let sqiChart = null;
 let qualityData = null;
 
-// Load quality officer data
+// Load DMPO HQ data
 function loadQualityOfficerData() {
     fetch('/api/dashboard-data')
         .then(response => response.json())

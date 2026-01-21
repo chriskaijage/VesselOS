@@ -1122,14 +1122,14 @@
             </div>
             
             {% if user.role == 'quality_officer' %}
-            <!-- Quality Officer Dashboard Tab -->
+            <!-- DMPO HQ Dashboard Tab -->
             <div class="tab-pane fade" id="quality-dashboard" role="tabpanel">
                 <div class="mb-4">
-                    <h4 class="mb-3"><i class="fas fa-clipboard-check me-2" style="color: var(--success-green);"></i> Quality Officer Dashboard</h4>
+                    <h4 class="mb-3"><i class="fas fa-clipboard-check me-2" style="color: var(--success-green);"></i> DMPO HQ Dashboard</h4>
                     <p class="text-muted">Conduct service quality evaluations and monitor performance metrics</p>
                 </div>
                 
-                <!-- Quality Officer Stats -->
+                <!-- DMPO HQ Stats -->
                 <div class="row mb-4">
                     <div class="col-xl-3 col-md-6 mb-3">
                         <div class="card stat-card stat-evaluations h-100">
@@ -1563,7 +1563,7 @@
                                     <option value="captain">Captain</option>
                                     <option value="port_engineer">Port Engineer</option>
                                     <option value="harbour_master">Harbour Master</option>
-                                    <option value="quality_officer">Quality Officer</option>
+                                    <option value="quality_officer">DMPO HQ</option>
                                 </select>
                             </div>
                         </div>
@@ -1804,7 +1804,7 @@
 </div>
 
 {% if user.role == 'quality_officer' %}
-<!-- Quality Officer Access Request Modal -->
+<!-- DMPO HQ Access Request Modal -->
 <div class="modal fade" id="qoAccessRequestModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -1858,7 +1858,7 @@
     </div>
 </div>
 
-<!-- Quality Officer Evaluation Details Modal -->
+<!-- DMPO HQ Evaluation Details Modal -->
 <div class="modal fade" id="qoEvaluationDetailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -4718,7 +4718,7 @@ function removeAttachment(index) {
 // since they're defined in base.html and inherited by this page
 
 {% if user.role == 'quality_officer' %}
-// ==================== QUALITY OFFICER DASHBOARD FUNCTIONS ====================
+// ==================== DMPO HQ DASHBOARD FUNCTIONS ====================
 let qoSqiChart = null;
 let qoQualityData = null;
 
@@ -4783,7 +4783,7 @@ function loadQOQualityOfficerData() {
             }
         })
         .catch(error => {
-            console.error('Error loading quality officer data:', error);
+            console.error('Error loading DMPO HQ data:', error);
         });
 }
 
@@ -5182,7 +5182,7 @@ function editQOEvaluation(evaluationId) {
     window.location.href = `/evaluate?edit=${evaluationId}`;
 }
 
-// Load quality officer data when tab is shown
+// Load DMPO HQ data when tab is shown
 document.addEventListener('DOMContentLoaded', function() {
     const qualityDashboardTab = document.getElementById('quality-dashboard-tab');
     if (qualityDashboardTab) {

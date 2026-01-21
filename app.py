@@ -4828,7 +4828,7 @@ def api_save_privacy_settings():
 def messaging_center():
     """Messaging center page."""
     if current_user.role == 'quality_officer':
-        flash('Quality officers cannot send messages.', 'warning')
+        flash('DMPO HQ officers cannot send messages.', 'warning')
         return redirect(url_for('dashboard'))
     return render_template('messaging_center.html')
 
@@ -6833,7 +6833,7 @@ def api_manager_approve_user():
 @login_required
 @role_required(['port_engineer'])
 def api_manager_quality_officers():
-    """Get all quality officers with their status."""
+    """Get all DMPO HQ with their status."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
@@ -6872,7 +6872,7 @@ def api_manager_quality_officers():
 
         return jsonify({'success': True, 'officers': officers})
     except Exception as e:
-        app.logger.error(f"Error getting quality officers: {e}")
+        app.logger.error(f"Error getting DMPO HQ: {e}")
         return jsonify({'success': False, 'error': str(e)})
     finally:
         conn.close()
@@ -6881,7 +6881,7 @@ def api_manager_quality_officers():
 @login_required
 @role_required(['port_engineer'])
 def api_manager_officer_access(user_id):
-    """Get quality officer access details."""
+    """Get DMPO HQ access details."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
@@ -6921,7 +6921,7 @@ def api_manager_officer_access(user_id):
 @login_required
 @role_required(['port_engineer'])
 def api_manager_update_officer_access():
-    """Update quality officer access."""
+    """Update DMPO HQ access."""
     try:
         data = request.get_json()
         officer_id = data.get('officer_id')
@@ -6962,7 +6962,7 @@ def api_manager_update_officer_access():
             create_notification(
                 officer_id,
                 'Access Updated',
-                f'Your quality officer access has been extended until {end_date_str}.',
+                f'Your DMPO HQ access has been extended until {end_date_str}.',
                 'info',
                 '/profile'
             )
@@ -6982,13 +6982,13 @@ def api_manager_update_officer_access():
 @login_required
 @role_required(['port_engineer'])
 def api_manager_create_quality_officer():
-    """Create a new quality officer account."""
+    """Create a new DMPO HQ account."""
     try:
         data = request.get_json()
         first_name = data.get('first_name')
         last_name = data.get('last_name')
         email = data.get('email')
-        rank = data.get('rank', 'Quality Officer')
+        rank = data.get('rank', 'DMPO HQ')
         access_days = data.get('access_days', 90)
 
         if not all([first_name, last_name, email]):
@@ -7032,13 +7032,13 @@ def api_manager_create_quality_officer():
 
             # Log activity
             log_activity('officer_created',
-                        f'Created quality officer {user_id} ({first_name} {last_name})')
+                        f'Created DMPO HQ {user_id} ({first_name} {last_name})')
 
             # Create welcome notification
             create_notification(
                 user_id,
                 'Welcome to Marine Service Center',
-                f'Your quality officer account has been created. Access expires on {end_date_str}.',
+                f'Your DMPO HQ account has been created. Access expires on {end_date_str}.',
                 'success',
                 '/login'
             )
@@ -7051,12 +7051,12 @@ def api_manager_create_quality_officer():
             })
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Error creating quality officer: {e}")
+            app.logger.error(f"Error creating DMPO HQ: {e}")
             return jsonify({'success': False, 'error': 'Database error'})
         finally:
             conn.close()
     except Exception as e:
-        app.logger.error(f"Error in create quality officer: {e}")
+        app.logger.error(f"Error in create DMPO HQ: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/manager/recent-notifications')
@@ -10211,7 +10211,7 @@ def init_db():
         ensure_port_engineer_account(c, conn)
         
         # Always update demo accounts to correct credentials and status
-        # Quality Officer
+        # DMPO HQ
         qo_email = 'quality@marine.com'
         qo_password = generate_password_hash('Quality@2025')
         end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
@@ -10220,9 +10220,9 @@ def init_db():
         if qo_user:
             c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1, survey_end_date = ? WHERE email = ?", (qo_password, end_date, qo_email))
         else:
-            c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'Sarah', 'Johnson', 'Quality Officer', 'quality_officer', end_date, 1, 1))
+            c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'DMPO', 'HQ', 'DMPO HQ', 'quality_officer', end_date, 1, 1))
         conn.commit()
-        print("✅ Quality Officer ensured: quality@marine.com / Quality@2025")
+        print("✅ DMPO HQ ensured: quality@marine.com / Quality@2025")
         
         # Always update Harbour Master
         hm_email = 'harbour_master@marine.com'
@@ -10262,7 +10262,7 @@ def init_db():
         print("   Email: port_engineer@marine.com")
         print("   Password: Admin@2025")
         print("   Role: Full system access")
-        print("\n👤 Demo Account 2 - Quality Officer:")
+        print("\n👤 Demo Account 2 - DMPO HQ:")
         print("   Email: quality@marine.com")
         print("   Password: Quality@2025")
         print("   Role: Inspection and compliance")
@@ -11722,7 +11722,7 @@ def initialize():
         'message': 'Database initialized successfully',
         'demo_accounts': [
             {'email': 'port_engineer@marine.com', 'password': 'Admin@2025', 'role': 'Port Engineer'},
-            {'email': 'quality@marine.com', 'password': 'Quality@2025', 'role': 'Quality Officer'},
+            {'email': 'quality@marine.com', 'password': 'Quality@2025', 'role': 'DMPO HQ'},
             {'email': 'harbour_master@marine.com', 'password': 'Maintenance@2025', 'role': 'Harbour Master'}
         ]
     }), 200
@@ -12084,11 +12084,11 @@ def export_audit_data():
     print("   • Attachment DL:  http://localhost:5000/api/messaging/download-attachment/<id>")
     print("\n👥 Default Accounts:")
     print("   • Port Engineer:  port_engineer@marine.com / Admin@2025")
-    print("   • Quality Officer: quality@marine.com / Quality@2025")
+    print("   • DMPO HQ: quality@marine.com / Quality@2025")
     print("   • Harbour Master: harbour_master@marine.com / Maintenance@2025")
     print("\n📧 Messaging Rules:")
     print("   • Port Engineers & Harbour Masters can send")
-    print("   • Quality Officers cannot send (receive only)")
+    print("   • DMPO HQ cannot send (receive only)")
     print("   • File attachments up to 20MB")
     print("   • Replies allowed only for 'Message' type")
     print("   • Sent messages can be filtered and searched")
