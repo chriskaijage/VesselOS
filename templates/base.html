@@ -3736,12 +3736,14 @@ function showFilePreview(fileUrl, fileName) {
             const initials = partyName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
             
             html += `
-                <a href="#" class="list-group-item list-group-item-action border-0" 
+                <a href="#" class="list-group-item list-group-item-action border-0 thread-item" 
+                   data-thread-id="${thread.other_party_id}"
                    onclick="openMessageThread('${thread.other_party_id}', '${partyName.replace(/'/g, "\\'")}')">
                     <div class="d-flex align-items-center">
                         <div class="avatar-small me-3 position-relative">
                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
-                                 style="width: 40px; height: 40px; font-size: 0.9rem; font-weight: bold;">
+                                 style="width: 40px; height: 40px; font-size: 0.9rem; font-weight: bold; cursor: pointer;"
+                                 onclick="event.stopPropagation(); showUserProfile('${thread.other_party_id}')">
                                 ${initials}
                             </div>
                             ${unreadCount > 0 ? `
@@ -3755,7 +3757,8 @@ function showFilePreview(fileUrl, fileName) {
                                     <strong>${partyName}</strong>
                                     <small class="text-muted">${formatDateTime(thread.last_message_date)}</small>
                             </div>
-                            <p class="mb-1 text-truncate" style="max-width: 250px;">${thread.message_count || 0} messages</p>
+                            <p class="mb-0 text-truncate" style="max-width: 250px;">${thread.message_count || 0} messages</p>
+                            <div class="thread-status"><small class="text-muted">Loading...</small></div>
                         </div>
                     </div>
                 </a>
@@ -3764,6 +3767,59 @@ function showFilePreview(fileUrl, fileName) {
         
         html += '</div>';
         content.innerHTML = html;
+        
+        // Fetch profile pictures and online status for each thread
+        threads.forEach(thread => {
+            fetch(`/api/user/status/${thread.other_party_id}`)
+                .then(response => response.json())
+                .then(statusData => {
+                    if (statusData.success) {
+                        const userStatus = statusData.user;
+                        const threadItem = content.querySelector(`[data-thread-id="${thread.other_party_id}"]`);
+                        if (threadItem) {
+                            const profilePicUrl = userStatus.profile_pic 
+                                ? `/uploads/profile_pics/${userStatus.profile_pic}`
+                                : null;
+                            const avatarDiv = threadItem.querySelector('.avatar-small');
+                            const unreadCount = thread.unread_count || 0;
+                            
+                            if (profilePicUrl && avatarDiv) {
+                                // Replace initials with profile picture
+                                avatarDiv.innerHTML = `
+                                    <img src="${profilePicUrl}" alt="${thread.other_party_name}" 
+                                         class="rounded-circle" 
+                                         style="width: 40px; height: 40px; object-fit: cover; cursor: pointer;"
+                                         onclick="event.stopPropagation(); showUserProfile('${thread.other_party_id}')">
+                                    ${unreadCount > 0 ? `
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            ${unreadCount}
+                                        </span>
+                                    ` : ''}
+                                    ${userStatus.is_online ? `<span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle" style="width: 12px; height: 12px;"></span>` : ''}
+                                `;
+                            } else if (avatarDiv && userStatus.is_online) {
+                                // Just add online indicator if no profile pic
+                                const badge = avatarDiv.querySelector('.position-absolute:last-child');
+                                if (!badge || !badge.classList.contains('bg-success')) {
+                                    const indicator = document.createElement('span');
+                                    indicator.className = 'position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle';
+                                    indicator.style.cssText = 'width: 12px; height: 12px;';
+                                    avatarDiv.appendChild(indicator);
+                                }
+                            }
+                            
+                            // Update status display
+                            const statusDiv = threadItem.querySelector('.thread-status');
+                            if (statusDiv) {
+                                statusDiv.innerHTML = userStatus.is_online 
+                                    ? '<small class="text-success">● Online</small>' 
+                                    : `<small class="text-muted">Last seen ${userStatus.last_seen_time}</small>`;
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching user status:', error));
+        });
     }
 
     function openComposeTab() {
@@ -3878,17 +3934,6 @@ function showFilePreview(fileUrl, fileName) {
             .catch(error => console.error('Error fetching user status:', error));
         
         let html = `
-            <div class="conversation-header">
-                <div class="avatar">${initials}</div>
-                <div class="info">
-                    <h6>${displayName}</h6>
-                    <p>Active now</p>
-                </div>
-                <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="switchMessagingTab('threads')">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-            </div>
-            
             <div class="message-conversation" id="messageThread">
         `;
         
