@@ -4519,6 +4519,14 @@ function showFilePreview(fileUrl, fileName) {
     function initMessaging() {
         console.log('🚀 Initializing messaging system...');
         
+        // Make functions globally accessible for testing
+        window.toggleMessagingPanel = toggleMessagingPanel;
+        window.switchMessagingTab = switchMessagingTab;
+        window.sendQuickMessage = sendQuickMessage;
+        window.openComposeTab = openComposeTab;
+        window.toggleEmojiPicker = toggleEmojiPicker;
+        window.insertEmoji = insertEmoji;
+        
         // Verify required elements exist
         const msgPanel = document.getElementById('messagingPanel');
         const msgToggle = document.getElementById('messagingToggleBtn');
@@ -4564,135 +4572,133 @@ function showFilePreview(fileUrl, fileName) {
         });
         
         console.log('✅ Messaging system initialized');
+        
+        // Test logging - remove after debugging
+        console.log('🧪 Testing: window.toggleMessagingPanel exists?', typeof window.toggleMessagingPanel === 'function');
+        console.log('🧪 Testing: messagingToggleBtn onclick?', document.getElementById('messagingToggleBtn')?.getAttribute('onclick'));
     }
     
     // Set up message button handlers - ensure all buttons work properly
     function setupMessageButtonHandlers() {
         console.log('🔧 Setting up message button handlers...');
         
-        // Check if toggleMessagingPanel is accessible
-        if (typeof toggleMessagingPanel !== 'function') {
-            console.error('❌ toggleMessagingPanel function not found');
-        } else {
-            console.log('✅ toggleMessagingPanel function verified');
-        }
-        
-        // Check if switchMessagingTab is accessible
-        if (typeof switchMessagingTab !== 'function') {
-            console.error('❌ switchMessagingTab function not found');
-        } else {
-            console.log('✅ switchMessagingTab function verified');
-        }
-        
-        // Check if sendQuickMessage is accessible
-        if (typeof sendQuickMessage !== 'function') {
-            console.error('❌ sendQuickMessage function not found');
-        } else {
-            console.log('✅ sendQuickMessage function verified');
-        }
-        
-        // Check if openComposeTab is accessible
-        if (typeof openComposeTab !== 'function') {
-            console.error('❌ openComposeTab function not found');
-        } else {
-            console.log('✅ openComposeTab function verified');
-        }
-        
-        // Check if sendReply is accessible
-        if (typeof sendReply !== 'function') {
-            console.error('❌ sendReply function not found');
-        } else {
-            console.log('✅ sendReply function verified');
-        }
-        
-        // Check if toggleEmojiPicker is accessible
-        if (typeof toggleEmojiPicker !== 'function') {
-            console.error('❌ toggleEmojiPicker function not found');
-        } else {
-            console.log('✅ toggleEmojiPicker function verified');
-        }
-        
-        // Check if insertEmoji is accessible
-        if (typeof insertEmoji !== 'function') {
-            console.error('❌ insertEmoji function not found');
-        } else {
-            console.log('✅ insertEmoji function verified');
-        }
-        
-        // Verify messaging panel exists and has the correct event listeners attached via onclick
-        const messagingToggleBtn = document.getElementById('messagingToggleBtn');
-        if (messagingToggleBtn) {
-            // Test that the button can call the toggle function
-            messagingToggleBtn.onclick = function(e) {
-                console.log('💬 Messaging toggle button clicked');
-                e.preventDefault();
-                e.stopPropagation();
-                try {
-                    toggleMessagingPanel();
-                } catch (error) {
-                    console.error('❌ Error in toggleMessagingPanel:', error);
-                }
-            };
-            console.log('✅ Messaging toggle button handler set');
-        } else {
-            console.error('❌ Messaging toggle button not found');
-        }
-        
-        // Verify messaging tab buttons exist
-        const messagingTabs = document.querySelectorAll('.messaging-tab');
-        if (messagingTabs.length > 0) {
-            console.log(`✅ Found ${messagingTabs.length} messaging tab buttons`);
-            // Enhance tab handlers with error catching
-            messagingTabs.forEach(tab => {
-                const tabName = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
-                if (tabName) {
-                    tab.onclick = function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log(`💭 Switching to ${tabName} tab`);
-                        try {
-                            switchMessagingTab(tabName);
-                        } catch (error) {
-                            console.error(`❌ Error switching to ${tabName}:`, error);
-                        }
-                    };
-                }
+        try {
+            // Check if toggleMessagingPanel is accessible
+            if (typeof toggleMessagingPanel !== 'function') {
+                console.error('❌ toggleMessagingPanel function not found');
+            } else {
+                console.log('✅ toggleMessagingPanel function verified');
+            }
+            
+            // Check if switchMessagingTab is accessible
+            if (typeof switchMessagingTab !== 'function') {
+                console.error('❌ switchMessagingTab function not found');
+            } else {
+                console.log('✅ switchMessagingTab function verified');
+            }
+            
+            // Check if sendQuickMessage is accessible
+            if (typeof sendQuickMessage !== 'function') {
+                console.error('❌ sendQuickMessage function not found');
+            } else {
+                console.log('✅ sendQuickMessage function verified');
+            }
+            
+            // Check if openComposeTab is accessible
+            if (typeof openComposeTab !== 'function') {
+                console.error('❌ openComposeTab function not found');
+            } else {
+                console.log('✅ openComposeTab function verified');
+            }
+            
+            // Check if sendReply is accessible
+            if (typeof sendReply !== 'function') {
+                console.error('❌ sendReply function not found');
+            } else {
+                console.log('✅ sendReply function verified');
+            }
+            
+            // Check if toggleEmojiPicker is accessible
+            if (typeof toggleEmojiPicker !== 'function') {
+                console.error('❌ toggleEmojiPicker function not found');
+            } else {
+                console.log('✅ toggleEmojiPicker function verified');
+            }
+            
+            // Check if insertEmoji is accessible
+            if (typeof insertEmoji !== 'function') {
+                console.error('❌ insertEmoji function not found');
+            } else {
+                console.log('✅ insertEmoji function verified');
+            }
+            
+            // Verify messaging panel and toggle button exist
+            const messagingPanel = document.getElementById('messagingPanel');
+            const messagingToggleBtn = document.getElementById('messagingToggleBtn');
+            
+            if (!messagingPanel) {
+                console.error('❌ messagingPanel not found');
+            } else {
+                console.log('✅ messagingPanel found');
+            }
+            
+            if (!messagingToggleBtn) {
+                console.error('❌ messagingToggleBtn not found');
+            } else {
+                console.log('✅ messagingToggleBtn found - onclick attribute:', messagingToggleBtn.getAttribute('onclick'));
+            }
+            
+            // Verify messaging tab buttons exist
+            const messagingTabs = document.querySelectorAll('.messaging-tab');
+            if (messagingTabs.length > 0) {
+                console.log(`✅ Found ${messagingTabs.length} messaging tab buttons`);
+            } else {
+                console.log('⚠️ No messaging tab buttons found (may not be loaded yet)');
+            }
+            
+            // Set up emoji picker buttons
+            setupEmojiPickerHandlers();
+            
+            // Set up dynamic button handlers using event delegation
+            setupDynamicMessageButtonHandlers();
+            
+            console.log('✅ Message button handlers setup complete');
+        } catch (error) {
+            console.error('❌ Critical error in setupMessageButtonHandlers:', error);
+            console.error('Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
             });
-        } else {
-            console.error('❌ No messaging tab buttons found');
         }
-        
-        // Set up emoji picker buttons
-        setupEmojiPickerHandlers();
-        
-        // Set up dynamic button handlers using event delegation
-        setupDynamicMessageButtonHandlers();
-        
-        console.log('✅ Message button handlers setup complete');
     }
     
     // Set up handlers for emoji picker buttons
     function setupEmojiPickerHandlers() {
         console.log('🎯 Setting up emoji picker handlers...');
         
-        const emojiItems = document.querySelectorAll('.emoji-item');
-        if (emojiItems.length > 0) {
-            console.log(`✅ Found ${emojiItems.length} emoji buttons`);
-            emojiItems.forEach(item => {
-                const emoji = item.textContent.trim();
-                item.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log(`😊 Emoji clicked: ${emoji}`);
-                    try {
-                        insertEmoji(emoji);
-                    } catch (error) {
-                        console.error(`❌ Error inserting emoji ${emoji}:`, error);
-                    }
-                };
-            });
-        } else {
-            console.log('⚠️ No emoji items found');
+        try {
+            const emojiItems = document.querySelectorAll('.emoji-item');
+            if (emojiItems.length > 0) {
+                console.log(`✅ Found ${emojiItems.length} emoji buttons`);
+                emojiItems.forEach(item => {
+                    const emoji = item.textContent.trim();
+                    item.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log(`😊 Emoji clicked: ${emoji}`);
+                        try {
+                            insertEmoji(emoji);
+                        } catch (error) {
+                            console.error(`❌ Error inserting emoji ${emoji}:`, error);
+                        }
+                    };
+                });
+            } else {
+                console.log('⚠️ No emoji items found');
+            }
+        } catch (error) {
+            console.error('❌ Error in setupEmojiPickerHandlers:', error);
         }
     }
     
@@ -4711,9 +4717,12 @@ function showFilePreview(fileUrl, fileName) {
                 try {
                     if (typeof sendQuickMessage === 'function') {
                         sendQuickMessage();
+                    } else {
+                        console.error('❌ sendQuickMessage is not a function');
                     }
                 } catch (error) {
                     console.error('❌ Error sending message:', error);
+                    console.error('Stack:', error.stack);
                 }
             }
             
@@ -4727,9 +4736,12 @@ function showFilePreview(fileUrl, fileName) {
                 try {
                     if (typeof sendReply === 'function' && messageId) {
                         sendReply(messageId);
+                    } else {
+                        console.error('❌ sendReply is not a function or messageId is missing');
                     }
                 } catch (error) {
                     console.error('❌ Error sending reply:', error);
+                    console.error('Stack:', error.stack);
                 }
             }
         }, true); // Use capture phase for better handling
@@ -5238,6 +5250,28 @@ function showFilePreview(fileUrl, fileName) {
         
         // Initialize messaging system
         initMessaging();
+        
+        // Log diagnostic info for troubleshooting
+        console.log('='.repeat(50));
+        console.log('📋 MESSAGING SYSTEM DIAGNOSTIC');
+        console.log('='.repeat(50));
+        setTimeout(function() {
+            const btn = document.getElementById('messagingToggleBtn');
+            const panel = document.getElementById('messagingPanel');
+            const content = document.getElementById('messagingContent');
+            
+            console.log('Button found:', !!btn);
+            console.log('Button onclick:', btn?.getAttribute('onclick'));
+            console.log('Button classes:', btn?.className);
+            console.log('Panel found:', !!panel);
+            console.log('Panel classes:', panel?.className);
+            console.log('Content found:', !!content);
+            
+            console.log('Toggle function exists:', typeof toggleMessagingPanel === 'function');
+            console.log('='.repeat(50));
+            console.log('💡 Try in console: toggleMessagingPanel()');
+            console.log('='.repeat(50));
+        }, 100);
         
         // Load notifications and update counts
         loadNotifications();
