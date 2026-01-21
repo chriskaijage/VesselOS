@@ -10212,7 +10212,7 @@ def init_db():
         
         # Always update demo accounts to correct credentials and status
         # DMPO HQ
-        qo_email = 'quality@marine.com'
+        qo_email = 'dmpo@marine.com'
         qo_password = generate_password_hash('Quality@2025')
         end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
         c.execute("SELECT user_id FROM users WHERE email = ?", (qo_email,))
@@ -10222,7 +10222,7 @@ def init_db():
         else:
             c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'DMPO', 'HQ', 'DMPO HQ', 'quality_officer', end_date, 1, 1))
         conn.commit()
-        print("✅ DMPO HQ ensured: quality@marine.com / Quality@2025")
+        print("✅ DMPO HQ ensured: dmpo@marine.com / Quality@2025")
         
         # Always update Harbour Master
         hm_email = 'harbour_master@marine.com'
@@ -10263,7 +10263,7 @@ def init_db():
         print("   Password: Admin@2025")
         print("   Role: Full system access")
         print("\n👤 Demo Account 2 - DMPO HQ:")
-        print("   Email: quality@marine.com")
+        print("   Email: dmpo@marine.com")
         print("   Password: Quality@2025")
         print("   Role: Inspection and compliance")
         print("\n👤 Demo Account 3 - Harbour Master:")
@@ -11722,7 +11722,7 @@ def initialize():
         'message': 'Database initialized successfully',
         'demo_accounts': [
             {'email': 'port_engineer@marine.com', 'password': 'Admin@2025', 'role': 'Port Engineer'},
-            {'email': 'quality@marine.com', 'password': 'Quality@2025', 'role': 'DMPO HQ'},
+            {'email': 'dmpo@marine.com', 'password': 'Quality@2025', 'role': 'DMPO HQ'},
             {'email': 'harbour_master@marine.com', 'password': 'Maintenance@2025', 'role': 'Harbour Master'}
         ]
     }), 200
@@ -12084,7 +12084,7 @@ def export_audit_data():
     print("   • Attachment DL:  http://localhost:5000/api/messaging/download-attachment/<id>")
     print("\n👥 Default Accounts:")
     print("   • Port Engineer:  port_engineer@marine.com / Admin@2025")
-    print("   • DMPO HQ: quality@marine.com / Quality@2025")
+    print("   • DMPO HQ: dmpo@marine.com / Quality@2025")
     print("   • Harbour Master: harbour_master@marine.com / Maintenance@2025")
     print("\n📧 Messaging Rules:")
     print("   • Port Engineers & Harbour Masters can send")
