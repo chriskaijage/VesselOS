@@ -3779,7 +3779,10 @@ function showFilePreview(fileUrl, fileName) {
                     message: error.message,
                     stack: error.stack
                 });
-                content.innerHTML = `<div class="alert alert-danger">Network error loading conversation: ${error.message}</div>`;
+                const errorMsg = error.message.includes('429') 
+                    ? 'Too many requests. Please wait a moment and try again.'
+                    : `Network error loading conversation: ${error.message}`;
+                content.innerHTML = `<div class="alert alert-danger">${errorMsg}</div>`;
             });
     }
 
@@ -3955,11 +3958,15 @@ function showFilePreview(fileUrl, fileName) {
             clearInterval(threadRefreshInterval);
         }
         
-        // Auto-refresh thread every 1 second for faster updates (like WhatsApp/Telegram)
+        // Auto-refresh thread every 30 seconds for polling fallback (most messages appear instantly)
+        // This is just a safety net - messages should arrive via optimistic updates and notifications
         threadRefreshInterval = setInterval(() => {
             if (currentConversationId) {
                 fetch(`/api/messaging/thread/${currentConversationId}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success && data.messages) {
                             // Update only if there are new messages
@@ -3972,9 +3979,9 @@ function showFilePreview(fileUrl, fileName) {
                             }
                         }
                     })
-                    .catch(error => console.log('Thread refresh check (non-critical):', error));
+                    .catch(error => console.log('Thread refresh check (non-critical):', error.message));
             }
-        }, 3000);
+        }, 30000);
         
         // Initialize emoji picker
         initEmojiPicker();
