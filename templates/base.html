@@ -3975,24 +3975,21 @@ function showFilePreview(fileUrl, fileName) {
         
         // Show loading state
         const sendBtn = document.querySelector('.quick-reply-area .btn-primary');
+        if (!sendBtn) return; // Safety check
         const originalText = sendBtn.innerHTML;
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
         sendBtn.disabled = true;
         const textarea = document.getElementById('threadReplyText');
-        textarea.disabled = true;
+        if (textarea) textarea.disabled = true;
         
         const sendStartTime = Date.now();
         console.log('📤 Sending thread reply at', new Date().toLocaleTimeString());
-        console.log('Form data:', { recipient_id: currentConversationId });
         
         // Clear form immediately (optimistic update)
         document.getElementById('threadReplyText').value = '';
         threadAttachments = [];
         document.getElementById('threadAttachmentPreview').innerHTML = '';
         document.getElementById('threadAttachment').value = '';
-        sendBtn.innerHTML = originalText;
-        sendBtn.disabled = false;
-        textarea.disabled = false;
         
         fetch('/api/messaging/quick-send', {
             method: 'POST',
@@ -4002,7 +3999,13 @@ function showFilePreview(fileUrl, fileName) {
         .then(data => {
             const sendDuration = Date.now() - sendStartTime;
             console.log(`✅ Message sent in ${sendDuration}ms`);
-            console.log('Send response:', data);
+            
+            // Restore button state
+            if (sendBtn) {
+                sendBtn.innerHTML = originalText;
+                sendBtn.disabled = false;
+            }
+            if (textarea) textarea.disabled = false;
             
             if (data.success) {
                 showAlert('success', 'Reply sent!');
@@ -4020,66 +4023,17 @@ function showFilePreview(fileUrl, fileName) {
                 console.error('Send failed:', data.error);
                 showAlert('danger', `Error: ${data.error}`);
                 // Restore form on error
-                document.getElementById('threadReplyText').focus();
+                if (textarea) textarea.focus();
             }
         })
         .catch(error => {
             console.error('❌ Send error:', error);
-            sendBtn.innerHTML = originalText;
-            sendBtn.disabled = false;
-            textarea.disabled = false;
+            if (sendBtn) {
+                sendBtn.innerHTML = originalText;
+                sendBtn.disabled = false;
+            }
+            if (textarea) textarea.disabled = false;
             showAlert('danger', 'Network error sending reply');
-        });
-        
-        return; // Skip the old fetch below
-        
-        fetch('/api/messaging/quick-send', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            const sendDuration = Date.now() - sendStartTime;
-            console.log(`✅ Message sent in ${sendDuration}ms`);
-            console.log('Send response:', data);
-            
-            sendBtn.innerHTML = originalText;
-            sendBtn.disabled = false;
-            textarea.disabled = false;
-            
-            if (data.success) {
-                showAlert('success', 'Reply sent successfully!');
-                // Clear form immediately
-                document.getElementById('threadReplyText').value = '';
-                threadAttachments = [];
-                document.getElementById('threadAttachmentPreview').innerHTML = '';
-                document.getElementById('threadAttachment').value = '';
-                
-                // Get current user name from header
-                const userNameElement = document.querySelector('.conversation-header h6');
-                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
-                
-                // Reload the thread after short delay to show the new message
-                setTimeout(() => {
-                    console.log('🔄 Refreshing thread to show new message...');
-                    openMessageThread(currentConversationId, displayName);
-                }, 300);
-            } else {
-                console.error('Send failed:', data.error);
-                showAlert('danger', `Error sending reply: ${data.error}`);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Send error:', error);
-            sendBtn.innerHTML = originalText;
-            sendBtn.disabled = false;
-            textarea.disabled = false;
-            showAlert('danger', 'Network error sending reply: ' + error.message);
-            console.error('Full error details:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            });
         });
     }
 
