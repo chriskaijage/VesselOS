@@ -5642,17 +5642,7 @@ def api_messaging_quick_send():
                     """, (message_id, current_user.id, recipient_id,
                           subject, message_text, priority, created_at))
 
-                # Create notification asynchronously (don't wait)
-                try:
-                    create_notification(
-                        recipient_id,
-                        f"New Message: {subject[:50]}",
-                        f"From {current_user.get_full_name()}",
-                        priority,
-                        '/messaging-center'
-                    )
-                except:
-                    pass  # Don't fail if notification fails
+                # Notification will be created in background thread (moved below)
                     
             else:
                 # Send to email
@@ -5678,13 +5668,34 @@ def api_messaging_quick_send():
 
             conn.commit()
             
-            # Log async (don't wait)
-            try:
-                log_activity('message_sent', f'Sent message to {recipient_id or email}')
-            except:
-                pass
-
-            return jsonify({'success': True, 'message_id': message_id, 'sent_at': created_at.isoformat()})
+            # Return response IMMEDIATELY (before notifications/logging)
+            # This is critical for instant message sending UX
+            response = jsonify({'success': True, 'message_id': message_id, 'sent_at': created_at.isoformat()})
+            
+            # Background tasks (don't block response)
+            def background_tasks():
+                try:
+                    log_activity('message_sent', f'Sent message to {recipient_id or email}')
+                except:
+                    pass
+                try:
+                    if recipient_id:
+                        create_notification(
+                            recipient_id,
+                            f"New Message: {subject[:50]}",
+                            f"From {current_user.get_full_name()}",
+                            priority,
+                            '/messaging-center'
+                        )
+                except:
+                    pass
+            
+            # Run background tasks in thread (non-blocking)
+            from threading import Thread
+            bg_thread = Thread(target=background_tasks, daemon=True)
+            bg_thread.start()
+            
+            return response
 
         except Exception as e:
             conn.rollback()
@@ -5787,11 +5798,34 @@ def api_messaging_quick_reply():
                           0, message_id, datetime.now()))
 
             conn.commit()
-            log_activity('quick_reply_sent', f'Replied to message {message_id}')
-
-            # Note: Notification will be created asynchronously in background
             
-            return jsonify({'success': True, 'reply_id': reply_id})
+            # Return response IMMEDIATELY
+            response = jsonify({'success': True, 'reply_id': reply_id})
+            
+            # Background tasks (non-blocking)
+            def background_tasks():
+                try:
+                    log_activity('quick_reply_sent', f'Replied to message {message_id}')
+                except:
+                    pass
+                try:
+                    if message['sender_id'] != current_user.id:
+                        create_notification(
+                            message['sender_id'],
+                            f"Reply to: {message['title'][:50]}",
+                            f"From {current_user.get_full_name()}",
+                            'normal',
+                            '/messaging-center'
+                        )
+                except:
+                    pass
+            
+            # Run background tasks in thread (non-blocking)
+            from threading import Thread
+            bg_thread = Thread(target=background_tasks, daemon=True)
+            bg_thread.start()
+            
+            return response
 
         except Exception as e:
             conn.rollback()
