@@ -314,6 +314,38 @@ def generate_id(prefix):
     random_str = ''.join(random.choices(string.digits, k=4))
     return f"{prefix}-{timestamp}-{random_str}"
 
+def format_time_ago(dt):
+    """Format a datetime object as 'time ago' string (e.g., '5m ago', '2h ago')."""
+    if not dt:
+        return 'Never'
+    
+    # Handle both datetime and string inputs
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt)
+        except:
+            return 'Unknown'
+    
+    now = datetime.now()
+    diff = now - dt
+    
+    # Calculate time differences
+    seconds = int(diff.total_seconds())
+    minutes = seconds // 60
+    hours = minutes // 60
+    days = hours // 24
+    
+    if seconds < 60:
+        return f"{seconds}s ago" if seconds > 0 else "Now"
+    elif minutes < 60:
+        return f"{minutes}m ago"
+    elif hours < 24:
+        return f"{hours}h ago"
+    elif days < 7:
+        return f"{days}d ago"
+    else:
+        return dt.strftime('%b %d, %Y')
+
 def log_activity(activity, details=""):
     """Log activity with real-time timestamp."""
     if current_user.is_authenticated:
@@ -5853,7 +5885,7 @@ def api_messaging_search_users():
             c = conn.cursor()
 
             search_query = """
-                SELECT user_id, first_name, last_name, email, role
+                SELECT user_id, first_name, last_name, email, role, profile_pic, is_online, last_activity
                 FROM users
                 WHERE is_active = 1 AND is_approved = 1
                 AND (first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR user_id LIKE ?)
@@ -5867,6 +5899,12 @@ def api_messaging_search_users():
             for row in c.fetchall():
                 user = dict(row)
                 user['full_name'] = f"{user['first_name']} {user['last_name']}"
+                # Format last activity time
+                if user['last_activity']:
+                    last_activity_dt = datetime.fromisoformat(user['last_activity'])
+                    user['last_seen_time'] = format_time_ago(last_activity_dt)
+                else:
+                    user['last_seen_time'] = 'Never'
                 users.append(user)
 
             return jsonify({'success': True, 'users': users})
@@ -5879,6 +5917,141 @@ def api_messaging_search_users():
 
     except Exception as e:
         app.logger.error(f"Error in search users: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/user/status/<user_id>')
+@login_required
+def api_user_status(user_id):
+    """Get user online status and last seen time."""
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            c.execute("""
+                SELECT user_id, first_name, last_name, is_online, last_activity, profile_pic, role
+                FROM users
+                WHERE user_id = ? AND is_active = 1
+            """, (user_id,))
+            
+            user = c.fetchone()
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'})
+            
+            user_dict = dict(user)
+            user_dict['full_name'] = f"{user_dict['first_name']} {user_dict['last_name']}"
+            
+            # Format last activity
+            if user_dict['last_activity']:
+                last_activity_dt = datetime.fromisoformat(user_dict['last_activity'])
+                user_dict['last_seen_time'] = format_time_ago(last_activity_dt)
+                user_dict['last_activity_iso'] = user_dict['last_activity']
+            else:
+                user_dict['last_seen_time'] = 'Never'
+                user_dict['last_activity_iso'] = None
+            
+            user_dict['is_online'] = bool(user_dict['is_online'])
+            
+            return jsonify({'success': True, 'user': user_dict})
+        
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        app.logger.error(f"Error getting user status: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/user/profile/<user_id>')
+@login_required
+def api_user_profile(user_id):
+    """Get user profile details (non-sensitive info only)."""
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            c.execute("""
+                SELECT user_id, first_name, last_name, rank, role, email, phone, 
+                       department, location, profile_pic, is_online, last_activity, created_at
+                FROM users
+                WHERE user_id = ? AND is_active = 1
+            """, (user_id,))
+            
+            user = c.fetchone()
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'})
+            
+            user_dict = dict(user)
+            user_dict['full_name'] = f"{user_dict['first_name']} {user_dict['last_name']}"
+            
+            # Format timestamps
+            if user_dict['last_activity']:
+                last_activity_dt = datetime.fromisoformat(user_dict['last_activity'])
+                user_dict['last_seen'] = format_time_ago(last_activity_dt)
+            else:
+                user_dict['last_seen'] = 'Never'
+            
+            if user_dict['created_at']:
+                created_dt = datetime.fromisoformat(user_dict['created_at'])
+                user_dict['member_since'] = created_dt.strftime('%B %Y')
+            
+            user_dict['is_online'] = bool(user_dict['is_online'])
+            
+            return jsonify({'success': True, 'profile': user_dict})
+        
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        app.logger.error(f"Error getting user profile: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/user/update-activity', methods=['POST'])
+@login_required
+def api_user_update_activity():
+    """Update user's online status and last activity timestamp."""
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            current_time = datetime.now()
+            
+            c.execute("""
+                UPDATE users
+                SET is_online = 1, last_activity = ?
+                WHERE user_id = ?
+            """, (current_time, current_user.id))
+            
+            conn.commit()
+            return jsonify({'success': True, 'timestamp': current_time.isoformat()})
+        
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        app.logger.error(f"Error updating activity: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/user/set-offline', methods=['POST'])
+@login_required
+def api_user_set_offline():
+    """Set user as offline."""
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            c.execute("""
+                UPDATE users
+                SET is_online = 0
+                WHERE user_id = ?
+            """, (current_user.id,))
+            
+            conn.commit()
+            return jsonify({'success': True})
+        
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        app.logger.error(f"Error setting offline: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/messaging/unread-count')
@@ -9402,6 +9575,10 @@ def init_db():
         if 'signature_path' not in columns:
             c.execute("ALTER TABLE users ADD COLUMN signature_path TEXT")
             print("✅ Added signature_path column to users table")
+        
+        if 'is_online' not in columns:
+            c.execute("ALTER TABLE users ADD COLUMN is_online INTEGER DEFAULT 0")
+            print("✅ Added is_online column to users table")
 
         # Create activity_logs table
         c.execute('''
