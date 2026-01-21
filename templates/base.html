@@ -2763,7 +2763,7 @@ function showFilePreview(fileUrl, fileName) {
 <body>
     {% if request.endpoint != 'login' and request.endpoint != 'register' and request.endpoint != 'maintenance_request' %}
     <!-- Floating Messaging Toggle Button -->
-    <button class="messaging-toggle-btn no-print" id="messagingToggleBtn" onclick="window.toggleMessagingPanel ? window.toggleMessagingPanel() : console.error('Function not yet initialized')">
+    <button class="messaging-toggle-btn no-print" id="messagingToggleBtn" onclick="toggleMessagingPanel()">
         <i class="fas fa-comments"></i>
         <span class="label-text">Messaging</span>
         <span class="badge bg-danger rounded-pill mt-2" id="floatingUnreadCount" style="display: none; transform: rotate(0deg);">0</span>
@@ -2776,19 +2776,19 @@ function showFilePreview(fileUrl, fileName) {
                 <i class="fas fa-comments"></i>
                 Messaging Center
             </h5>
-            <button class="btn btn-sm btn-light" onclick="window.toggleMessagingPanel && window.toggleMessagingPanel()">
+            <button class="btn btn-sm btn-light" onclick="toggleMessagingPanel()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
         <div class="messaging-tabs">
-            <button class="messaging-tab active" onclick="window.switchMessagingTab && window.switchMessagingTab('inbox')">
+            <button class="messaging-tab active" onclick="switchMessagingTab('inbox')">
                 <i class="fas fa-inbox"></i> Inbox
             </button>
-            <button class="messaging-tab" onclick="window.switchMessagingTab && window.switchMessagingTab('compose')">
+            <button class="messaging-tab" onclick="switchMessagingTab('compose')">
                 <i class="fas fa-pen"></i> Compose
             </button>
-            <button class="messaging-tab" onclick="window.switchMessagingTab && window.switchMessagingTab('threads')">
+            <button class="messaging-tab" onclick="switchMessagingTab('threads')">
                 <i class="fas fa-comments"></i> Threads
             </button>
         </div>
@@ -2812,30 +2812,30 @@ function showFilePreview(fileUrl, fileName) {
     
     <!-- Emoji Picker -->
     <div class="emoji-picker" id="emojiPicker">
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😊')">😊</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😀')">😀</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😂')">😂</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😍')">😍</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😎')">😎</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('👍')">👍</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('👌')">👌</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('❤️')">❤️</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😉')">😉</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('🤔')">🤔</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😅')">😅</div>
-        <div class="emoji-item" onclick="window.insertEmoji && window.insertEmoji('😢')">😢</div>
+        <div class="emoji-item" onclick="insertEmoji('😊')">😊</div>
+        <div class="emoji-item" onclick="insertEmoji('😀')">😀</div>
+        <div class="emoji-item" onclick="insertEmoji('😂')">😂</div>
+        <div class="emoji-item" onclick="insertEmoji('😍')">😍</div>
+        <div class="emoji-item" onclick="insertEmoji('😎')">😎</div>
+        <div class="emoji-item" onclick="insertEmoji('👍')">👍</div>
+        <div class="emoji-item" onclick="insertEmoji('👌')">👌</div>
+        <div class="emoji-item" onclick="insertEmoji('❤️')">❤️</div>
+        <div class="emoji-item" onclick="insertEmoji('😉')">😉</div>
+        <div class="emoji-item" onclick="insertEmoji('🤔')">🤔</div>
+        <div class="emoji-item" onclick="insertEmoji('😅')">😅</div>
+        <div class="emoji-item" onclick="insertEmoji('😢')">😢</div>
     </div>
     
     <!-- Sidebar Navigation -->
     {% if request.endpoint != 'login' and request.endpoint != 'register' and request.endpoint != 'maintenance_request' %}
-    <div class="sidebar-overlay no-print" id="sidebarOverlay" onclick="window.toggleSidebar && window.toggleSidebar()"></div>
+    <div class="sidebar-overlay no-print" id="sidebarOverlay" onclick="toggleSidebar()"></div>
     <aside class="sidebar no-print" id="sidebar">
         <div class="sidebar-header">
             <a class="sidebar-brand" href="{{ url_for('dashboard') }}">
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Marine Service Center Logo" class="navbar-logo">
                 <span>Marine Service Center</span>
             </a>
-            <button class="sidebar-toggle-btn" onclick="window.toggleSidebarCollapse && window.toggleSidebarCollapse()" title="Toggle Sidebar">
+            <button class="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Toggle Sidebar">
                 <i class="fas fa-chevron-left" id="sidebarToggleIcon"></i>
             </button>
         </div>
@@ -3013,13 +3013,13 @@ function showFilePreview(fileUrl, fileName) {
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="#" onclick="window.printProfile && window.printProfile(); return false;">
+                        <a class="dropdown-item" href="#" onclick="printProfile()">
                             <i class="fas fa-print me-2"></i> Print Profile
                         </a>
                     </li>
                     {% if current_user.role in ['port_engineer', 'harbour_master', 'chief_engineer', 'captain'] %}
                     <li>
-                        <a class="dropdown-item" href="#" onclick="window.openComposeTab && window.openComposeTab(); return false;">
+                        <a class="dropdown-item" href="#" onclick="openComposeTab(); return false;">
                             <i class="fas fa-paper-plane me-2"></i> Send Message
                         </a>
                     </li>
@@ -3037,7 +3037,7 @@ function showFilePreview(fileUrl, fileName) {
     
     <!-- Top Navigation Bar -->
     <nav class="top-navbar no-print">
-        <button class="sidebar-toggle" id="sidebarToggle" onclick="window.toggleSidebar ? window.toggleSidebar() : console.error('toggleSidebar not initialized')">
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
         </button>
         
@@ -3064,7 +3064,7 @@ function showFilePreview(fileUrl, fileName) {
         
         <!-- Messaging Inbox Link -->
         <div class="dropdown">
-            <a href="#" class="nav-link dropdown-toggle position-relative" onclick="window.toggleMessagingPanel && window.toggleMessagingPanel(); return false;">
+            <a href="#" class="nav-link dropdown-toggle position-relative" onclick="toggleMessagingPanel(); return false;">
                 <i class="fas fa-inbox"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" id="navbarUnreadCount" style="display: none;">
                     0
@@ -3081,43 +3081,43 @@ function showFilePreview(fileUrl, fileName) {
                 <li><h6 class="dropdown-header"><i class="fas fa-palette me-2"></i>Color Themes</h6></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="purple" onclick="window.setTheme && window.setTheme('purple'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="purple" onclick="setTheme('purple'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #5a4fcf, #6b5dd8); margin-right: 10px; vertical-align: middle;"></span>
                         Purple (Default)
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="blue-ocean" onclick="window.setTheme && window.setTheme('blue-ocean'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="blue-ocean" onclick="setTheme('blue-ocean'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #2563eb, #1d4ed8); margin-right: 10px; vertical-align: middle;"></span>
                         Blue Ocean
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="teal-marine" onclick="window.setTheme && window.setTheme('teal-marine'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="teal-marine" onclick="setTheme('teal-marine'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #0d9488, #14b8a6); margin-right: 10px; vertical-align: middle;"></span>
                         Teal Marine
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="emerald" onclick="window.setTheme && window.setTheme('emerald'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="emerald" onclick="setTheme('emerald'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #059669, #10b981); margin-right: 10px; vertical-align: middle;"></span>
                         Emerald
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="indigo" onclick="window.setTheme && window.setTheme('indigo'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="indigo" onclick="setTheme('indigo'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #4f46e5, #6366f1); margin-right: 10px; vertical-align: middle;"></span>
                         Indigo
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="rose" onclick="window.setTheme && window.setTheme('rose'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="rose" onclick="setTheme('rose'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #e11d48, #f43f5e); margin-right: 10px; vertical-align: middle;"></span>
                         Rose
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="amber" onclick="window.setTheme && window.setTheme('amber'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="amber" onclick="setTheme('amber'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #d97706, #f59e0b); margin-right: 10px; vertical-align: middle;"></span>
                         Amber
                     </a>
@@ -3219,7 +3219,7 @@ function showFilePreview(fileUrl, fileName) {
                                      class="rounded-circle profile-pic-preview" 
                                      alt="Image Preview">
                                 <div class="mt-2">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="window.cancelUpload && window.cancelUpload()">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="cancelUpload()">
                                         <i class="fas fa-times me-1"></i> Cancel
                                     </button>
                                 </div>
@@ -3239,7 +3239,7 @@ function showFilePreview(fileUrl, fileName) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="uploadButton" onclick="window.uploadProfilePicture && window.uploadProfilePicture()" disabled>
+                    <button type="button" class="btn btn-primary" id="uploadButton" onclick="uploadProfilePicture()" disabled>
                         <i class="fas fa-upload me-1"></i> Upload Picture
                     </button>
                 </div>
@@ -3300,79 +3300,6 @@ function showFilePreview(fileUrl, fileName) {
     let currentConversationId = null;
     let currentTab = 'inbox';
     let threadAttachments = [];
-
-    // ==================== GLOBAL MESSAGING FUNCTION STUBS ====================
-    // These are defined here so they're globally available immediately
-    // They will be properly defined later in this script
-    // Stubs silently ignore early calls - real functions will be assigned on DOMContentLoaded
-    
-    window.toggleMessagingPanel = function() { /* Waiting for initialization */ };
-    window.switchMessagingTab = function(tab) { /* Waiting for initialization */ };
-    window.sendQuickMessage = function() { /* Waiting for initialization */ };
-    window.openComposeTab = function() { /* Waiting for initialization */ };
-    window.toggleEmojiPicker = function() { /* Waiting for initialization */ };
-    window.insertEmoji = function(emoji) { /* Waiting for initialization */ };
-    window.openMessageThread = function(id, name) { /* Waiting for initialization */ };
-    window.sendReply = function(id) { /* Waiting for initialization */ };
-    window.openMessageDetail = function(id) { /* Waiting for initialization */ };
-    window.loadMessagingTab = function(tab) { /* Waiting for initialization */ };
-    window.loadUnreadCount = function() { /* Waiting for initialization */ };
-    window.handleAttachmentUpload = function(input, context) { /* Waiting for initialization */ };
-    window.removeAttachment = function(index, context) { /* Waiting for initialization */ };
-    window.showEmojiPicker = function() { /* Waiting for initialization */ };
-    window.quickSearchUsers = function(query) { /* Waiting for initialization */ };
-    window.saveAsDraft = function() { /* Waiting for initialization */ };
-    window.openUserSearchModal = function() { /* Waiting for initialization */ };
-    window.showUserProfile = function(userId) { /* Waiting for initialization */ };
-    window.toggleSidebar = function() { /* Waiting for initialization */ };
-    window.toggleSidebarCollapse = function() { /* Waiting for initialization */ };
-    window.setTheme = function(theme) { /* Waiting for initialization */ };
-    window.submitAuthorization = function(emergencyId) { /* Waiting for initialization */ };
-    
-    // ==================== GLOBAL BUTTON FUNCTION STUBS ====================
-    // These stubs ensure all onclick handlers work even if called before full initialization
-    // They will be replaced with real implementations when the page fully loads
-    
-    window.exportAllReports = function() { console.warn('exportAllReports: not yet initialized'); };
-    window.loadReports = function() { console.warn('loadReports: not yet initialized'); };
-    window.clearAllReports = function() { console.warn('clearAllReports: not yet initialized'); };
-    window.clearSignature = function() { console.warn('clearSignature: not yet initialized'); };
-    window.clearPrfSignature = function() { console.warn('clearPrfSignature: not yet initialized'); };
-    window.clearShipSignature = function() { console.warn('clearShipSignature: not yet initialized'); };
-    window.assignToMe = function() { console.warn('assignToMe: not yet initialized'); };
-    window.updateStatus = function() { console.warn('updateStatus: not yet initialized'); };
-    window.addNotes = function() { console.warn('addNotes: not yet initialized'); };
-    window.startService = function() { console.warn('startService: not yet initialized'); };
-    window.declareEmergency = function() { console.warn('declareEmergency: not yet initialized'); };
-    window.loadWorkflowHistory = function() { console.warn('loadWorkflowHistory: not yet initialized'); };
-    window.updateRequestStatus = function() { console.warn('updateRequestStatus: not yet initialized'); };
-    window.evaluateService = function() { console.warn('evaluateService: not yet initialized'); };
-    window.printRequest = function() { console.warn('printRequest: not yet initialized'); };
-    window.exportRequest = function() { console.warn('exportRequest: not yet initialized'); };
-    window.shareRequest = function() { console.warn('shareRequest: not yet initialized'); };
-    window.cloneRequest = function() { console.warn('cloneRequest: not yet initialized'); };
-    window.saveStatusUpdate = function() { console.warn('saveStatusUpdate: not yet initialized'); };
-    window.viewFullEvaluation = function() { console.warn('viewFullEvaluation: not yet initialized'); };
-    window.showAccessRequestModal = function() { console.warn('showAccessRequestModal: not yet initialized'); };
-    window.loadMyEvaluations = function() { console.warn('loadMyEvaluations: not yet initialized'); };
-    window.submitAccessRequest = function() { console.warn('submitAccessRequest: not yet initialized'); };
-    window.sendBulkNotifications = function() { console.warn('sendBulkNotifications: not yet initialized'); };
-    window.generateSystemReport = function() { console.warn('generateSystemReport: not yet initialized'); };
-    window.generateOneTimePassword = function() { console.warn('generateOneTimePassword: not yet initialized'); };
-    window.updateQualityOfficerAccess = function() { console.warn('updateQualityOfficerAccess: not yet initialized'); };
-    window.createQualityOfficer = function() { console.warn('createQualityOfficer: not yet initialized'); };
-    window.sendNotification = function() { console.warn('sendNotification: not yet initialized'); };
-    window.loadLiveUpdates = function() { console.warn('loadLiveUpdates: not yet initialized'); };
-    window.newRequest = function() { console.warn('newRequest: not yet initialized'); };
-    window.callEmergency = function() { console.warn('callEmergency: not yet initialized'); };
-    window.printProfile = function() { console.warn('printProfile: not yet initialized'); };
-    window.removeProfilePic = function() { console.warn('removeProfilePic: not yet initialized'); };
-    window.showSignatureModal = function() { console.warn('showSignatureModal: not yet initialized'); };
-    window.resetFormChanges = function() { console.warn('resetFormChanges: not yet initialized'); };
-    window.showSendMessageModal = function() { console.warn('showSendMessageModal: not yet initialized'); };
-    window.showInbox = function() { console.warn('showInbox: not yet initialized'); };
-    window.showSentMessagesModal = function() { console.warn('showSentMessagesModal: not yet initialized'); };
-    window.toggleMessagingPanel = function() { console.warn('toggleMessagingPanel called before initialization'); };
 
     // ==================== FLOATING PANEL FUNCTIONS ====================
 
@@ -3565,7 +3492,7 @@ function showFilePreview(fileUrl, fileName) {
                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                     <h6 class="text-muted">No new messages</h6>
                     <p class="text-muted small">Your inbox is empty</p>
-                    <button class="btn btn-sm btn-primary mt-2" onclick="window.switchMessagingTab && window.switchMessagingTab('compose')">
+                    <button class="btn btn-sm btn-primary mt-2" onclick="switchMessagingTab('compose')">
                         <i class="fas fa-pen me-1"></i> Compose New
                     </button>
                 </div>
@@ -3586,7 +3513,7 @@ function showFilePreview(fileUrl, fileName) {
             
             html += `
                 <a href="#" class="list-group-item list-group-item-action border-0 ${priorityClass} ${readClass}" 
-                   onclick="window.openMessageDetail && window.openMessageDetail('${message.message_id}')">
+                   onclick="openMessageDetail('${message.message_id}')">
                     <div class="d-flex align-items-center">
                         <div class="avatar-small me-3">
                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
@@ -3630,8 +3557,8 @@ function showFilePreview(fileUrl, fileName) {
                     <div class="input-group">
                         <input type="text" class="form-control" id="quickTo" 
                                placeholder="Search user or enter email..." 
-                               onkeyup="window.quickSearchUsers && window.quickSearchUsers(this.value)">
-                        <button class="btn btn-outline-secondary" type="button" onclick="window.openUserSearchModal && window.openUserSearchModal()">
+                               onkeyup="quickSearchUsers(this.value)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="openUserSearchModal()">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
@@ -3640,7 +3567,7 @@ function showFilePreview(fileUrl, fileName) {
                 
                 <div class="mb-3">
                     <label class="form-label">Message</label>
-                    <textarea class="form-control" id="quickMessage" rows="4" placeholder="Type your message here..." onfocus="window.showEmojiPicker && window.showEmojiPicker()"></textarea>
+                    <textarea class="form-control" id="quickMessage" rows="4" placeholder="Type your message here..."></textarea>
                 </div>
                 
                 <div class="mb-3">
@@ -3655,25 +3582,16 @@ function showFilePreview(fileUrl, fileName) {
                 
                 <div class="mb-3">
                     <label class="form-label">Attachment</label>
-                    <input type="file" class="form-control" id="quickAttachment" multiple onchange="window.handleAttachmentUpload && window.handleAttachmentUpload(this, 'compose')">
+                    <input type="file" class="form-control" id="quickAttachment" multiple onchange="handleAttachmentUpload(this, 'compose')">
                     <small class="form-text text-muted">Multiple files allowed, max 20MB each</small>
                     <div id="composeAttachmentPreview"></div>
                 </div>
                 
-                <div class="d-flex gap-2 mb-3">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('quickAttachment').click()" title="Attach file">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.toggleEmojiPicker && window.toggleEmojiPicker()" title="Add emoji">
-                        <i class="fas fa-smile"></i>
-                    </button>
-                </div>
-                
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary" onclick="window.sendQuickMessage && window.sendQuickMessage()">
+                    <button type="button" class="btn btn-primary" onclick="sendQuickMessage()">
                         <i class="fas fa-paper-plane me-1"></i> Send Message
                     </button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="window.saveAsDraft && window.saveAsDraft()">
+                    <button type="button" class="btn btn-outline-secondary" onclick="saveAsDraft()">
                         <i class="fas fa-save me-1"></i> Save as Draft
                     </button>
                 </div>
@@ -3710,7 +3628,7 @@ function showFilePreview(fileUrl, fileName) {
                     <div class="file-name">${file.name}</div>
                     <div class="file-size">${fileSize} MB</div>
                 </div>
-                <i class="fas fa-times remove-attachment" onclick="window.removeAttachment && window.removeAttachment(${index}, '${context}')"></i>
+                <i class="fas fa-times remove-attachment" onclick="removeAttachment(${index}, '${context}')"></i>
             `;
             previewDiv.appendChild(previewItem);
         });
@@ -3751,7 +3669,7 @@ function showFilePreview(fileUrl, fileName) {
                     <div class="file-name">${file.name}</div>
                     <div class="file-size">${fileSize} MB</div>
                 </div>
-                <i class="fas fa-times remove-attachment" onclick="window.removeAttachment && window.removeAttachment(${index}, '${context}')"></i>
+                <i class="fas fa-times remove-attachment" onclick="removeAttachment(${index}, '${context}')"></i>
             `;
             previewDiv.appendChild(previewItem);
         });
@@ -3802,7 +3720,7 @@ function showFilePreview(fileUrl, fileName) {
                     <i class="fas fa-comments fa-3x text-muted mb-3"></i>
                     <h6 class="text-muted">No conversations</h6>
                     <p class="text-muted small">Start a new conversation</p>
-                    <button class="btn btn-sm btn-primary mt-2" onclick="window.switchMessagingTab && window.switchMessagingTab('compose')">
+                    <button class="btn btn-sm btn-primary mt-2" onclick="switchMessagingTab('compose')">
                         <i class="fas fa-pen me-1"></i> Compose New
                     </button>
                 </div>
@@ -3820,12 +3738,12 @@ function showFilePreview(fileUrl, fileName) {
             html += `
                 <a href="#" class="list-group-item list-group-item-action border-0 thread-item" 
                    data-thread-id="${thread.other_party_id}"
-                   onclick="window.openMessageThread && window.openMessageThread('${thread.other_party_id}', '${partyName.replace(/'/g, "\\'")}')">
+                   onclick="openMessageThread('${thread.other_party_id}', '${partyName.replace(/'/g, "\\'")}')">
                     <div class="d-flex align-items-center">
                         <div class="avatar-small me-3 position-relative">
                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
                                  style="width: 40px; height: 40px; font-size: 0.9rem; font-weight: bold; cursor: pointer;"
-                                 onclick="event.stopPropagation(); window.showUserProfile && window.showUserProfile('${thread.other_party_id}')">
+                                 onclick="event.stopPropagation(); showUserProfile('${thread.other_party_id}')">
                                 ${initials}
                             </div>
                             ${unreadCount > 0 ? `
@@ -3957,49 +3875,6 @@ function showFilePreview(fileUrl, fileName) {
             });
     }
 
-    // Helper function to check if file is an image
-    function isImageFile(filename) {
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
-        const ext = filename.split('.').pop().toLowerCase();
-        return imageExtensions.includes(ext);
-    }
-    
-    // Helper function to get attachment display HTML based on file type
-    function getAttachmentHtml(att, messageId, replyId, isReply) {
-        const isImage = isImageFile(att.filename);
-        const downloadUrl = isReply 
-            ? `/api/messaging/download-reply-attachment/${messageId}/${replyId}`
-            : `/api/messaging/download-attachment/${messageId}/${att.index}`;
-        
-        if (isImage) {
-            // For images, show preview that can be clicked to view
-            return `
-                <div class="attachment-item" style="cursor: pointer; overflow: hidden; border-radius: 0.375rem; max-width: 200px;">
-                    <img src="${downloadUrl}" 
-                         alt="${att.filename}" 
-                         style="max-width: 100%; height: auto; display: block; cursor: pointer;"
-                         onclick="window.showFilePreview && window.showFilePreview('${downloadUrl}', '${att.filename.replace(/'/g, "\\'")}')">
-                </div>
-            `;
-        } else {
-            // For other files, show download button
-            return `
-                <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded" 
-                     style="background: rgba(255, 255, 255, 0.2); color: white;">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
-                        <span class="small" style="color: white;">${att.filename}</span>
-                    </div>
-                    <a href="${downloadUrl}" 
-                       class="btn btn-sm btn-outline-light" 
-                       title="Download ${att.filename}">
-                        <i class="fas fa-download"></i>
-                    </a>
-                </div>
-            `;
-        }
-    }
-    
     let threadRefreshInterval = null;
     
     function renderMessageThread(content, messages, userName) {
@@ -4008,7 +3883,7 @@ function showFilePreview(fileUrl, fileName) {
         
         // Build initial HTML with placeholder header
         let html = `
-            <div class="conversation-header" id="threadHeader" onclick="window.showUserProfile && window.showUserProfile('${currentConversationId}')" style="cursor: pointer;">
+            <div class="conversation-header" id="threadHeader" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
                 <div class="position-relative">
                     <div class="avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">${initials}</div>
                 </div>
@@ -4034,7 +3909,20 @@ function showFilePreview(fileUrl, fileName) {
                         ${messageText ? `<div>${messageText}</div>` : ''}
                         ${msg.attachments && msg.attachments.length > 0 ? `
                             <div class="message-attachments mt-2">
-                                ${msg.attachments.map(att => getAttachmentHtml(att, msg.message_id, null, false)).join('')}
+                                ${msg.attachments.map(att => `
+                                    <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded" 
+                                         style="background: rgba(255, 255, 255, 0.2); color: white;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
+                                            <span class="small" style="color: white;">${att.filename}</span>
+                                        </div>
+                                        <a href="/api/messaging/download-attachment/${msg.message_id}/${att.index}" 
+                                           class="btn btn-sm btn-outline-light" 
+                                           title="Download ${att.filename}">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                `).join('')}
                             </div>
                         ` : ''}
                         <div class="message-time">${formatDateTime(msg.created_at)}</div>
@@ -4050,7 +3938,20 @@ function showFilePreview(fileUrl, fileName) {
                                 ${reply.reply_text ? `<div>${reply.reply_text}</div>` : ''}
                                 ${reply.attachments && reply.attachments.length > 0 ? `
                                     <div class="message-attachments mt-2">
-                                        ${reply.attachments.map(att => getAttachmentHtml(att, msg.message_id, reply.reply_id, true)).join('')}
+                                        ${reply.attachments.map(att => `
+                                            <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded" 
+                                                 style="background: rgba(255, 255, 255, 0.2); color: white;">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
+                                                    <span class="small" style="color: white;">${att.filename}</span>
+                                                </div>
+                                                <a href="/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}" 
+                                                   class="btn btn-sm btn-outline-light" 
+                                                   title="Download ${att.filename}">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            </div>
+                                        `).join('')}
                                     </div>
                                 ` : ''}
                                 <div class="message-time">${formatDateTime(reply.created_at)}</div>
@@ -4073,11 +3974,11 @@ function showFilePreview(fileUrl, fileName) {
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('threadAttachment').click()">
                         <i class="fas fa-paperclip"></i>
                     </button>
-                    <input type="file" id="threadAttachment" style="display: none;" multiple onchange="window.handleAttachmentUpload && window.handleAttachmentUpload(this, 'thread')">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.toggleEmojiPicker && window.toggleEmojiPicker()">
+                    <input type="file" id="threadAttachment" style="display: none;" multiple onchange="handleAttachmentUpload(this, 'thread')">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEmojiPicker()">
                         <i class="fas fa-smile"></i>
                     </button>
-                    <button type="button" class="btn btn-primary ms-auto" onclick="window.sendThreadReply && window.sendThreadReply()">
+                    <button type="button" class="btn btn-primary ms-auto" onclick="sendThreadReply()">
                         <i class="fas fa-paper-plane me-1"></i> Send
                     </button>
                 </div>
@@ -4100,7 +4001,7 @@ function showFilePreview(fileUrl, fileName) {
                     if (threadHeader) {
                         // Update header with profile picture and status
                         let headerHtml = `
-                            <div class="position-relative" onclick="window.showUserProfile && window.showUserProfile('${currentConversationId}')" style="cursor: pointer;">
+                            <div class="position-relative" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
                         `;
                         
                         if (profilePicUrl) {
@@ -4533,7 +4434,7 @@ function showFilePreview(fileUrl, fileName) {
                         <div class="reply-section mt-4">
                             <h6>Reply:</h6>
                             <textarea class="form-control mb-2" id="replyText" rows="3" placeholder="Type your reply..."></textarea>
-                            <button class="btn btn-primary" onclick="window.sendReply && window.sendReply('${messageId}')">
+                            <button class="btn btn-primary" onclick="sendReply('${messageId}')">
                                 <i class="fas fa-paper-plane me-1"></i> Send Reply
                             </button>
                         </div>
@@ -4590,28 +4491,6 @@ function showFilePreview(fileUrl, fileName) {
     function initMessaging() {
         console.log('🚀 Initializing messaging system...');
         
-        // Make functions globally accessible for testing and cross-template access
-        window.toggleMessagingPanel = toggleMessagingPanel;
-        window.switchMessagingTab = switchMessagingTab;
-        window.sendQuickMessage = sendQuickMessage;
-        window.openComposeTab = openComposeTab;
-        window.toggleEmojiPicker = toggleEmojiPicker;
-        window.insertEmoji = insertEmoji;
-        window.openMessageThread = openMessageThread;
-        window.sendReply = sendReply;
-        window.openMessageDetail = openMessageDetail;
-        window.loadMessagingTab = loadMessagingTab;
-        window.loadUnreadCount = loadUnreadCount;
-        window.handleAttachmentUpload = handleAttachmentUpload;
-        window.removeAttachment = removeAttachment;
-        window.showEmojiPicker = showEmojiPicker;
-        window.quickSearchUsers = quickSearchUsers;
-        window.saveAsDraft = saveAsDraft;
-        window.openUserSearchModal = openUserSearchModal;
-        window.showUserProfile = showUserProfile;
-        
-        console.log('✅ All messaging functions exposed globally');
-        
         // Verify required elements exist
         const msgPanel = document.getElementById('messagingPanel');
         const msgToggle = document.getElementById('messagingToggleBtn');
@@ -4624,9 +4503,6 @@ function showFilePreview(fileUrl, fileName) {
         if (msgPanel && msgToggle && msgContent) {
             console.log('✅ All messaging elements found');
         }
-        
-        // Ensure message button handlers are functional
-        setupMessageButtonHandlers();
         
         // Load unread count
         loadUnreadCount();
@@ -4657,182 +4533,6 @@ function showFilePreview(fileUrl, fileName) {
         });
         
         console.log('✅ Messaging system initialized');
-        
-        // Test logging - remove after debugging
-        console.log('🧪 Testing: window.toggleMessagingPanel exists?', typeof window.toggleMessagingPanel === 'function');
-        console.log('🧪 Testing: window.openComposeTab exists?', typeof window.openComposeTab === 'function');
-        console.log('🧪 Testing: messagingToggleBtn onclick?', document.getElementById('messagingToggleBtn')?.getAttribute('onclick'));
-    }
-    
-    // Set up message button handlers - ensure all buttons work properly
-    function setupMessageButtonHandlers() {
-        console.log('🔧 Setting up message button handlers...');
-        
-        try {
-            // Check if toggleMessagingPanel is accessible
-            if (typeof toggleMessagingPanel !== 'function') {
-                console.error('❌ toggleMessagingPanel function not found');
-            } else {
-                console.log('✅ toggleMessagingPanel function verified');
-            }
-            
-            // Check if switchMessagingTab is accessible
-            if (typeof switchMessagingTab !== 'function') {
-                console.error('❌ switchMessagingTab function not found');
-            } else {
-                console.log('✅ switchMessagingTab function verified');
-            }
-            
-            // Check if sendQuickMessage is accessible
-            if (typeof sendQuickMessage !== 'function') {
-                console.error('❌ sendQuickMessage function not found');
-            } else {
-                console.log('✅ sendQuickMessage function verified');
-            }
-            
-            // Check if openComposeTab is accessible
-            if (typeof openComposeTab !== 'function') {
-                console.error('❌ openComposeTab function not found');
-            } else {
-                console.log('✅ openComposeTab function verified');
-            }
-            
-            // Check if sendReply is accessible
-            if (typeof sendReply !== 'function') {
-                console.error('❌ sendReply function not found');
-            } else {
-                console.log('✅ sendReply function verified');
-            }
-            
-            // Check if toggleEmojiPicker is accessible
-            if (typeof toggleEmojiPicker !== 'function') {
-                console.error('❌ toggleEmojiPicker function not found');
-            } else {
-                console.log('✅ toggleEmojiPicker function verified');
-            }
-            
-            // Check if insertEmoji is accessible
-            if (typeof insertEmoji !== 'function') {
-                console.error('❌ insertEmoji function not found');
-            } else {
-                console.log('✅ insertEmoji function verified');
-            }
-            
-            // Verify messaging panel and toggle button exist
-            const messagingPanel = document.getElementById('messagingPanel');
-            const messagingToggleBtn = document.getElementById('messagingToggleBtn');
-            
-            if (!messagingPanel) {
-                console.error('❌ messagingPanel not found');
-            } else {
-                console.log('✅ messagingPanel found');
-            }
-            
-            if (!messagingToggleBtn) {
-                console.error('❌ messagingToggleBtn not found');
-            } else {
-                console.log('✅ messagingToggleBtn found - onclick attribute:', messagingToggleBtn.getAttribute('onclick'));
-            }
-            
-            // Verify messaging tab buttons exist
-            const messagingTabs = document.querySelectorAll('.messaging-tab');
-            if (messagingTabs.length > 0) {
-                console.log(`✅ Found ${messagingTabs.length} messaging tab buttons`);
-            } else {
-                console.log('⚠️ No messaging tab buttons found (may not be loaded yet)');
-            }
-            
-            // Set up emoji picker buttons
-            setupEmojiPickerHandlers();
-            
-            // Set up dynamic button handlers using event delegation
-            setupDynamicMessageButtonHandlers();
-            
-            console.log('✅ Message button handlers setup complete');
-        } catch (error) {
-            console.error('❌ Critical error in setupMessageButtonHandlers:', error);
-            console.error('Error details:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            });
-        }
-    }
-    
-    // Set up handlers for emoji picker buttons
-    function setupEmojiPickerHandlers() {
-        console.log('🎯 Setting up emoji picker handlers...');
-        
-        try {
-            const emojiItems = document.querySelectorAll('.emoji-item');
-            if (emojiItems.length > 0) {
-                console.log(`✅ Found ${emojiItems.length} emoji buttons`);
-                emojiItems.forEach(item => {
-                    const emoji = item.textContent.trim();
-                    item.onclick = function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log(`😊 Emoji clicked: ${emoji}`);
-                        try {
-                            insertEmoji(emoji);
-                        } catch (error) {
-                            console.error(`❌ Error inserting emoji ${emoji}:`, error);
-                        }
-                    };
-                });
-            } else {
-                console.log('⚠️ No emoji items found');
-            }
-        } catch (error) {
-            console.error('❌ Error in setupEmojiPickerHandlers:', error);
-        }
-    }
-    
-    // Set up handlers for dynamic buttons created by JavaScript
-    function setupDynamicMessageButtonHandlers() {
-        console.log('🔄 Setting up dynamic message button handlers...');
-        
-        // Use event delegation for dynamically created buttons
-        document.addEventListener('click', function(e) {
-            // Handle message send buttons
-            if (e.target?.classList?.contains('send-message-btn') || 
-                e.target?.closest('.send-message-btn')) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('📤 Send message button clicked via delegation');
-                try {
-                    if (typeof sendQuickMessage === 'function') {
-                        sendQuickMessage();
-                    } else {
-                        console.error('❌ sendQuickMessage is not a function');
-                    }
-                } catch (error) {
-                    console.error('❌ Error sending message:', error);
-                    console.error('Stack:', error.stack);
-                }
-            }
-            
-            // Handle reply send buttons
-            if (e.target?.classList?.contains('send-reply-btn') || 
-                e.target?.closest('.send-reply-btn')) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('📤 Send reply button clicked via delegation');
-                const messageId = e.target?.getAttribute('data-message-id');
-                try {
-                    if (typeof sendReply === 'function' && messageId) {
-                        sendReply(messageId);
-                    } else {
-                        console.error('❌ sendReply is not a function or messageId is missing');
-                    }
-                } catch (error) {
-                    console.error('❌ Error sending reply:', error);
-                    console.error('Stack:', error.stack);
-                }
-            }
-        }, true); // Use capture phase for better handling
-        
-        console.log('✅ Dynamic message button handlers configured');
     }
 
     // Load unread message count
@@ -4984,7 +4684,7 @@ function showFilePreview(fileUrl, fileName) {
                                      style="cursor: pointer; transition: all 0.2s;" 
                                      onmouseover="this.style.backgroundColor='#f8f9fa'" 
                                      onmouseout="this.style.backgroundColor=''" 
-                                     onclick="window.viewNotificationDetails && window.viewNotificationDetails(${notif.id})">
+                                     onclick="viewNotificationDetails(${notif.id})">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
                                             <div class="d-flex align-items-center">
@@ -5076,7 +4776,7 @@ function showFilePreview(fileUrl, fileName) {
                         </div>
                         <div class="modal-footer">
                             ${notification.action_url && notification.action_url !== '#' ? `
-                                <button type="button" class="btn btn-${notification.type}" data-action-url="${notification.action_url.replace(/"/g, '&quot;')}" onclick="window.navigateToNotificationPage && window.navigateToNotificationPage(this.dataset.actionUrl)">
+                                <button type="button" class="btn btn-${notification.type}" data-action-url="${notification.action_url.replace(/"/g, '&quot;')}" onclick="navigateToNotificationPage(this.dataset.actionUrl)">
                                     <i class="fas fa-external-link-alt me-1"></i> Go to Related Page
                                 </button>
                             ` : ''}
@@ -5293,12 +4993,6 @@ function showFilePreview(fileUrl, fileName) {
         loadTheme();
         // Load sidebar state
         loadSidebarState();
-        
-        // Expose sidebar and navigation functions to window object for global access
-        window.toggleSidebar = toggleSidebar;
-        window.toggleSidebarCollapse = toggleSidebarCollapse;
-        window.setTheme = setTheme;
-        
         // Image preview functionality
         const profilePicFile = document.getElementById('profilePicFile');
         if (profilePicFile) {
@@ -5342,28 +5036,6 @@ function showFilePreview(fileUrl, fileName) {
         
         // Initialize messaging system
         initMessaging();
-        
-        // Log diagnostic info for troubleshooting
-        console.log('='.repeat(50));
-        console.log('📋 MESSAGING SYSTEM DIAGNOSTIC');
-        console.log('='.repeat(50));
-        setTimeout(function() {
-            const btn = document.getElementById('messagingToggleBtn');
-            const panel = document.getElementById('messagingPanel');
-            const content = document.getElementById('messagingContent');
-            
-            console.log('Button found:', !!btn);
-            console.log('Button onclick:', btn?.getAttribute('onclick'));
-            console.log('Button classes:', btn?.className);
-            console.log('Panel found:', !!panel);
-            console.log('Panel classes:', panel?.className);
-            console.log('Content found:', !!content);
-            
-            console.log('Toggle function exists:', typeof toggleMessagingPanel === 'function');
-            console.log('='.repeat(50));
-            console.log('💡 Try in console: toggleMessagingPanel()');
-            console.log('='.repeat(50));
-        }, 100);
         
         // Load notifications and update counts
         loadNotifications();
