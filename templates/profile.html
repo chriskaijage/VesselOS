@@ -4717,7 +4717,6 @@ function removeAttachment(index) {
 // Note: Other messaging functions from base.html are available through the global scope
 // since they're defined in base.html and inherited by this page
 
-{% if user.role == 'quality_officer' %}
 // ==================== DMPO HQ DASHBOARD FUNCTIONS ====================
 let qoSqiChart = null;
 let qoQualityData = null;
@@ -5197,6 +5196,5 @@ document.addEventListener('DOMContentLoaded', function() {
         loadQOQualityOfficerData();
     }
 });
-{% endif %}
 </script>
 {% endblock %}
