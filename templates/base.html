@@ -3322,6 +3322,7 @@ function showFilePreview(fileUrl, fileName) {
     window.quickSearchUsers = function(query) { console.warn('quickSearchUsers called before initialization'); };
     window.saveAsDraft = function() { console.warn('saveAsDraft called before initialization'); };
     window.openUserSearchModal = function() { console.warn('openUserSearchModal called before initialization'); };
+    window.showUserProfile = function(userId) { console.warn('showUserProfile called before initialization'); };
     window.toggleSidebar = function() { console.warn('toggleSidebar called before initialization'); };
     window.setTheme = function(theme) { console.warn('setTheme called before initialization'); };
     
@@ -3561,7 +3562,7 @@ function showFilePreview(fileUrl, fileName) {
                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                     <h6 class="text-muted">No new messages</h6>
                     <p class="text-muted small">Your inbox is empty</p>
-                    <button class="btn btn-sm btn-primary mt-2" onclick="switchMessagingTab('compose')">
+                    <button class="btn btn-sm btn-primary mt-2" onclick="window.switchMessagingTab && window.switchMessagingTab('compose')">
                         <i class="fas fa-pen me-1"></i> Compose New
                     </button>
                 </div>
@@ -3582,7 +3583,7 @@ function showFilePreview(fileUrl, fileName) {
             
             html += `
                 <a href="#" class="list-group-item list-group-item-action border-0 ${priorityClass} ${readClass}" 
-                   onclick="openMessageDetail('${message.message_id}')">
+                   onclick="window.openMessageDetail && window.openMessageDetail('${message.message_id}')">
                     <div class="d-flex align-items-center">
                         <div class="avatar-small me-3">
                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
@@ -3626,8 +3627,8 @@ function showFilePreview(fileUrl, fileName) {
                     <div class="input-group">
                         <input type="text" class="form-control" id="quickTo" 
                                placeholder="Search user or enter email..." 
-                               onkeyup="quickSearchUsers(this.value)">
-                        <button class="btn btn-outline-secondary" type="button" onclick="openUserSearchModal()">
+                               onkeyup="window.quickSearchUsers && window.quickSearchUsers(this.value)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="window.openUserSearchModal && window.openUserSearchModal()">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
@@ -3636,7 +3637,7 @@ function showFilePreview(fileUrl, fileName) {
                 
                 <div class="mb-3">
                     <label class="form-label">Message</label>
-                    <textarea class="form-control" id="quickMessage" rows="4" placeholder="Type your message here..." onfocus="showEmojiPicker()"></textarea>
+                    <textarea class="form-control" id="quickMessage" rows="4" placeholder="Type your message here..." onfocus="window.showEmojiPicker && window.showEmojiPicker()"></textarea>
                 </div>
                 
                 <div class="mb-3">
@@ -3651,7 +3652,7 @@ function showFilePreview(fileUrl, fileName) {
                 
                 <div class="mb-3">
                     <label class="form-label">Attachment</label>
-                    <input type="file" class="form-control" id="quickAttachment" multiple onchange="handleAttachmentUpload(this, 'compose')">
+                    <input type="file" class="form-control" id="quickAttachment" multiple onchange="window.handleAttachmentUpload && window.handleAttachmentUpload(this, 'compose')">
                     <small class="form-text text-muted">Multiple files allowed, max 20MB each</small>
                     <div id="composeAttachmentPreview"></div>
                 </div>
@@ -3660,16 +3661,16 @@ function showFilePreview(fileUrl, fileName) {
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('quickAttachment').click()" title="Attach file">
                         <i class="fas fa-paperclip"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEmojiPicker()" title="Add emoji">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.toggleEmojiPicker && window.toggleEmojiPicker()" title="Add emoji">
                         <i class="fas fa-smile"></i>
                     </button>
                 </div>
                 
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary" onclick="sendQuickMessage()">
+                    <button type="button" class="btn btn-primary" onclick="window.sendQuickMessage && window.sendQuickMessage()">
                         <i class="fas fa-paper-plane me-1"></i> Send Message
                     </button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="saveAsDraft()">
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.saveAsDraft && window.saveAsDraft()">
                         <i class="fas fa-save me-1"></i> Save as Draft
                     </button>
                 </div>
@@ -3706,7 +3707,7 @@ function showFilePreview(fileUrl, fileName) {
                     <div class="file-name">${file.name}</div>
                     <div class="file-size">${fileSize} MB</div>
                 </div>
-                <i class="fas fa-times remove-attachment" onclick="removeAttachment(${index}, '${context}')"></i>
+                <i class="fas fa-times remove-attachment" onclick="window.removeAttachment && window.removeAttachment(${index}, '${context}')"></i>
             `;
             previewDiv.appendChild(previewItem);
         });
@@ -3747,7 +3748,7 @@ function showFilePreview(fileUrl, fileName) {
                     <div class="file-name">${file.name}</div>
                     <div class="file-size">${fileSize} MB</div>
                 </div>
-                <i class="fas fa-times remove-attachment" onclick="removeAttachment(${index}, '${context}')"></i>
+                <i class="fas fa-times remove-attachment" onclick="window.removeAttachment && window.removeAttachment(${index}, '${context}')"></i>
             `;
             previewDiv.appendChild(previewItem);
         });
@@ -3798,7 +3799,7 @@ function showFilePreview(fileUrl, fileName) {
                     <i class="fas fa-comments fa-3x text-muted mb-3"></i>
                     <h6 class="text-muted">No conversations</h6>
                     <p class="text-muted small">Start a new conversation</p>
-                    <button class="btn btn-sm btn-primary mt-2" onclick="switchMessagingTab('compose')">
+                    <button class="btn btn-sm btn-primary mt-2" onclick="window.switchMessagingTab && window.switchMessagingTab('compose')">
                         <i class="fas fa-pen me-1"></i> Compose New
                     </button>
                 </div>
@@ -3816,12 +3817,12 @@ function showFilePreview(fileUrl, fileName) {
             html += `
                 <a href="#" class="list-group-item list-group-item-action border-0 thread-item" 
                    data-thread-id="${thread.other_party_id}"
-                   onclick="openMessageThread('${thread.other_party_id}', '${partyName.replace(/'/g, "\\'")}')">
+                   onclick="window.openMessageThread && window.openMessageThread('${thread.other_party_id}', '${partyName.replace(/'/g, "\\'")}')">
                     <div class="d-flex align-items-center">
                         <div class="avatar-small me-3 position-relative">
                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
                                  style="width: 40px; height: 40px; font-size: 0.9rem; font-weight: bold; cursor: pointer;"
-                                 onclick="event.stopPropagation(); showUserProfile('${thread.other_party_id}')">
+                                 onclick="event.stopPropagation(); window.showUserProfile && window.showUserProfile('${thread.other_party_id}')">
                                 ${initials}
                             </div>
                             ${unreadCount > 0 ? `
@@ -4004,7 +4005,7 @@ function showFilePreview(fileUrl, fileName) {
         
         // Build initial HTML with placeholder header
         let html = `
-            <div class="conversation-header" id="threadHeader" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
+            <div class="conversation-header" id="threadHeader" onclick="window.showUserProfile && window.showUserProfile('${currentConversationId}')" style="cursor: pointer;">
                 <div class="position-relative">
                     <div class="avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">${initials}</div>
                 </div>
@@ -4096,7 +4097,7 @@ function showFilePreview(fileUrl, fileName) {
                     if (threadHeader) {
                         // Update header with profile picture and status
                         let headerHtml = `
-                            <div class="position-relative" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
+                            <div class="position-relative" onclick="window.showUserProfile && window.showUserProfile('${currentConversationId}')" style="cursor: pointer;">
                         `;
                         
                         if (profilePicUrl) {
@@ -4529,7 +4530,7 @@ function showFilePreview(fileUrl, fileName) {
                         <div class="reply-section mt-4">
                             <h6>Reply:</h6>
                             <textarea class="form-control mb-2" id="replyText" rows="3" placeholder="Type your reply..."></textarea>
-                            <button class="btn btn-primary" onclick="sendReply('${messageId}')">
+                            <button class="btn btn-primary" onclick="window.sendReply && window.sendReply('${messageId}')">
                                 <i class="fas fa-paper-plane me-1"></i> Send Reply
                             </button>
                         </div>
@@ -4604,6 +4605,7 @@ function showFilePreview(fileUrl, fileName) {
         window.quickSearchUsers = quickSearchUsers;
         window.saveAsDraft = saveAsDraft;
         window.openUserSearchModal = openUserSearchModal;
+        window.showUserProfile = showUserProfile;
         
         console.log('✅ All messaging functions exposed globally');
         
