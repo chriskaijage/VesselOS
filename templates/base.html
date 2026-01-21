@@ -2763,7 +2763,7 @@ function showFilePreview(fileUrl, fileName) {
 <body>
     {% if request.endpoint != 'login' and request.endpoint != 'register' and request.endpoint != 'maintenance_request' %}
     <!-- Floating Messaging Toggle Button -->
-    <button class="messaging-toggle-btn no-print" id="messagingToggleBtn" onclick="toggleMessagingPanel()">
+    <button class="messaging-toggle-btn no-print" id="messagingToggleBtn" onclick="window.toggleMessagingPanel ? window.toggleMessagingPanel() : console.error('Function not yet initialized')">
         <i class="fas fa-comments"></i>
         <span class="label-text">Messaging</span>
         <span class="badge bg-danger rounded-pill mt-2" id="floatingUnreadCount" style="display: none; transform: rotate(0deg);">0</span>
@@ -3900,8 +3900,6 @@ function showFilePreview(fileUrl, fileName) {
             });
     }
 
-    let threadRefreshInterval = null;
-    
     // Helper function to check if file is an image
     function isImageFile(filename) {
         const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];

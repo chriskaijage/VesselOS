@@ -7471,6 +7471,215 @@ def api_manager_user_details(user_id):
     finally:
         conn.close()
 
+# ==================== MISSING API ROUTES FOR DASHBOARDS ====================
+
+@app.route('/api/manager/pending-maintenance')
+@login_required
+@role_required(['port_engineer'])
+def api_manager_pending_maintenance():
+    """Get pending maintenance requests."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("""
+            SELECT id, request_number, title, status, priority, created_by, 
+                   created_at, scheduled_date
+            FROM maintenance_requests
+            WHERE status IN ('pending', 'approved')
+            ORDER BY created_at DESC
+            LIMIT 10
+        """)
+        
+        requests = [dict(row) for row in c.fetchall()]
+        return jsonify({'success': True, 'data': requests})
+    except Exception as e:
+        app.logger.error(f"Error getting pending maintenance: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/api/manager/emergency-requests')
+@login_required
+@role_required(['port_engineer'])
+def api_manager_emergency_requests():
+    """Get emergency maintenance requests."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("""
+            SELECT id, request_number, title, status, priority, created_by,
+                   created_at, scheduled_date
+            FROM maintenance_requests
+            WHERE priority = 'emergency' AND status IN ('pending', 'approved')
+            ORDER BY created_at DESC
+            LIMIT 10
+        """)
+        
+        requests = [dict(row) for row in c.fetchall()]
+        return jsonify({'success': True, 'data': requests})
+    except Exception as e:
+        app.logger.error(f"Error getting emergency requests: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/api/manager/extend-officer-access', methods=['POST'])
+@login_required
+@role_required(['port_engineer'])
+def api_manager_extend_officer_access():
+    """Extend quality officer access period."""
+    try:
+        data = request.get_json()
+        officer_id = data.get('officer_id')
+        days = data.get('days', 30)
+        
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Update officer access expiry
+        new_expiry = datetime.utcnow() + timedelta(days=days)
+        c.execute("""
+            UPDATE users
+            SET access_expiry = ?
+            WHERE user_id = ? AND role = 'quality_officer'
+        """, (new_expiry.isoformat(), officer_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': f'Access extended by {days} days'})
+    except Exception as e:
+        app.logger.error(f"Error extending officer access: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/manager/deactivate-officer', methods=['POST'])
+@login_required
+@role_required(['port_engineer'])
+def api_manager_deactivate_officer():
+    """Deactivate quality officer access."""
+    try:
+        data = request.get_json()
+        officer_id = data.get('officer_id')
+        
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        c.execute("""
+            UPDATE users
+            SET is_active = 0, access_expiry = ?
+            WHERE user_id = ? AND role = 'quality_officer'
+        """, (datetime.utcnow().isoformat(), officer_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Officer access deactivated'})
+    except Exception as e:
+        app.logger.error(f"Error deactivating officer: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/manager/notify-emergency-team', methods=['POST'])
+@login_required
+@role_required(['port_engineer'])
+def api_manager_notify_emergency_team():
+    """Send emergency notification to team."""
+    try:
+        data = request.get_json()
+        message = data.get('message', '')
+        
+        # Store notification in database
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        notification = {
+            'title': 'EMERGENCY ALERT',
+            'message': message,
+            'type': 'emergency',
+            'created_at': datetime.utcnow().isoformat()
+        }
+        
+        # Insert notification for all port engineer/captain users
+        c.execute("""
+            INSERT INTO notifications (user_id, title, message, type, created_at)
+            SELECT user_id, ?, ?, ?, ?
+            FROM users
+            WHERE role IN ('port_engineer', 'captain', 'chief_engineer')
+        """, (notification['title'], notification['message'], notification['type'], 
+              notification['created_at']))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Emergency notification sent'})
+    except Exception as e:
+        app.logger.error(f"Error sending emergency notification: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/manager/generate-system-report')
+@login_required
+@role_required(['port_engineer'])
+def api_manager_generate_system_report():
+    """Generate system activity report."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Get system statistics
+        c.execute("SELECT COUNT(*) as total_users FROM users WHERE is_active = 1")
+        active_users = c.fetchone()['total_users']
+        
+        c.execute("SELECT COUNT(*) as total_messages FROM messages")
+        total_messages = c.fetchone()['total_messages']
+        
+        c.execute("SELECT COUNT(*) as total_requests FROM maintenance_requests")
+        total_requests = c.fetchone()['total_requests']
+        
+        report = {
+            'generated_at': datetime.utcnow().isoformat(),
+            'active_users': active_users,
+            'total_messages': total_messages,
+            'total_maintenance_requests': total_requests
+        }
+        
+        conn.close()
+        return jsonify({'success': True, 'report': report})
+    except Exception as e:
+        app.logger.error(f"Error generating system report: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/messaging/stats')
+@login_required
+def api_messaging_stats():
+    """Get messaging statistics for dashboard."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Get unread count
+        c.execute("""
+            SELECT COUNT(*) as unread_count FROM messages
+            WHERE recipient_id = ? AND is_read = 0
+        """, (current_user.id,))
+        unread = c.fetchone()['unread_count']
+        
+        # Get total messages
+        c.execute("""
+            SELECT COUNT(*) as total_messages FROM messages
+            WHERE recipient_id = ? OR sender_id = ?
+        """, (current_user.id, current_user.id))
+        total = c.fetchone()['total_messages']
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'unread_count': unread,
+            'total_messages': total
+        })
+    except Exception as e:
+        app.logger.error(f"Error getting messaging stats: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 # ==================== ENHANCED NOTIFICATION SYSTEM ====================
 
 @app.route('/api/notifications')
