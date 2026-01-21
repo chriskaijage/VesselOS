@@ -2828,14 +2828,14 @@ function showFilePreview(fileUrl, fileName) {
     
     <!-- Sidebar Navigation -->
     {% if request.endpoint != 'login' and request.endpoint != 'register' and request.endpoint != 'maintenance_request' %}
-    <div class="sidebar-overlay no-print" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar-overlay no-print" id="sidebarOverlay" onclick="window.toggleSidebar && window.toggleSidebar()"></div>
     <aside class="sidebar no-print" id="sidebar">
         <div class="sidebar-header">
             <a class="sidebar-brand" href="{{ url_for('dashboard') }}">
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Marine Service Center Logo" class="navbar-logo">
                 <span>Marine Service Center</span>
             </a>
-            <button class="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Toggle Sidebar">
+            <button class="sidebar-toggle-btn" onclick="window.toggleSidebarCollapse && window.toggleSidebarCollapse()" title="Toggle Sidebar">
                 <i class="fas fa-chevron-left" id="sidebarToggleIcon"></i>
             </button>
         </div>
@@ -3324,6 +3324,7 @@ function showFilePreview(fileUrl, fileName) {
     window.openUserSearchModal = function() { console.warn('openUserSearchModal called before initialization'); };
     window.showUserProfile = function(userId) { console.warn('showUserProfile called before initialization'); };
     window.toggleSidebar = function() { console.warn('toggleSidebar called before initialization'); };
+    window.toggleSidebarCollapse = function() { console.warn('toggleSidebarCollapse called before initialization'); };
     window.setTheme = function(theme) { console.warn('setTheme called before initialization'); };
     
     // ==================== GLOBAL BUTTON FUNCTION STUBS ====================
@@ -5293,6 +5294,7 @@ function showFilePreview(fileUrl, fileName) {
         
         // Expose sidebar and navigation functions to window object for global access
         window.toggleSidebar = toggleSidebar;
+        window.toggleSidebarCollapse = toggleSidebarCollapse;
         window.setTheme = setTheme;
         
         // Image preview functionality
