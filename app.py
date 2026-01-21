@@ -38,7 +38,7 @@ except ImportError:
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'marine-service-secure-key-2025-v2')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'marine-service-secure-key-2026-v2')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'zip', 'rar'}
@@ -8903,7 +8903,7 @@ def api_emergency_authorize():
             return jsonify({'success': False, 'error': 'Missing required fields'})
 
         # In a real system, validate the authorization code
-        if auth_code != "MARINE2025":
+        if auth_code != "MARINE2026":
             return jsonify({'success': False, 'error': 'Invalid authorization code'})
 
         conn = get_db_connection()
@@ -9321,7 +9321,7 @@ def ensure_port_engineer_account(c, conn):
         else:
             # Create new account
             pe_id = 'PE001'
-            hashed_password = generate_password_hash('Admin@2025')
+            hashed_password = generate_password_hash('Admin@2026')
             c.execute('''
                 INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, phone, department, location, is_approved, is_active)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -9341,7 +9341,7 @@ def ensure_port_engineer_account(c, conn):
             print(f"   Approved: {'Yes' if result['is_approved'] else 'No'}")
             print("\n✅ You can now log in with:")
             print("   Email: port_engineer@marine.com")
-            print("   Password: Admin@2025")
+            print("   Password: Admin@2026")
         
     except Exception as e:
         print(f"❌ Error ensuring port engineer account: {e}")
@@ -10213,7 +10213,7 @@ def init_db():
         # Always update demo accounts to correct credentials and status
         # DMPO HQ
         qo_email = 'dmpo@marine.com'
-        qo_password = generate_password_hash('Quality@2025')
+        qo_password = generate_password_hash('Quality@2026')
         end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
         c.execute("SELECT user_id FROM users WHERE email = ?", (qo_email,))
         qo_user = c.fetchone()
@@ -10222,11 +10222,11 @@ def init_db():
         else:
             c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'DMPO', 'HQ', 'DMPO HQ', 'quality_officer', end_date, 1, 1))
         conn.commit()
-        print("✅ DMPO HQ ensured: dmpo@marine.com / Quality@2025")
+        print("✅ DMPO HQ ensured: dmpo@marine.com / Quality@2026")
         
         # Always update Harbour Master
         hm_email = 'harbour_master@marine.com'
-        hm_password = generate_password_hash('Maintenance@2025')
+        hm_password = generate_password_hash('Maintenance@2026')
         c.execute("SELECT user_id FROM users WHERE email = ?", (hm_email,))
         hm_user = c.fetchone()
         if hm_user:
@@ -10234,7 +10234,7 @@ def init_db():
         else:
             c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('HM001', hm_email, hm_password, 'Robert', 'Wilson', 'Harbour Master', 'harbour_master', 1, 1))
         conn.commit()
-        print("✅ Harbour Master ensured: harbour_master@marine.com / Maintenance@2025")
+        print("✅ Harbour Master ensured: harbour_master@marine.com / Maintenance@2026")
         
         # Create a sample emergency request
         c.execute("SELECT COUNT(*) FROM emergency_requests")
@@ -10264,11 +10264,11 @@ def init_db():
         print("   Role: Full system access")
         print("\n👤 Demo Account 2 - DMPO HQ:")
         print("   Email: dmpo@marine.com")
-        print("   Password: Quality@2025")
+        print("   Password: Quality@2026")
         print("   Role: Inspection and compliance")
         print("\n👤 Demo Account 3 - Harbour Master:")
         print("   Email: harbour_master@marine.com")
-        print("   Password: Maintenance@2025")
+        print("   Password: Maintenance@2026")
         print("   Role: Port operations management")
         print("="*70 + "\n")
 
@@ -11721,9 +11721,9 @@ def initialize():
         'status': 'success',
         'message': 'Database initialized successfully',
         'demo_accounts': [
-            {'email': 'port_engineer@marine.com', 'password': 'Admin@2025', 'role': 'Port Engineer'},
-            {'email': 'dmpo@marine.com', 'password': 'Quality@2025', 'role': 'DMPO HQ'},
-            {'email': 'harbour_master@marine.com', 'password': 'Maintenance@2025', 'role': 'Harbour Master'}
+            {'email': 'port_engineer@marine.com', 'password': 'Admin@2026', 'role': 'Port Engineer'},
+            {'email': 'dmpo@marine.com', 'password': 'Quality@2026', 'role': 'DMPO HQ'},
+            {'email': 'harbour_master@marine.com', 'password': 'Maintenance@2026', 'role': 'Harbour Master'}
         ]
     }), 200
 
@@ -12083,9 +12083,9 @@ def export_audit_data():
     print("   • Conversations:  http://localhost:5000/api/messaging/conversations")
     print("   • Attachment DL:  http://localhost:5000/api/messaging/download-attachment/<id>")
     print("\n👥 Default Accounts:")
-    print("   • Port Engineer:  port_engineer@marine.com / Admin@2025")
-    print("   • DMPO HQ: dmpo@marine.com / Quality@2025")
-    print("   • Harbour Master: harbour_master@marine.com / Maintenance@2025")
+    print("   • Port Engineer:  port_engineer@marine.com / Admin@2026")
+    print("   • DMPO HQ: dmpo@marine.com / Quality@2026")
+    print("   • Harbour Master: harbour_master@marine.com / Maintenance@2026")
     print("\n📧 Messaging Rules:")
     print("   • Port Engineers & Harbour Masters can send")
     print("   • DMPO HQ cannot send (receive only)")
