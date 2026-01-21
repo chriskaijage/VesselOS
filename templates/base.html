@@ -3513,11 +3513,6 @@ function showFilePreview(fileUrl, fileName) {
                 </div>
                 
                 <div class="mb-3">
-                    <label class="form-label">Subject</label>
-                    <input type="text" class="form-control" id="quickSubject" placeholder="Message subject">
-                </div>
-                
-                <div class="mb-3">
                     <label class="form-label">Message</label>
                     <textarea class="form-control" id="quickMessage" rows="4" placeholder="Type your message here..."></textarea>
                 </div>
@@ -4089,21 +4084,25 @@ function showFilePreview(fileUrl, fileName) {
 
     function sendQuickMessage() {
         const toField = document.getElementById('quickTo');
+        if (!toField) {
+            showAlert('danger', 'Form error: cannot find recipient field');
+            return;
+        }
+        
         const userId = toField.dataset.userId;
-        const userName = toField.value;
-        const subject = document.getElementById('quickSubject').value;
+        const userName = toField.value || '';
         const message = document.getElementById('quickMessage').value;
         const priority = document.getElementById('quickPriority').value;
         
-        console.log('📧 Preparing to send message:', { userId, userName, subject });
+        console.log('📧 Preparing to send message:', { userId, userName });
         
-        if (!userId && !userName.includes('@')) {
+        if (!userId && !userName.trim()) {
             showAlert('warning', 'Please select a user from the dropdown or enter a valid email');
             return;
         }
         
-        if (!subject.trim()) {
-            showAlert('warning', 'Please enter a subject');
+        if (!userId && !userName.includes('@')) {
+            showAlert('warning', 'Please enter a valid email address');
             return;
         }
         
@@ -4121,6 +4120,9 @@ function showFilePreview(fileUrl, fileName) {
             formData.append('email', userName);
             console.log('Sending to email:', userName);
         }
+        
+        // Auto-generate subject from first 50 chars of message if needed
+        const subject = `Message from ${document.querySelector('.nav-link.dropdown-toggle:first-child')?.textContent || 'User'}`;
         formData.append('subject', subject);
         formData.append('message', message);
         formData.append('priority', priority);
