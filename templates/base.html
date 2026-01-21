@@ -3316,6 +3316,12 @@ function showFilePreview(fileUrl, fileName) {
     window.openMessageDetail = function(id) { console.warn('openMessageDetail called before initialization'); };
     window.loadMessagingTab = function(tab) { console.warn('loadMessagingTab called before initialization'); };
     window.loadUnreadCount = function() { console.warn('loadUnreadCount called before initialization'); };
+    window.handleAttachmentUpload = function(input, context) { console.warn('handleAttachmentUpload called before initialization'); };
+    window.removeAttachment = function(index, context) { console.warn('removeAttachment called before initialization'); };
+    window.showEmojiPicker = function() { console.warn('showEmojiPicker called before initialization'); };
+    window.quickSearchUsers = function(query) { console.warn('quickSearchUsers called before initialization'); };
+    window.saveAsDraft = function() { console.warn('saveAsDraft called before initialization'); };
+    window.openUserSearchModal = function() { console.warn('openUserSearchModal called before initialization'); };
     window.toggleSidebar = function() { console.warn('toggleSidebar called before initialization'); };
     window.setTheme = function(theme) { console.warn('setTheme called before initialization'); };
     
@@ -4592,6 +4598,12 @@ function showFilePreview(fileUrl, fileName) {
         window.openMessageDetail = openMessageDetail;
         window.loadMessagingTab = loadMessagingTab;
         window.loadUnreadCount = loadUnreadCount;
+        window.handleAttachmentUpload = handleAttachmentUpload;
+        window.removeAttachment = removeAttachment;
+        window.showEmojiPicker = showEmojiPicker;
+        window.quickSearchUsers = quickSearchUsers;
+        window.saveAsDraft = saveAsDraft;
+        window.openUserSearchModal = openUserSearchModal;
         
         console.log('✅ All messaging functions exposed globally');
         
