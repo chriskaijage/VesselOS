@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 MARINE SERVICE CENTER EXPERT SYSTEM - INTERNATIONAL STANDARD
 Enhanced with Ship Maintenance Requests, Advanced Reporting, and Full Role Management
 """
 
 import os
+import sys
+import io
+
+# Ensure UTF-8 encoding for output on Windows
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 import json
 import sqlite3
 import random
@@ -614,7 +621,7 @@ def send_notification_email(user_email, user_name, title, message, action_url="#
         <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                 <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #007acc; padding-bottom: 20px;">
-                    <h2 style="color: #333; margin: 0;">🚢 Marine Service Center</h2>
+                    <h2 style="color: #333; margin: 0;">[SHIP] Marine Service Center</h2>
                     <p style="color: #666; margin: 5px 0 0 0;">International Standard System</p>
                 </div>
                 
@@ -644,7 +651,7 @@ def send_notification_email(user_email, user_name, title, message, action_url="#
     
     plain_text = f"Marine Service Center - {title}\n\n{message}\n\nFor more details, visit: {action_url}"
     
-    return send_email(user_email, f"🚢 {title}", html_body, plain_text)
+    return send_email(user_email, f"[SHIP] {title}", html_body, plain_text)
 
 # ==================== MAINTENANCE REQUEST WORKFLOW HELPERS ====================
 
@@ -5023,7 +5030,7 @@ def api_messaging_send():
             conn.commit()
 
             log_activity('message_sent', f'Sent {message_type} to {len(recipients)} recipients')
-            print(f"✅ MESSAGE SENT: {base_message_id} to {len(recipients)} recipients")
+            print(f"[OK] MESSAGE SENT: {base_message_id} to {len(recipients)} recipients")
             app.logger.info(f"Message sent successfully: {base_message_id} to {len(recipients)} recipients")
 
             return jsonify({
@@ -9717,7 +9724,7 @@ def ensure_port_engineer_account(c, conn):
                 WHERE email = 'port_engineer@marine.com'
             ''')
             conn.commit()
-            print(f"✅ Port engineer account updated: {user_id}")
+            print(f"[OK] Port engineer account updated: {user_id}")
         else:
             # Create new account
             pe_id = 'PE001'
@@ -9727,24 +9734,24 @@ def ensure_port_engineer_account(c, conn):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (pe_id, 'port_engineer@marine.com', hashed_password, 'John', 'Smith', 'Port Engineer', 'port_engineer', '+1234567890', 'Management', 'Headquarters', 1, 1))
             conn.commit()
-            print("✅ Port engineer account created successfully!")
+            print("[OK] Port engineer account created successfully!")
         
         # Verify the account
         c.execute("SELECT user_id, email, role, is_active, is_approved FROM users WHERE email = 'port_engineer@marine.com'")
         result = c.fetchone()
         if result:
-            print("\n📋 Account Details:")
+            print("\n[INFO] Account Details:")
             print(f"   User ID: {result['user_id']}")
             print(f"   Email: {result['email']}")
             print(f"   Role: {result['role']}")
             print(f"   Active: {'Yes' if result['is_active'] else 'No'}")
             print(f"   Approved: {'Yes' if result['is_approved'] else 'No'}")
-            print("\n✅ You can now log in with:")
+            print("\n[OK] You can now log in with:")
             print("   Email: port_engineer@marine.com")
             print("   Password: Engineer@2026")
         
     except Exception as e:
-        print(f"❌ Error ensuring port engineer account: {e}")
+        print(f"[ERROR] Error ensuring port engineer account: {e}")
         import traceback
         traceback.print_exc()
 
@@ -9783,11 +9790,11 @@ def init_db():
 
         if 'signature_path' not in columns:
             c.execute("ALTER TABLE users ADD COLUMN signature_path TEXT")
-            print("✅ Added signature_path column to users table")
+            print("[OK] Added signature_path column to users table")
         
         if 'is_online' not in columns:
             c.execute("ALTER TABLE users ADD COLUMN is_online INTEGER DEFAULT 0")
-            print("✅ Added is_online column to users table")
+            print("[OK] Added is_online column to users table")
 
         # Create activity_logs table
         c.execute('''
@@ -9910,7 +9917,7 @@ def init_db():
                     FOREIGN KEY (evaluator_id) REFERENCES users (user_id)
                 )
             ''')
-            print("✅ Created service_evaluations table with correct structure")
+            print("[OK] Created service_evaluations table with correct structure")
         elif 'evaluator_id' not in columns:
             # Drop and recreate if structure is wrong
             c.execute("DROP TABLE IF EXISTS service_evaluations")
@@ -9926,7 +9933,7 @@ def init_db():
                     FOREIGN KEY (evaluator_id) REFERENCES users (user_id)
                 )
             ''')
-            print("✅ Recreated service_evaluations table with correct structure")
+            print("[OK] Recreated service_evaluations table with correct structure")
         
         # Create notifications table
         c.execute('''
@@ -10631,7 +10638,7 @@ def init_db():
             pass
 
         conn.commit()
-        print("✅ Database tables initialized successfully")
+        print("[OK] Database tables initialized successfully")
         
         # Ensure port engineer account exists and is properly configured
         ensure_port_engineer_account(c, conn)
@@ -10648,7 +10655,7 @@ def init_db():
         else:
             c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'DMPO', 'HQ', 'DMPO HQ', 'quality_officer', end_date, 1, 1))
         conn.commit()
-        print("✅ DMPO HQ ensured: dmpo@marine.com / Quality@2026")
+        print("[OK] DMPO HQ ensured: dmpo@marine.com / Quality@2026")
         
         # Always update Harbour Master
         hm_email = 'harbour_master@marine.com'
@@ -10660,7 +10667,7 @@ def init_db():
         else:
             c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('HM001', hm_email, hm_password, 'Robert', 'Wilson', 'Harbour Master', 'harbour_master', 1, 1))
         conn.commit()
-        print("✅ Harbour Master ensured: harbour_master@marine.com / Harbour@2026")
+        print("[OK] Harbour Master ensured: harbour_master@marine.com / Harbour@2026")
         
         # Create a sample emergency request
         c.execute("SELECT COUNT(*) FROM emergency_requests")
@@ -10676,30 +10683,30 @@ def init_db():
                   'Dispatch rescue team, send tugboat, evacuate if necessary',
                   'Tugboat, rescue team, emergency supplies', 'PE001', 'pending'))
             conn.commit()
-            print("✅ Sample emergency request created")
+            print("[OK] Sample emergency request created")
         
         conn.commit()
         
         # Print login information
         print("\n" + "="*70)
-        print("✅ ALL DEMO ACCOUNTS READY FOR LOGIN")
+        print("[OK] ALL DEMO ACCOUNTS READY FOR LOGIN")
         print("="*70)
-        print("\n👤 Demo Account 1 - Port Engineer (Admin):")
+        print("\n[ACCOUNT] Demo Account 1 - Port Engineer (Admin):")
         print("   Email: port_engineer@marine.com")
         print("   Password: Admin@2025")
         print("   Role: Full system access")
-        print("\n👤 Demo Account 2 - DMPO HQ:")
+        print("\n[ACCOUNT] Demo Account 2 - DMPO HQ:")
         print("   Email: dmpo@marine.com")
         print("   Password: Quality@2026")
         print("   Role: Inspection and compliance")
-        print("\n👤 Demo Account 3 - Harbour Master:")
+        print("\n[ACCOUNT] Demo Account 3 - Harbour Master:")
         print("   Email: harbour_master@marine.com")
         print("   Password: Harbour@2026")
         print("   Role: Port operations management")
         print("="*70 + "\n")
 
     except Exception as e:
-        print(f"❌ Error initializing database: {e}")
+        print(f"[ERROR] Error initializing database: {e}")
     finally:
         conn.close()
 
@@ -12170,7 +12177,7 @@ def before_first_request_func():
                 conn.close()
             app.db_initialized = True
         except Exception as e:
-            print(f"⚠️  Warning during database check: {e}")
+            print(f"[WARNING] Warning during database check: {e}")
             app.db_initialized = True
 
 # ==================== MAIN APPLICATION ====================
@@ -12180,10 +12187,68 @@ if __name__ == '__main__':
     init_db()
     
     print("\n" + "="*70)
-    print("🚢 MARINE SERVICE CENTER - INTERNATIONAL STANDARD")
+    print("[SHIP] MARINE SERVICE CENTER - INTERNATIONAL STANDARD")
     print("="*70)
-    print("✅ System Initialized")
-    print("📊 Database: SQLite with dynamic schema management")
+    print("[OK] System Initialized")
+    print("[DATABASE] Database: SQLite with dynamic schema management")
+    
+    print("[FILE] File Upload: Up to 100MB supported")
+    print("[REPORTS] Reports: CSV generation")
+    print("[SECURITY] Role-based access control")
+    print("[PROFILE] Profile System: Fully functional with picture upload")
+    print("[SIGNATURE] Digital Signature: Upload and drawing capability")
+    print("[DOCUMENTS] Document Management: View, Download, Rename, Delete")
+    print("[MESSAGING] Messaging System: Complete with attachments and replies")
+    print("[SENT] Sent Messages: New feature to view sent messages")
+    print("[THREADS] Threads View: Conversation threads functionality")
+    print("[CONVERSATIONS] Conversations: Floating panel conversation support")
+    print("[QUICK] Quick Send: Quick message sending from floating panel")
+    print("[REPLY] Quick Reply: Quick replies from conversation threads")
+    print("[SEARCH] User Search: Search users for messaging")
+    print("[PRINT] Print Profile: Professional print functionality")
+    print("\n[FIXES] FIXES APPLIED:")
+    print("   [OK] Fixed Network error in messaging system")
+    print("   [OK] Added Threads functionality with /api/messaging/threads")
+    print("   [OK] Added Conversations for floating panel")
+    print("   [OK] Fixed sent messages query with proper grouping")
+    print("   [OK] Added messaging-center route")
+    print("   [OK] Fixed attachment handling with JSON storage")
+    print("   [OK] Improved search functionality in inbox")
+    print("   [OK] Added conversation thread viewing")
+    print("   [OK] ADDED MISSING ROUTES FOR FLOATING PANEL:")
+    print("       - /api/messaging/conversations")
+    print("       - /api/messaging/conversation/<thread_id>")
+    print("       - /api/messaging/quick-send")
+    print("       - /api/messaging/quick-reply")
+    print("       - /api/messaging/search-users")
+    print("\n[ENDPOINTS] Access Points:")
+    print("   [URL] Login:          http://localhost:5000/login")
+    print("   [URL] Register:       http://localhost:5000/register")
+    print("   [URL] Profile:        http://localhost:5000/profile")
+    print("   [URL] Dashboard:      http://localhost:5000/dashboard")
+    print("   [URL] Messaging:      http://localhost:5000/messaging-center")
+    print("   [URL] Monitor:        http://localhost:5000/monitor")
+    print("   [URL] Sent Messages:  http://localhost:5000/api/messaging/sent")
+    print("   [URL] Threads:        http://localhost:5000/api/messaging/threads")
+    print("   [URL] Conversations:  http://localhost:5000/api/messaging/conversations")
+    print("   [URL] Attachment DL:  http://localhost:5000/api/messaging/download-attachment/<id>")
+    print("\n[ACCOUNTS] Default Accounts:")
+    print("   [LOGIN] Port Engineer:  port_engineer@marine.com / Engineer@2026")
+    print("   [LOGIN] DMPO HQ: dmpo@marine.com / Quality@2026")
+    print("   [LOGIN] Harbour Master: harbour_master@marine.com / Harbour@2026")
+    print("\n[RULES] Messaging Rules:")
+    print("   [RULE] Port Engineers & Harbour Masters can send")
+    print("   [RULE] DMPO HQ cannot send (receive only)")
+    print("   [RULE] File attachments up to 20MB")
+    print("   [RULE] Replies allowed only for 'Message' type")
+    print("   [RULE] Sent messages can be filtered and searched")
+    print("   [RULE] Threads show conversation history")
+    print("   [RULE] Floating panel has quick send and reply")
+    print("   [RULE] Conversations load quickly in floating panel")
+    print("="*70 + "\n")
+    
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
 # ==================== REAL-TIME MONITORING & AUDIT ROUTES ====================
 
 @app.route('/api/realtime/user-activity/<user_id>')
@@ -12467,60 +12532,3 @@ def export_audit_data():
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         conn.close()
-
-    print("📁 File Upload: Up to 100MB supported")
-    print("📈 Reports: CSV generation")
-    print("🔐 Security: Role-based access control")
-    print("👤 Profile System: Fully functional with picture upload")
-    print("📝 Digital Signature: Upload and drawing capability")
-    print("📄 Document Management: View, Download, Rename, Delete")
-    print("📧 Messaging System: Complete with attachments and replies")
-    print("📨 Sent Messages: New feature to view sent messages")
-    print("📱 Threads View: Conversation threads functionality")
-    print("📱 Conversations: Floating panel conversation support")
-    print("📨 Quick Send: Quick message sending from floating panel")
-    print("↩️  Quick Reply: Quick replies from conversation threads")
-    print("🔍 User Search: Search users for messaging")
-    print("🖨️  Print Profile: Professional print functionality")
-    print("\n🎯 FIXES APPLIED:")
-    print("   • ✅ Fixed Network error in messaging system")
-    print("   • ✅ Added Threads functionality with /api/messaging/threads")
-    print("   • ✅ Added Conversations for floating panel")
-    print("   • ✅ Fixed sent messages query with proper grouping")
-    print("   • ✅ Added messaging-center route")
-    print("   • ✅ Fixed attachment handling with JSON storage")
-    print("   • ✅ Improved search functionality in inbox")
-    print("   • ✅ Added conversation thread viewing")
-    print("   • ✅ ADDED MISSING ROUTES FOR FLOATING PANEL:")
-    print("       - /api/messaging/conversations")
-    print("       - /api/messaging/conversation/<thread_id>")
-    print("       - /api/messaging/quick-send")
-    print("       - /api/messaging/quick-reply")
-    print("       - /api/messaging/search-users")
-    print("\n🌐 Access Points:")
-    print("   • Login:          http://localhost:5000/login")
-    print("   • Register:       http://localhost:5000/register")
-    print("   • Profile:        http://localhost:5000/profile")
-    print("   • Dashboard:      http://localhost:5000/dashboard")
-    print("   • Messaging:      http://localhost:5000/messaging-center")
-    print("   • Monitor:        http://localhost:5000/monitor")
-    print("   • Sent Messages:  http://localhost:5000/api/messaging/sent")
-    print("   • Threads:        http://localhost:5000/api/messaging/threads")
-    print("   • Conversations:  http://localhost:5000/api/messaging/conversations")
-    print("   • Attachment DL:  http://localhost:5000/api/messaging/download-attachment/<id>")
-    print("\n👥 Default Accounts:")
-    print("   • Port Engineer:  port_engineer@marine.com / Engineer@2026")
-    print("   • DMPO HQ: dmpo@marine.com / Quality@2026")
-    print("   • Harbour Master: harbour_master@marine.com / Harbour@2026")
-    print("\n📧 Messaging Rules:")
-    print("   • Port Engineers & Harbour Masters can send")
-    print("   • DMPO HQ cannot send (receive only)")
-    print("   • File attachments up to 20MB")
-    print("   • Replies allowed only for 'Message' type")
-    print("   • Sent messages can be filtered and searched")
-    print("   • Threads show conversation history")
-    print("   • Floating panel has quick send and reply")
-    print("   • Conversations load quickly in floating panel")
-    print("="*70 + "\n")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
