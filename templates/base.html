@@ -3037,7 +3037,7 @@ function showFilePreview(fileUrl, fileName) {
     
     <!-- Top Navigation Bar -->
     <nav class="top-navbar no-print">
-        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="window.toggleSidebar ? window.toggleSidebar() : console.error('toggleSidebar not initialized')">
             <i class="fas fa-bars"></i>
         </button>
         
@@ -3316,6 +3316,8 @@ function showFilePreview(fileUrl, fileName) {
     window.openMessageDetail = function(id) { console.warn('openMessageDetail called before initialization'); };
     window.loadMessagingTab = function(tab) { console.warn('loadMessagingTab called before initialization'); };
     window.loadUnreadCount = function() { console.warn('loadUnreadCount called before initialization'); };
+    window.toggleSidebar = function() { console.warn('toggleSidebar called before initialization'); };
+    window.setTheme = function(theme) { console.warn('setTheme called before initialization'); };
 
     // ==================== FLOATING PANEL FUNCTIONS ====================
 
@@ -5229,6 +5231,11 @@ function showFilePreview(fileUrl, fileName) {
         loadTheme();
         // Load sidebar state
         loadSidebarState();
+        
+        // Expose sidebar and navigation functions to window object for global access
+        window.toggleSidebar = toggleSidebar;
+        window.setTheme = setTheme;
+        
         // Image preview functionality
         const profilePicFile = document.getElementById('profilePicFile');
         if (profilePicFile) {
