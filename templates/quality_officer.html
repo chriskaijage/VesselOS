@@ -483,10 +483,10 @@ function updateEvaluationsTable(evaluations) {
                     <td><span class="badge bg-${ratingClass}">${eval.sqi_rating}</span></td>
                     <td><span class="badge bg-${priorityBadge}">${eval.priority}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewEvaluationDetails('${eval.request_id || eval.evaluation_id}')">
+                        <button class="btn btn-sm btn-outline-primary" onclick="window.viewEvaluationDetails && window.viewEvaluationDetails('${eval.request_id || eval.evaluation_id}')">
                             <i class="fas fa-eye"></i> View
                         </button>
-                        <button class="btn btn-sm btn-outline-success ms-1" onclick="editEvaluation('${eval.request_id || eval.evaluation_id}')">
+                        <button class="btn btn-sm btn-outline-success ms-1" onclick="window.editEvaluation && window.editEvaluation('${eval.request_id || eval.evaluation_id}')">
                             <i class="fas fa-edit"></i> Edit
                         </button>
                     </td>
@@ -532,10 +532,10 @@ function loadSampleEvaluations() {
                 <td><span class="badge bg-${ratingClass}">${eval.sqi_rating}</span></td>
                 <td><span class="badge bg-${priorityBadge}">${eval.priority}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewEvaluationDetails('${eval.evaluation_id}')">
+                    <button class="btn btn-sm btn-outline-primary" onclick="window.viewEvaluationDetails && window.viewEvaluationDetails('${eval.evaluation_id}')">
                         <i class="fas fa-eye"></i> View
                     </button>
-                    <button class="btn btn-sm btn-outline-success ms-1" onclick="editEvaluation('${eval.evaluation_id}')">
+                    <button class="btn btn-sm btn-outline-success ms-1" onclick="window.editEvaluation && window.editEvaluation('${eval.evaluation_id}')">
                         <i class="fas fa-edit"></i> Edit
                     </button>
                 </td>

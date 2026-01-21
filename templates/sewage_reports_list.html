@@ -118,7 +118,7 @@ function displayReports(reports) {
                 <td><small>${report.disposal_method ? report.disposal_method.replace(/_/g, ' ') : 'N/A'}</small></td>
                 <td>${report.officer_name || 'N/A'}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-warning" onclick="viewReport('${report.report_id}')">
+                    <button class="btn btn-sm btn-outline-warning" onclick="window.viewReport && window.viewReport('${report.report_id}')">
                         <i class="fas fa-eye"></i>
                     </button>
                 </td>

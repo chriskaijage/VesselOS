@@ -755,7 +755,7 @@
                                                 <small class="text-muted">Create a detailed PDF report of your profile</small>
                                             </div>
                                         </div>
-                                        <button class="btn btn-sm w-100 mt-2" onclick="generateProfileReport()" style="background: var(--success-green); color: white; border: none;">
+                                        <button class="btn btn-sm w-100 mt-2" onclick="window.generateProfileReport && window.generateProfileReport()" style="background: var(--success-green); color: white; border: none;">
                                             <i class="fas fa-download me-1"></i> Download PDF
                                         </button>
                                     </div>
@@ -771,7 +771,7 @@
                                                 <small class="text-muted">Download all your personal data in JSON format</small>
                                             </div>
                                         </div>
-                                        <button class="btn btn-sm w-100 mt-2" onclick="downloadPersonalData()" style="background: var(--info-blue); color: white; border: none;">
+                                        <button class="btn btn-sm w-100 mt-2" onclick="window.downloadPersonalData && window.downloadPersonalData()" style="background: var(--info-blue); color: white; border: none;">
                                             <i class="fas fa-file-export me-1"></i> Export Data
                                         </button>
                                     </div>
@@ -787,7 +787,7 @@
                                                 <small class="text-muted">Request permanent deletion of your account</small>
                                             </div>
                                         </div>
-                                        <button class="btn btn-sm w-100 mt-2" onclick="requestAccountDeletion()" style="background: var(--danger-red); color: white; border: none;">
+                                        <button class="btn btn-sm w-100 mt-2" onclick="window.requestAccountDeletion && window.requestAccountDeletion()" style="background: var(--danger-red); color: white; border: none;">
                                             <i class="fas fa-trash me-1"></i> Request Deletion
                                         </button>
                                     </div>

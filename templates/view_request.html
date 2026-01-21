@@ -1217,7 +1217,7 @@ function displayWorkflowActions(request) {
     // Show different actions based on workflow status and user role
     if (workflowStatus === 'submitted' && userRole === 'port_engineer') {
         actionsHTML += `
-            <button class="btn btn-primary btn-sm" onclick="approveRequest('${request.request_id}')">
+            <button class="btn btn-primary btn-sm" onclick="window.approveRequest && window.approveRequest('${request.request_id}')">
                 <i class="fas fa-check me-1"></i> Approve & Route
             </button>
         `;
@@ -1226,7 +1226,7 @@ function displayWorkflowActions(request) {
     if ((workflowStatus === 'pm_approved' || workflowStatus === 'hm_assigned') && 
         (userRole === 'harbour_master' || userRole === 'port_engineer')) {
         actionsHTML += `
-            <button class="btn btn-warning btn-sm" onclick="executeRequest('${request.request_id}')">
+            <button class="btn btn-warning btn-sm" onclick="window.executeRequest && window.executeRequest('${request.request_id}')">
                 <i class="fas fa-cogs me-1"></i> Start Execution
             </button>
         `;
@@ -1234,7 +1234,7 @@ function displayWorkflowActions(request) {
     
     if (workflowStatus === 'executing' && (userRole === 'harbour_master' || userRole === 'port_engineer')) {
         actionsHTML += `
-            <button class="btn btn-success btn-sm" onclick="resolveRequest('${request.request_id}')">
+            <button class="btn btn-success btn-sm" onclick="window.resolveRequest && window.resolveRequest('${request.request_id}')">
                 <i class="fas fa-check-double me-1"></i> Mark as Resolved
             </button>
         `;
