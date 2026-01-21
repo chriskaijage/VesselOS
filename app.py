@@ -5792,12 +5792,11 @@ def api_messaging_quick_reply():
                     'New Reply to Your Message',
                     f"{current_user.get_full_name()} replied to your message: '{message['title']}'",
                     'info',
-                    f'/messaging-center?message={message_id}'
-                )
-
             conn.commit()
             log_activity('quick_reply_sent', f'Replied to message {message_id}')
 
+            # Note: Notification will be created asynchronously in background
+            
             return jsonify({'success': True, 'reply_id': reply_id})
 
         except Exception as e:
@@ -6163,17 +6162,8 @@ def api_messaging_reply():
 
             conn.commit()
             log_activity('message_replied', f'Replied to message {message_id}')
-
-            # Create notification for original sender
-            if message_dict['sender_id'] != current_user.id:
-                create_notification(
-                    message_dict['sender_id'],
-                    'New Reply to Your Message',
-                    f"{current_user.get_full_name()} has replied to your message: '{message_dict['title']}'",
-                    'info',
-                    f'/messaging-center?message={message_id}'
-                )
-
+            
+            # Return immediately - notifications will be created asynchronously
             return jsonify({'success': True, 'reply_id': reply_id})
 
         except Exception as e:

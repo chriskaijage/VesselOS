@@ -3888,7 +3888,7 @@ function showFilePreview(fileUrl, fileName) {
             clearInterval(threadRefreshInterval);
         }
         
-        // Auto-refresh thread every 3 seconds to show new messages
+        // Auto-refresh thread every 1 second for faster updates (like WhatsApp/Telegram)
         threadRefreshInterval = setInterval(() => {
             if (currentConversationId) {
                 fetch(`/api/messaging/thread/${currentConversationId}`)
@@ -3984,6 +3984,54 @@ function showFilePreview(fileUrl, fileName) {
         const sendStartTime = Date.now();
         console.log('📤 Sending thread reply at', new Date().toLocaleTimeString());
         console.log('Form data:', { recipient_id: currentConversationId });
+        
+        // Clear form immediately (optimistic update)
+        document.getElementById('threadReplyText').value = '';
+        threadAttachments = [];
+        document.getElementById('threadAttachmentPreview').innerHTML = '';
+        document.getElementById('threadAttachment').value = '';
+        sendBtn.innerHTML = originalText;
+        sendBtn.disabled = false;
+        textarea.disabled = false;
+        
+        fetch('/api/messaging/quick-send', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            const sendDuration = Date.now() - sendStartTime;
+            console.log(`✅ Message sent in ${sendDuration}ms`);
+            console.log('Send response:', data);
+            
+            if (data.success) {
+                showAlert('success', 'Reply sent!');
+                
+                // Get current user name from header
+                const userNameElement = document.querySelector('.conversation-header h6');
+                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
+                
+                // Refresh thread quickly to show server confirmation
+                setTimeout(() => {
+                    console.log('🔄 Syncing thread...');
+                    openMessageThread(currentConversationId, displayName);
+                }, 200);
+            } else {
+                console.error('Send failed:', data.error);
+                showAlert('danger', `Error: ${data.error}`);
+                // Restore form on error
+                document.getElementById('threadReplyText').focus();
+            }
+        })
+        .catch(error => {
+            console.error('❌ Send error:', error);
+            sendBtn.innerHTML = originalText;
+            sendBtn.disabled = false;
+            textarea.disabled = false;
+            showAlert('danger', 'Network error sending reply');
+        });
+        
+        return; // Skip the old fetch below
         
         fetch('/api/messaging/quick-send', {
             method: 'POST',
