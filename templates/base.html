@@ -3013,13 +3013,13 @@ function showFilePreview(fileUrl, fileName) {
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="#" onclick="printProfile()">
+                        <a class="dropdown-item" href="#" onclick="window.printProfile && window.printProfile(); return false;">
                             <i class="fas fa-print me-2"></i> Print Profile
                         </a>
                     </li>
                     {% if current_user.role in ['port_engineer', 'harbour_master', 'chief_engineer', 'captain'] %}
                     <li>
-                        <a class="dropdown-item" href="#" onclick="openComposeTab(); return false;">
+                        <a class="dropdown-item" href="#" onclick="window.openComposeTab && window.openComposeTab(); return false;">
                             <i class="fas fa-paper-plane me-2"></i> Send Message
                         </a>
                     </li>
@@ -3081,43 +3081,43 @@ function showFilePreview(fileUrl, fileName) {
                 <li><h6 class="dropdown-header"><i class="fas fa-palette me-2"></i>Color Themes</h6></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="purple" onclick="setTheme('purple'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="purple" onclick="window.setTheme && window.setTheme('purple'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #5a4fcf, #6b5dd8); margin-right: 10px; vertical-align: middle;"></span>
                         Purple (Default)
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="blue-ocean" onclick="setTheme('blue-ocean'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="blue-ocean" onclick="window.setTheme && window.setTheme('blue-ocean'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #2563eb, #1d4ed8); margin-right: 10px; vertical-align: middle;"></span>
                         Blue Ocean
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="teal-marine" onclick="setTheme('teal-marine'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="teal-marine" onclick="window.setTheme && window.setTheme('teal-marine'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #0d9488, #14b8a6); margin-right: 10px; vertical-align: middle;"></span>
                         Teal Marine
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="emerald" onclick="setTheme('emerald'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="emerald" onclick="window.setTheme && window.setTheme('emerald'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #059669, #10b981); margin-right: 10px; vertical-align: middle;"></span>
                         Emerald
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="indigo" onclick="setTheme('indigo'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="indigo" onclick="window.setTheme && window.setTheme('indigo'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #4f46e5, #6366f1); margin-right: 10px; vertical-align: middle;"></span>
                         Indigo
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="rose" onclick="setTheme('rose'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="rose" onclick="window.setTheme && window.setTheme('rose'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #e11d48, #f43f5e); margin-right: 10px; vertical-align: middle;"></span>
                         Rose
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item theme-option" href="#" data-theme="amber" onclick="setTheme('amber'); return false;">
+                    <a class="dropdown-item theme-option" href="#" data-theme="amber" onclick="window.setTheme && window.setTheme('amber'); return false;">
                         <span class="theme-preview" style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #d97706, #f59e0b); margin-right: 10px; vertical-align: middle;"></span>
                         Amber
                     </a>
@@ -3219,7 +3219,7 @@ function showFilePreview(fileUrl, fileName) {
                                      class="rounded-circle profile-pic-preview" 
                                      alt="Image Preview">
                                 <div class="mt-2">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="cancelUpload()">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="window.cancelUpload && window.cancelUpload()">
                                         <i class="fas fa-times me-1"></i> Cancel
                                     </button>
                                 </div>
@@ -3239,7 +3239,7 @@ function showFilePreview(fileUrl, fileName) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="uploadButton" onclick="uploadProfilePicture()" disabled>
+                    <button type="button" class="btn btn-primary" id="uploadButton" onclick="window.uploadProfilePicture && window.uploadProfilePicture()" disabled>
                         <i class="fas fa-upload me-1"></i> Upload Picture
                     </button>
                 </div>
@@ -3977,7 +3977,7 @@ function showFilePreview(fileUrl, fileName) {
                     <img src="${downloadUrl}" 
                          alt="${att.filename}" 
                          style="max-width: 100%; height: auto; display: block; cursor: pointer;"
-                         onclick="showFilePreview('${downloadUrl}', '${att.filename.replace(/'/g, "\\'")}')">
+                         onclick="window.showFilePreview && window.showFilePreview('${downloadUrl}', '${att.filename.replace(/'/g, "\\'")}')">
                 </div>
             `;
         } else {
@@ -4072,11 +4072,11 @@ function showFilePreview(fileUrl, fileName) {
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('threadAttachment').click()">
                         <i class="fas fa-paperclip"></i>
                     </button>
-                    <input type="file" id="threadAttachment" style="display: none;" multiple onchange="handleAttachmentUpload(this, 'thread')">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEmojiPicker()">
+                    <input type="file" id="threadAttachment" style="display: none;" multiple onchange="window.handleAttachmentUpload && window.handleAttachmentUpload(this, 'thread')">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.toggleEmojiPicker && window.toggleEmojiPicker()">
                         <i class="fas fa-smile"></i>
                     </button>
-                    <button type="button" class="btn btn-primary ms-auto" onclick="sendThreadReply()">
+                    <button type="button" class="btn btn-primary ms-auto" onclick="window.sendThreadReply && window.sendThreadReply()">
                         <i class="fas fa-paper-plane me-1"></i> Send
                     </button>
                 </div>
