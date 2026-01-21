@@ -305,68 +305,84 @@ function resizeCanvas() {
     canvasContext.lineJoin = 'round';
 }
 
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-signatureCanvas.addEventListener('mousedown', (e) => {
-    isDrawing = true;
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
-
-signatureCanvas.addEventListener('mousemove', (e) => {
-    if (!isDrawing) return;
-    canvasContext.beginPath();
-    canvasContext.moveTo(lastX, lastY);
-    canvasContext.lineTo(e.offsetX, e.offsetY);
-    canvasContext.stroke();
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
-
-signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
-signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
-
-function clearSignature() {
-    canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-}
-
-// Form Submission
-document.getElementById('logbookForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
-    
-    // Validate 4-digit time format
-    const timeFormat = /^[0-2][0-3][0-5][0-9]$/;
-    if (data.watch_start_time && !timeFormat.test(data.watch_start_time)) {
-        showAlert('danger', 'Invalid time format. Please use 4-digit format (0000-2400)');
+function initializeLogbookListeners() {
+    const canvas = document.getElementById('signatureCanvas');
+    if (!canvas) {
+        console.error('signatureCanvas not found');
         return;
     }
     
-    data.signature_data = signatureCanvas.toDataURL();
+    signatureCanvas = canvas;
+    canvasContext = canvas.getContext('2d');
     
-    if (!data.entry_date) {
-        data.entry_date = new Date().toISOString().split('T')[0];
-    }
-    
-    fetch('/api/logbook-entry', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            showAlert('success', `Logbook Entry ${result.entry_id} submitted successfully!`);
-            setTimeout(() => window.location.href = '/logbook-entries', 2000);
-        } else {
-            showAlert('danger', result.error || 'Failed to submit entry');
-        }
-    })
-    .catch(error => {
-        showAlert('danger', 'Error: ' + error.message);
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        [lastX, lastY] = [e.offsetX, e.offsetY];
     });
-});
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        canvasContext.beginPath();
+        canvasContext.moveTo(lastX, lastY);
+        canvasContext.lineTo(e.offsetX, e.offsetY);
+        canvasContext.stroke();
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
+
+    canvas.addEventListener('mouseup', () => { isDrawing = false; });
+    canvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+    // Form Submission
+    const logbookForm = document.getElementById('logbookForm');
+    if (logbookForm) {
+        logbookForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Validate 4-digit time format
+            const timeFormat = /^[0-2][0-3][0-5][0-9]$/;
+            if (data.watch_start_time && !timeFormat.test(data.watch_start_time)) {
+                showAlert('danger', 'Invalid time format. Please use 4-digit format (0000-2400)');
+                return;
+            }
+            
+            data.signature_data = signatureCanvas.toDataURL();
+            
+            if (!data.entry_date) {
+                data.entry_date = new Date().toISOString().split('T')[0];
+            }
+            
+            fetch('/api/logbook-entry', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert('success', `Logbook Entry ${result.entry_id} submitted successfully!`);
+                    setTimeout(() => window.location.href = '/logbook-entries', 2000);
+                } else {
+                    showAlert('danger', result.error || 'Failed to submit entry');
+                }
+            })
+            .catch(error => {
+                showAlert('danger', 'Error: ' + error.message);
+            });
+        });
+    }
+}
+
+function clearSignature() {
+    if (canvasContext && signatureCanvas) {
+        canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    }
+}
 
 function showAlert(type, message) {
     const alert = document.createElement('div');
@@ -381,6 +397,20 @@ function showAlert(type, message) {
     setTimeout(() => alert.remove(), 5000);
 }
 
-document.querySelector('input[name="entry_date"]').valueAsDate = new Date();
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    let signatureCanvas = document.getElementById('signatureCanvas');
+    let canvasContext = signatureCanvas ? signatureCanvas.getContext('2d') : null;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    initializeLogbookListeners();
+    
+    const entryDate = document.querySelector('input[name="entry_date"]');
+    if (entryDate) {
+        entryDate.valueAsDate = new Date();
+    }
+});
 </script>
 {% endblock %}

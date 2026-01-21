@@ -630,57 +630,68 @@ function resizeCanvas() {
     canvasContext.lineJoin = 'round';
 }
 
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+function initializeFuelReportListeners() {
+    const canvas = document.getElementById('signatureCanvas');
+    if (!canvas) {
+        console.error('signatureCanvas not found');
+        return;
+    }
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-signatureCanvas.addEventListener('mousedown', (e) => {
-    isDrawing = true;
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
 
-signatureCanvas.addEventListener('mousemove', (e) => {
-    if (!isDrawing) return;
-    canvasContext.beginPath();
-    canvasContext.moveTo(lastX, lastY);
-    canvasContext.lineTo(e.offsetX, e.offsetY);
-    canvasContext.stroke();
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        canvasContext.beginPath();
+        canvasContext.moveTo(lastX, lastY);
+        canvasContext.lineTo(e.offsetX, e.offsetY);
+        canvasContext.stroke();
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
 
-signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
-signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+    canvas.addEventListener('mouseup', () => { isDrawing = false; });
+    canvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+    // Form Submission
+    const fuelForm = document.getElementById('fuelReportForm');
+    if (fuelForm) {
+        fuelForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            data.signature_data = signatureCanvas.toDataURL();
+            
+            fetch('/api/fuel-report', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert('success', `Bunker Delivery Note ${result.report_id} submitted successfully!`);
+                    setTimeout(() => window.location.href = '/fuel-reports_list', 2000);
+                } else {
+                    showAlert('danger', result.error || 'Failed to submit report');
+                }
+            })
+            .catch(error => {
+                showAlert('danger', 'Error: ' + error.message);
+            });
+        });
+    }
+}
 
 function clearSignature() {
     canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
 }
-
-// Form Submission
-document.getElementById('fuelReportForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
-    
-    data.signature_data = signatureCanvas.toDataURL();
-    
-    fetch('/api/fuel-report', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            showAlert('success', `Bunker Delivery Note ${result.report_id} submitted successfully!`);
-            setTimeout(() => window.location.href = '/fuel-reports_list', 2000);
-        } else {
-            showAlert('danger', result.error || 'Failed to submit report');
-        }
-    })
-    .catch(error => {
-        showAlert('danger', 'Error: ' + error.message);
-    });
-});
 
 function showAlert(type, message) {
     const alert = document.createElement('div');
@@ -695,7 +706,12 @@ function showAlert(type, message) {
     setTimeout(() => alert.remove(), 5000);
 }
 
-document.querySelector('input[name="delivery_date"]').valueAsDate = new Date();
-document.querySelector('input[name="sample_collection_date"]').valueAsDate = new Date();
+document.addEventListener('DOMContentLoaded', function() {
+    initializeFuelReportListeners();
+    const deliveryDate = document.querySelector('input[name="delivery_date"]');
+    const sampleDate = document.querySelector('input[name="sample_collection_date"]');
+    if (deliveryDate) deliveryDate.valueAsDate = new Date();
+    if (sampleDate) sampleDate.valueAsDate = new Date();
+});
 </script>
 {% endblock %}

@@ -371,56 +371,63 @@ function callEmergency() {
     // In a real system: window.location.href = 'tel:+18006274633';
 }
 
-document.getElementById('maintenanceRequestForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    
-    // Separate files from form data
-    const attachmentFiles = formData.getAll('attachments');
-    
-    // Convert form data to JSON (excluding files)
-    const jsonData = {};
-    for (const [key, value] of formData.entries()) {
-        if (key !== 'attachments') {  // Skip file inputs
-            jsonData[key] = value;
-        }
+function initializeMaintenanceFormListener() {
+    const maintenanceForm = document.getElementById('maintenanceRequestForm');
+    if (!maintenanceForm) {
+        console.error('maintenanceRequestForm not found');
+        return;
     }
-    
-    // Show loading state
-    const submitBtn = document.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
-    submitBtn.disabled = true;
-    
-    // Step 1: Submit request data
-    fetch('/api/maintenance-requests', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(jsonData)
-    })
-    .then(response => {
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            return response.text().then(text => {
-                throw new Error('Server returned non-JSON response. Please check if you are logged in or contact support.');
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to submit request');
+        
+        maintenanceForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            // Separate files from form data
+            const attachmentFiles = formData.getAll('attachments');
+        
+        // Convert form data to JSON (excluding files)
+        const jsonData = {};
+        for (const [key, value] of formData.entries()) {
+            if (key !== 'attachments') {  // Skip file inputs
+                jsonData[key] = value;
+            }
         }
         
-        const requestId = data.request_id;
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+        submitBtn.disabled = true;
         
-        // Step 2: Upload attachments if any exist
-        if (attachmentFiles && attachmentFiles.length > 0) {
-            const uploadFormData = new FormData();
-            attachmentFiles.forEach(file => {
-                uploadFormData.append('files', file);
-            });
+        // Step 1: Submit request data
+        fetch('/api/maintenance-requests', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(jsonData)
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error('Server returned non-JSON response. Please check if you are logged in or contact support.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to submit request');
+            }
+            
+            const requestId = data.request_id;
+            
+            // Step 2: Upload attachments if any exist
+            if (attachmentFiles && attachmentFiles.length > 0) {
+                const uploadFormData = new FormData();
+                attachmentFiles.forEach(file => {
+                    uploadFormData.append('files', file);
+                });
             
             return fetch(`/api/maintenance-requests/${requestId}/attachments/upload`, {
                 method: 'POST',
@@ -439,37 +446,39 @@ document.getElementById('maintenanceRequestForm').addEventListener('submit', fun
                 // Don't fail the whole operation if attachments fail
                 return data;
             });
-        }
-        
-        return data;
-    })
-    .then(data => {
-        // Show success message
-        document.getElementById('successMessage').style.display = 'block';
-        document.getElementById('requestIdDisplay').textContent = data.request_id;
-        document.getElementById('maintenanceRequestForm').reset();
-        
-        // Scroll to success message
-        document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
-        
-        // Log to console
-        console.log('Maintenance Request Submitted:', {
-            request_id: data.request_id,
-            data: jsonData,
-            attachments: data.attachments,
-            timestamp: new Date().toISOString()
+            }
+            
+            return data;
+        })
+        .then(data => {
+            // Show success message
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('requestIdDisplay').textContent = data.request_id;
+            document.getElementById('maintenanceRequestForm').reset();
+            
+            // Scroll to success message
+            document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+            
+            // Log to console
+            console.log('Maintenance Request Submitted:', {
+                request_id: data.request_id,
+                data: jsonData,
+                attachments: data.attachments,
+                timestamp: new Date().toISOString()
+            });
+        })
+        .catch(error => {
+            console.error('Error submitting maintenance request:', error);
+            alert('Error submitting request: ' + error.message);
+        })
+        .finally(() => {
+            // Restore button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         });
-    })
-    .catch(error => {
-        console.error('Error submitting maintenance request:', error);
-        alert('Error submitting request: ' + error.message);
-    })
-    .finally(() => {
-        // Restore button
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
-});
+        });
+    }
+}
 
 function printRequest() {
     // Generate printable summary
@@ -517,10 +526,16 @@ function newRequest() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize form listener
+    initializeMaintenanceFormListener();
+    
     // Set default ETA to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    document.querySelector('input[name="eta"]').valueAsDate = tomorrow;
+    const etaInput = document.querySelector('input[name="eta"]');
+    if (etaInput) {
+        etaInput.valueAsDate = tomorrow;
+    }
 });
 </script>
 {% endblock %}

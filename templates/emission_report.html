@@ -360,12 +360,13 @@
 <script>
 // Signature Canvas Setup
 let signatureCanvas = document.getElementById('signatureCanvas');
-let canvasContext = signatureCanvas.getContext('2d');
+let canvasContext = signatureCanvas ? signatureCanvas.getContext('2d') : null;
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
 
 function resizeCanvas() {
+    if (!signatureCanvas) return;
     signatureCanvas.width = signatureCanvas.offsetWidth;
     signatureCanvas.height = 150;
     canvasContext.strokeStyle = '#000';
@@ -374,57 +375,73 @@ function resizeCanvas() {
     canvasContext.lineJoin = 'round';
 }
 
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+function initializeEmissionReportListeners() {
+    const canvas = document.getElementById('signatureCanvas');
+    if (!canvas) {
+        console.error('signatureCanvas not found');
+        return;
+    }
+    
+    signatureCanvas = canvas;
+    canvasContext = canvas.getContext('2d');
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-signatureCanvas.addEventListener('mousedown', (e) => {
-    isDrawing = true;
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
 
-signatureCanvas.addEventListener('mousemove', (e) => {
-    if (!isDrawing) return;
-    canvasContext.beginPath();
-    canvasContext.moveTo(lastX, lastY);
-    canvasContext.lineTo(e.offsetX, e.offsetY);
-    canvasContext.stroke();
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        canvasContext.beginPath();
+        canvasContext.moveTo(lastX, lastY);
+        canvasContext.lineTo(e.offsetX, e.offsetY);
+        canvasContext.stroke();
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
 
-signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
-signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+    canvas.addEventListener('mouseup', () => { isDrawing = false; });
+    canvas.addEventListener('mouseout', () => { isDrawing = false; });
 
-function clearSignature() {
-    canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    // Form Submission
+    const emissionForm = document.getElementById('emissionReportForm');
+    if (emissionForm) {
+        emissionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            data.signature_data = signatureCanvas.toDataURL();
+            
+            fetch('/api/emission-report', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert('success', `Fuel Oil Consumption Report ${result.report_id} submitted successfully!`);
+                    setTimeout(() => window.location.href = '/emission-reports_list', 2000);
+                } else {
+                    showAlert('danger', result.error || 'Failed to submit report');
+                }
+            })
+            .catch(error => {
+                showAlert('danger', 'Error: ' + error.message);
+            });
+        });
+    }
 }
 
-// Form Submission
-document.getElementById('emissionReportForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
-    
-    data.signature_data = signatureCanvas.toDataURL();
-    
-    fetch('/api/emission-report', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            showAlert('success', `Fuel Oil Consumption Report ${result.report_id} submitted successfully!`);
-            setTimeout(() => window.location.href = '/emission-reports_list', 2000);
-        } else {
-            showAlert('danger', result.error || 'Failed to submit report');
-        }
-    })
-    .catch(error => {
-        showAlert('danger', 'Error: ' + error.message);
-    });
-});
+function clearSignature() {
+    if (canvasContext && signatureCanvas) {
+        canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    }
+}
 
 function showAlert(type, message) {
     const alert = document.createElement('div');
@@ -439,6 +456,12 @@ function showAlert(type, message) {
     setTimeout(() => alert.remove(), 5000);
 }
 
-document.querySelector('input[name="submission_date"]').valueAsDate = new Date();
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEmissionReportListeners();
+    const submissionDate = document.querySelector('input[name="submission_date"]');
+    if (submissionDate) {
+        submissionDate.valueAsDate = new Date();
+    }
+});
 </script>
 {% endblock %}

@@ -726,100 +726,108 @@ function updateReportsTable(reports) {
     }
 }
 
-// Generate comprehensive report with all content types
-document.getElementById('reportForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const reportType = document.getElementById('reportType').value;
-    const format = document.querySelector('input[name="format"]:checked').value;
-    const title = document.getElementById('reportTitle').value || `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
-    const notes = document.getElementById('reportNotes').value;
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    // Collect content types
-    const contentTypes = [];
-    if (document.getElementById('includeStats').checked) contentTypes.push('stats');
-    if (document.getElementById('includeBreakdowns').checked) contentTypes.push('breakdowns');
-    if (document.getElementById('includeCharts').checked) contentTypes.push('charts');
-    if (document.getElementById('includeRecommendations').checked) contentTypes.push('recommendations');
-    
-    if (!reportType) {
-        showAlert('danger', 'Please select a report type');
+// Generate comprehensive report with all content types - WRAPPED IN FUNCTION FOR SAFE INITIALIZATION
+function setupReportFormListener() {
+    const reportForm = document.getElementById('reportForm');
+    if (!reportForm) {
+        console.error('reportForm element not found');
         return;
     }
     
-    if (contentTypes.length === 0) {
-        showAlert('danger', 'Please select at least one content type');
-        return;
-    }
-    
-    // Show loading
-    const submitBtn = document.getElementById('generateReportBtn');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating Report...';
-    submitBtn.disabled = true;
-    
-    try {
-        // Call backend API to generate report
-        const response = await fetch('/api/generate-report', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                report_type: reportType,
-                parameters: {
-                    title: title,
-                    notes: notes,
-                    startDate: startDate,
-                    endDate: endDate,
-                    contentTypes: contentTypes,
-                    format: format,
-                    generated_by: '{{ current_user_profile.full_name }}'
-                }
-            })
-        });
+    reportForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        const result = await response.json();
+        const reportType = document.getElementById('reportType').value;
+        const format = document.querySelector('input[name="format"]:checked').value;
+        const title = document.getElementById('reportTitle').value || `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
+        const notes = document.getElementById('reportNotes').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
         
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to generate report');
+        // Collect content types
+        const contentTypes = [];
+        if (document.getElementById('includeStats').checked) contentTypes.push('stats');
+        if (document.getElementById('includeBreakdowns').checked) contentTypes.push('breakdowns');
+        if (document.getElementById('includeCharts').checked) contentTypes.push('charts');
+        if (document.getElementById('includeRecommendations').checked) contentTypes.push('recommendations');
+        
+        if (!reportType) {
+            showAlert('danger', 'Please select a report type');
+            return;
         }
         
-        // Store the report data globally
-        const reportData = result.report_data;
-        currentReportData = reportData;
-        const reportId = result.report_id;
+        if (contentTypes.length === 0) {
+            showAlert('danger', 'Please select at least one content type');
+            return;
+        }
         
-        // Add to reports list
-        const newReport = {
-            report_id: reportId,
-            title: title,
-            report_type: reportType,
-            generated_at: reportData.generated_at,
-            content: contentTypes,
-            notes: notes,
-            download_url: result.download_url,
-            data: reportData
-        };
+        // Show loading
+        const submitBtn = document.getElementById('generateReportBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating Report...';
+        submitBtn.disabled = true;
         
-        currentReports.unshift(newReport);
-        updateReportsTable(currentReports);
-        
-        // Show report details modal
-        showReportDetailsModal(reportId, reportData, contentTypes);
-        
-        showAlert('success', `Report "${title}" generated successfully!`);
-        
-    } catch (error) {
-        console.error('Error generating report:', error);
-        showAlert('danger', 'Error generating report: ' + error.message);
-    } finally {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-});
+        try {
+            // Call backend API to generate report
+            const response = await fetch('/api/generate-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    report_type: reportType,
+                    parameters: {
+                        title: title,
+                        notes: notes,
+                        startDate: startDate,
+                        endDate: endDate,
+                        contentTypes: contentTypes,
+                        format: format,
+                        generated_by: '{{ current_user_profile.full_name }}'
+                    }
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to generate report');
+            }
+            
+            // Store the report data globally
+            const reportData = result.report_data;
+            currentReportData = reportData;
+            const reportId = result.report_id;
+            
+            // Add to reports list
+            const newReport = {
+                report_id: reportId,
+                title: title,
+                report_type: reportType,
+                generated_at: reportData.generated_at,
+                content: contentTypes,
+                notes: notes,
+                download_url: result.download_url,
+                data: reportData
+            };
+            
+            currentReports.unshift(newReport);
+            updateReportsTable(currentReports);
+            
+            // Show report details modal
+            showReportDetailsModal(reportId, reportData, contentTypes);
+            
+            showAlert('success', `Report "${title}" generated successfully!`);
+            
+        } catch (error) {
+            console.error('Error generating report:', error);
+            showAlert('danger', 'Error generating report: ' + error.message);
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+}
 
 // Generate comprehensive report data
 async function generateComprehensiveReportData(reportType, parameters) {
@@ -1598,6 +1606,9 @@ function formatDate(date) {
 document.addEventListener('DOMContentLoaded', function() {
     loadReports();
     loadAnalytics();
+    
+    // Setup form submit listener (IMPORTANT: must be after DOM is ready)
+    setupReportFormListener();
     
     // Set default dates to current month
     const today = new Date();

@@ -384,33 +384,85 @@ function resizeCanvas() {
     canvasContext.lineJoin = 'round';
 }
 
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+// Initialize all event listeners when DOM is ready
+function initializeBilgeReportListeners() {
+    const canvas = document.getElementById('signatureCanvas');
+    if (!canvas) {
+        console.error('signatureCanvas not found');
+        return;
+    }
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-signatureCanvas.addEventListener('mousedown', (e) => {
-    isDrawing = true;
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
 
-signatureCanvas.addEventListener('mousemove', (e) => {
-    if (!isDrawing) return;
-    canvasContext.beginPath();
-    canvasContext.moveTo(lastX, lastY);
-    canvasContext.lineTo(e.offsetX, e.offsetY);
-    canvasContext.stroke();
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        canvasContext.beginPath();
+        canvasContext.moveTo(lastX, lastY);
+        canvasContext.lineTo(e.offsetX, e.offsetY);
+        canvasContext.stroke();
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
 
-signatureCanvas.addEventListener('mouseup', () => { isDrawing = false; });
-signatureCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+    canvas.addEventListener('mouseup', () => { isDrawing = false; });
+    canvas.addEventListener('mouseout', () => { isDrawing = false; });
+
+    // Calculate discharge duration
+    const startTimeInput = document.querySelector('input[name="discharge_start_time"]');
+    const endTimeInput = document.querySelector('input[name="discharge_end_time"]');
+    if (startTimeInput) startTimeInput.addEventListener('change', calculateDuration);
+    if (endTimeInput) endTimeInput.addEventListener('change', calculateDuration);
+
+    // Calculate differential pressure
+    const inletPressureInput = document.querySelector('input[name="inlet_pressure"]');
+    const outletPressureInput = document.querySelector('input[name="outlet_pressure"]');
+    if (inletPressureInput) inletPressureInput.addEventListener('change', calculateDifferentialPressure);
+    if (outletPressureInput) outletPressureInput.addEventListener('change', calculateDifferentialPressure);
+
+    // Form Submission
+    const bilgeForm = document.getElementById('bilgeReportForm');
+    if (bilgeForm) {
+        bilgeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+        
+        data.signature_data = signatureCanvas.toDataURL();
+        
+        if (!data.report_date) {
+            data.report_date = new Date().toISOString().split('T')[0];
+        }
+        
+        fetch('/api/bilge-report', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showAlert('success', `Bilge Report ${result.report_id} submitted successfully!`);
+                setTimeout(() => window.location.href = '/bilge-reports', 2000);
+            } else {
+                showAlert('danger', result.error || 'Failed to submit report');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Error: ' + error.message);
+        });
+        });
+    }
+}
 
 function clearSignature() {
     canvasContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
 }
-
-// Calculate discharge duration
-document.querySelector('input[name="discharge_start_time"]')?.addEventListener('change', calculateDuration);
-document.querySelector('input[name="discharge_end_time"]')?.addEventListener('change', calculateDuration);
 
 function calculateDuration() {
     const startTime = document.querySelector('input[name="discharge_start_time"]').value;
@@ -427,47 +479,11 @@ function calculateDuration() {
     }
 }
 
-// Calculate differential pressure
-document.querySelector('input[name="inlet_pressure"]')?.addEventListener('change', calculateDifferentialPressure);
-document.querySelector('input[name="outlet_pressure"]')?.addEventListener('change', calculateDifferentialPressure);
-
 function calculateDifferentialPressure() {
     const inlet = parseFloat(document.querySelector('input[name="inlet_pressure"]').value) || 0;
     const outlet = parseFloat(document.querySelector('input[name="outlet_pressure"]').value) || 0;
     document.querySelector('input[name="differential_pressure"]').value = (inlet - outlet).toFixed(2);
 }
-
-// Form Submission
-document.getElementById('bilgeReportForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
-    
-    data.signature_data = signatureCanvas.toDataURL();
-    
-    if (!data.report_date) {
-        data.report_date = new Date().toISOString().split('T')[0];
-    }
-    
-    fetch('/api/bilge-report', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            showAlert('success', `Bilge Report ${result.report_id} submitted successfully!`);
-            setTimeout(() => window.location.href = '/bilge-reports', 2000);
-        } else {
-            showAlert('danger', result.error || 'Failed to submit report');
-        }
-    })
-    .catch(error => {
-        showAlert('danger', 'Error: ' + error.message);
-    });
-});
 
 function showAlert(type, message) {
     const alert = document.createElement('div');
@@ -482,6 +498,13 @@ function showAlert(type, message) {
     setTimeout(() => alert.remove(), 5000);
 }
 
-document.querySelector('input[name="report_date"]').valueAsDate = new Date();
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializeBilgeReportListeners();
+    const dateInput = document.querySelector('input[name="report_date"]');
+    if (dateInput) {
+        dateInput.valueAsDate = new Date();
+    }
+});
 </script>
 {% endblock %}
