@@ -150,19 +150,19 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <button class="btn btn-primary" onclick="assignToMe()">
+                    <button class="btn btn-primary" onclick="window.assignToMe && window.assignToMe()">
                         <i class="fas fa-user-check me-2"></i> Assign to Me
                     </button>
-                    <button class="btn btn-warning" onclick="updateStatus()">
+                    <button class="btn btn-warning" onclick="window.updateStatus && window.updateStatus()">
                         <i class="fas fa-edit me-2"></i> Update Status
                     </button>
-                    <button class="btn btn-info" onclick="addNotes()">
+                    <button class="btn btn-info" onclick="window.addNotes && window.addNotes()">
                         <i class="fas fa-sticky-note me-2"></i> Add Notes
                     </button>
-                    <button class="btn btn-success" onclick="startService()">
+                    <button class="btn btn-success" onclick="window.startService && window.startService()">
                         <i class="fas fa-play-circle me-2"></i> Start Service
                     </button>
-                    <button class="btn btn-danger" onclick="declareEmergency()">
+                    <button class="btn btn-danger" onclick="window.declareEmergency && window.declareEmergency()">
                         <i class="fas fa-exclamation-triangle me-2"></i> Declare Emergency
                     </button>
                 </div>
@@ -189,7 +189,7 @@
                             <!-- Timeline will be loaded here -->
                         </div>
                     </div>
-                    <button class="btn btn-sm btn-outline-info w-100" onclick="loadWorkflowHistory()">
+                    <button class="btn btn-sm btn-outline-info w-100" onclick="window.loadWorkflowHistory && window.loadWorkflowHistory()">
                         <i class="fas fa-history me-1"></i> View Full History
                     </button>
                 </div>
@@ -213,7 +213,7 @@
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
-                    <button class="btn btn-sm btn-outline-primary w-100" onclick="updateRequestStatus()">
+                    <button class="btn btn-sm btn-outline-primary w-100" onclick="window.updateRequestStatus && window.updateRequestStatus()">
                         Update Status
                     </button>
                 </div>
@@ -230,7 +230,7 @@
                     <div class="text-center text-muted py-3">
                         <i class="fas fa-clipboard-check fa-2x mb-2"></i>
                         <p>No evaluation yet</p>
-                        <button class="btn btn-sm btn-primary" onclick="evaluateService()">
+                        <button class="btn btn-sm btn-primary" onclick="window.evaluateService && window.evaluateService()">
                             <i class="fas fa-star me-1"></i> Evaluate Service
                         </button>
                     </div>
@@ -260,22 +260,22 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-6 mb-2">
-                        <button class="btn btn-outline-primary w-100" onclick="printRequest()">
+                        <button class="btn btn-outline-primary w-100" onclick="window.printRequest && window.printRequest()">
                             <i class="fas fa-print"></i>
                         </button>
                     </div>
                     <div class="col-6 mb-2">
-                        <button class="btn btn-outline-success w-100" onclick="exportRequest()">
+                        <button class="btn btn-outline-success w-100" onclick="window.exportRequest && window.exportRequest()">
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
                     <div class="col-6">
-                        <button class="btn btn-outline-info w-100" onclick="shareRequest()">
+                        <button class="btn btn-outline-info w-100" onclick="window.shareRequest && window.shareRequest()">
                             <i class="fas fa-share"></i>
                         </button>
                     </div>
                     <div class="col-6">
-                        <button class="btn btn-outline-warning w-100" onclick="cloneRequest()">
+                        <button class="btn btn-outline-warning w-100" onclick="window.cloneRequest && window.cloneRequest()">
                             <i class="fas fa-copy"></i>
                         </button>
                     </div>
@@ -330,7 +330,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveStatusUpdate()">Save Update</button>
+                <button type="button" class="btn btn-primary" onclick="window.saveStatusUpdate && window.saveStatusUpdate()">Save Update</button>
             </div>
         </div>
     </div>
@@ -1338,7 +1338,7 @@ function loadEvaluationSummary() {
                 <div class="badge bg-success mb-3">EXCELLENT</div>
                 <p class="small mb-2">Evaluated by: David Chen</p>
                 <p class="small mb-3">Date: 2024-01-15</p>
-                <button class="btn btn-sm btn-outline-primary" onclick="viewFullEvaluation()">
+                <button class="btn btn-sm btn-outline-primary" onclick="window.viewFullEvaluation && window.viewFullEvaluation()">
                     <i class="fas fa-chart-bar me-1"></i> View Full Report
                 </button>
             </div>

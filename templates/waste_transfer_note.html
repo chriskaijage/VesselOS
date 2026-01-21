@@ -429,7 +429,7 @@
                                     <canvas id="prfSignatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
                                 </div>
                                 <div class="mt-2 mb-3">
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearPrfSignature()">Clear Signature</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="window.clearPrfSignature && window.clearPrfSignature()">Clear Signature</button>
                                 </div>
                                 <small class="text-muted">PRF operator/supervisor signature & stamp/facility seal</small>
                             </div>
@@ -446,7 +446,7 @@
                                     <canvas id="shipSignatureCanvas" style="border: 1px solid #ddd; display: block; margin: 0 auto; cursor: crosshair; width: 100%;"></canvas>
                                 </div>
                                 <div class="mt-2 mb-3">
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearShipSignature()">Clear Signature</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="window.clearShipSignature && window.clearShipSignature()">Clear Signature</button>
                                 </div>
                                 <small class="text-muted">Ship's officer signature (Chief Officer, Captain, or Chief Engineer)</small>
                             </div>

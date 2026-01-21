@@ -155,7 +155,7 @@
                     <h5 class="mb-0"><i class="fas fa-history me-2"></i> Generated Reports</h5>
                     <div>
                         <span class="badge bg-primary" id="reportCount">0 reports</span>
-                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="exportAllReports()" title="Export All">
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="window.exportAllReports && window.exportAllReports()" title="Export All">
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
@@ -188,10 +188,10 @@
                 </div>
                 
                 <div class="text-center mt-3">
-                    <button class="btn btn-outline-primary" onclick="loadReports()">
+                    <button class="btn btn-outline-primary" onclick="window.loadReports && window.loadReports()">
                         <i class="fas fa-sync-alt me-1"></i> Refresh Reports
                     </button>
-                    <button class="btn btn-outline-danger ms-2" onclick="clearAllReports()">
+                    <button class="btn btn-outline-danger ms-2" onclick="window.clearAllReports && window.clearAllReports()">
                         <i class="fas fa-trash-alt me-1"></i> Clear All
                     </button>
                 </div>

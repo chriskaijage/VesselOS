@@ -3318,6 +3318,51 @@ function showFilePreview(fileUrl, fileName) {
     window.loadUnreadCount = function() { console.warn('loadUnreadCount called before initialization'); };
     window.toggleSidebar = function() { console.warn('toggleSidebar called before initialization'); };
     window.setTheme = function(theme) { console.warn('setTheme called before initialization'); };
+    
+    // ==================== GLOBAL BUTTON FUNCTION STUBS ====================
+    // These stubs ensure all onclick handlers work even if called before full initialization
+    // They will be replaced with real implementations when the page fully loads
+    
+    window.exportAllReports = function() { console.warn('exportAllReports: not yet initialized'); };
+    window.loadReports = function() { console.warn('loadReports: not yet initialized'); };
+    window.clearAllReports = function() { console.warn('clearAllReports: not yet initialized'); };
+    window.clearSignature = function() { console.warn('clearSignature: not yet initialized'); };
+    window.clearPrfSignature = function() { console.warn('clearPrfSignature: not yet initialized'); };
+    window.clearShipSignature = function() { console.warn('clearShipSignature: not yet initialized'); };
+    window.assignToMe = function() { console.warn('assignToMe: not yet initialized'); };
+    window.updateStatus = function() { console.warn('updateStatus: not yet initialized'); };
+    window.addNotes = function() { console.warn('addNotes: not yet initialized'); };
+    window.startService = function() { console.warn('startService: not yet initialized'); };
+    window.declareEmergency = function() { console.warn('declareEmergency: not yet initialized'); };
+    window.loadWorkflowHistory = function() { console.warn('loadWorkflowHistory: not yet initialized'); };
+    window.updateRequestStatus = function() { console.warn('updateRequestStatus: not yet initialized'); };
+    window.evaluateService = function() { console.warn('evaluateService: not yet initialized'); };
+    window.printRequest = function() { console.warn('printRequest: not yet initialized'); };
+    window.exportRequest = function() { console.warn('exportRequest: not yet initialized'); };
+    window.shareRequest = function() { console.warn('shareRequest: not yet initialized'); };
+    window.cloneRequest = function() { console.warn('cloneRequest: not yet initialized'); };
+    window.saveStatusUpdate = function() { console.warn('saveStatusUpdate: not yet initialized'); };
+    window.viewFullEvaluation = function() { console.warn('viewFullEvaluation: not yet initialized'); };
+    window.showAccessRequestModal = function() { console.warn('showAccessRequestModal: not yet initialized'); };
+    window.loadMyEvaluations = function() { console.warn('loadMyEvaluations: not yet initialized'); };
+    window.submitAccessRequest = function() { console.warn('submitAccessRequest: not yet initialized'); };
+    window.sendBulkNotifications = function() { console.warn('sendBulkNotifications: not yet initialized'); };
+    window.generateSystemReport = function() { console.warn('generateSystemReport: not yet initialized'); };
+    window.generateOneTimePassword = function() { console.warn('generateOneTimePassword: not yet initialized'); };
+    window.updateQualityOfficerAccess = function() { console.warn('updateQualityOfficerAccess: not yet initialized'); };
+    window.createQualityOfficer = function() { console.warn('createQualityOfficer: not yet initialized'); };
+    window.sendNotification = function() { console.warn('sendNotification: not yet initialized'); };
+    window.loadLiveUpdates = function() { console.warn('loadLiveUpdates: not yet initialized'); };
+    window.newRequest = function() { console.warn('newRequest: not yet initialized'); };
+    window.callEmergency = function() { console.warn('callEmergency: not yet initialized'); };
+    window.printProfile = function() { console.warn('printProfile: not yet initialized'); };
+    window.removeProfilePic = function() { console.warn('removeProfilePic: not yet initialized'); };
+    window.showSignatureModal = function() { console.warn('showSignatureModal: not yet initialized'); };
+    window.resetFormChanges = function() { console.warn('resetFormChanges: not yet initialized'); };
+    window.showSendMessageModal = function() { console.warn('showSendMessageModal: not yet initialized'); };
+    window.showInbox = function() { console.warn('showInbox: not yet initialized'); };
+    window.showSentMessagesModal = function() { console.warn('showSentMessagesModal: not yet initialized'); };
+    window.toggleMessagingPanel = function() { console.warn('toggleMessagingPanel called before initialization'); };
 
     // ==================== FLOATING PANEL FUNCTIONS ====================
 

@@ -89,7 +89,7 @@ function formatDateTime(dateString) {
                         <p class="lead mb-0">Manage users, approve requests, and oversee system operations</p>
                     </div>
                     <div class="ms-auto">
-                        <button class="btn btn-outline-primary" onclick="openComposeTab()">
+                        <button class="btn btn-outline-primary" onclick="window.openComposeTab && window.openComposeTab()">
                             <i class="fas fa-paper-plane me-2"></i> Send Message
                         </button>
                     </div>
@@ -160,12 +160,12 @@ function formatDateTime(dateString) {
                         </button>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <button class="btn btn-warning w-100" onclick="sendBulkNotifications()">
+                        <button class="btn btn-warning w-100" onclick="window.sendBulkNotifications && window.sendBulkNotifications()">
                             <i class="fas fa-bullhorn me-2"></i> Send Announcement
                         </button>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <button class="btn btn-info w-100" onclick="generateSystemReport()">
+                        <button class="btn btn-info w-100" onclick="window.generateSystemReport && window.generateSystemReport()">
                             <i class="fas fa-file-export me-2"></i> Export Report
                         </button>
                     </div>
@@ -173,7 +173,7 @@ function formatDateTime(dateString) {
                 <!-- Messaging Quick Actions -->
                 <div class="row mt-3">
                     <div class="col-md-4 mb-2">
-                        <button class="btn btn-outline-primary w-100" onclick="openComposeTab()">
+                        <button class="btn btn-outline-primary w-100" onclick="window.openComposeTab && window.openComposeTab()">
                             <i class="fas fa-paper-plane me-2"></i> Quick Message
                         </button>
                     </div>
@@ -364,10 +364,10 @@ function formatDateTime(dateString) {
                     </div>
                 </div>
                 <div class="text-center">
-                    <button class="btn btn-sm btn-primary me-2" onclick="openComposeTab()">
+                    <button class="btn btn-sm btn-primary me-2" onclick="window.openComposeTab && window.openComposeTab()">
                         <i class="fas fa-paper-plane me-1"></i> New Message
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleMessagingPanel()">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.toggleMessagingPanel && window.toggleMessagingPanel()">
                         <i class="fas fa-comments me-1"></i> Open Messenger
                     </button>
                 </div>
@@ -466,14 +466,14 @@ function formatDateTime(dateString) {
                     <label class="form-label">Generate One-Time Password</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="oneTimePassword" readonly>
-                        <button class="btn btn-outline-secondary" type="button" onclick="generateOneTimePassword()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="window.generateOneTimePassword && window.generateOneTimePassword()">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
                     <small class="text-muted">This password will be valid for 24 hours</small>
                 </div>
                 <div class="mt-4">
-                    <button class="btn btn-primary w-100" onclick="updateQualityOfficerAccess()">
+                    <button class="btn btn-primary w-100" onclick="window.updateQualityOfficerAccess && window.updateQualityOfficerAccess()">
                         <i class="fas fa-save me-2"></i> Update Access
                     </button>
                 </div>
@@ -522,7 +522,7 @@ function formatDateTime(dateString) {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="createQualityOfficer()">Create Officer</button>
+                <button type="button" class="btn btn-primary" onclick="window.createQualityOfficer && window.createQualityOfficer()">Create Officer</button>
             </div>
         </div>
     </div>
@@ -574,7 +574,7 @@ function formatDateTime(dateString) {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="sendNotification()">Send Notification</button>
+                <button type="button" class="btn btn-primary" onclick="window.sendNotification && window.sendNotification()">Send Notification</button>
             </div>
         </div>
     </div>

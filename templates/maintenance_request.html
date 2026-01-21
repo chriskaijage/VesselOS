@@ -278,10 +278,10 @@
                         </ol>
                     </div>
                     <div class="mt-3">
-                        <a href="#" class="btn btn-outline-primary" onclick="printRequest()">
+                        <a href="#" class="btn btn-outline-primary" onclick="window.printRequest && window.printRequest()">
                             <i class="fas fa-print me-1"></i> Print Request Summary
                         </a>
-                        <button class="btn btn-outline-success ms-2" onclick="newRequest()">
+                        <button class="btn btn-outline-success ms-2" onclick="window.newRequest && window.newRequest()">
                             <i class="fas fa-plus me-1"></i> Submit Another Request
                         </button>
                     </div>
@@ -348,7 +348,7 @@ function updateCriticalityUI() {
             <strong>EMERGENCY ALERT:</strong> Your vessel is immobilized. Please IMMEDIATELY call our emergency hotline: 
             <strong class="text-danger">+1-800-MARINE-EMERGENCY</strong> and stay on the line.
             <div class="mt-2">
-                <button class="btn btn-sm btn-danger" onclick="callEmergency()">
+                <button class="btn btn-sm btn-danger" onclick="window.callEmergency && window.callEmergency()">
                     <i class="fas fa-phone me-1"></i> Call Emergency Hotline Now
                 </button>
             </div>

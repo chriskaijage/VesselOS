@@ -478,7 +478,7 @@
                     </div>
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-light btn-lg" onclick="printProfile()" id="printProfileBtn" style="background: white; color: var(--primary-purple); border: 2px solid var(--primary-purple);">
+                    <button class="btn btn-light btn-lg" onclick="window.printProfile && window.printProfile()" id="printProfileBtn" style="background: white; color: var(--primary-purple); border: 2px solid var(--primary-purple);">
                         <i class="fas fa-print me-2"></i> Print Profile
                     </button>
                 </div>
@@ -628,7 +628,7 @@
                                     <h6>Preview:</h6>
                                     <img id="previewImage" class="preview-image" alt="Preview">
                                     <div class="mt-2">
-                                        <button type="button" class="btn btn-sm btn-danger" onclick="removeProfilePic()">
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="window.removeProfilePic && window.removeProfilePic()">
                                             <i class="fas fa-trash me-1"></i> Remove
                                         </button>
                                     </div>
@@ -646,7 +646,7 @@
                                     <div class="text-center">
                                         <i class="fas fa-signature fa-3x text-muted mb-3"></i>
                                         <p class="text-muted">No signature uploaded</p>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="showSignatureModal()">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.showSignatureModal && window.showSignatureModal()">
                                             <i class="fas fa-upload me-1"></i> Upload Signature
                                         </button>
                                     </div>
@@ -655,7 +655,7 @@
                             </div>
                             
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <button type="reset" class="btn btn-outline-secondary" id="resetChangesBtn" onclick="resetFormChanges()">
+                                <button type="reset" class="btn btn-outline-secondary" id="resetChangesBtn" onclick="window.resetFormChanges && window.resetFormChanges()">
                                     <i class="fas fa-undo me-2"></i> Reset Changes
                                 </button>
                                 <button type="submit" class="btn btn-primary" id="updateProfileBtn">
@@ -710,14 +710,14 @@
                                     </h6>
                                 </div>
                                 <div class="list-group list-group-flush">
-                                    <a href="#" class="list-group-item list-group-item-action border-0" onclick="showSendMessageModal(); return false;" style="color: #1f2937; padding: 0.75rem 1rem;">
+                                    <a href="#" class="list-group-item list-group-item-action border-0" onclick="window.showSendMessageModal && window.showSendMessageModal(); return false;" style="color: #1f2937; padding: 0.75rem 1rem;">
                                         <i class="fas fa-paper-plane me-2" style="color: #1f2937;"></i> Send Message/Notification
                                     </a>
-                                    <a href="#" class="list-group-item list-group-item-action border-0" onclick="showInbox(); return false;" style="color: #1f2937; padding: 0.75rem 1rem;">
+                                    <a href="#" class="list-group-item list-group-item-action border-0" onclick="window.showInbox && window.showInbox(); return false;" style="color: #1f2937; padding: 0.75rem 1rem;">
                                         <i class="fas fa-inbox me-2" style="color: #1f2937;"></i> Inbox
                                         <span class="badge float-end" id="unreadCount" style="background: var(--primary-purple); display: none;">0</span>
                                     </a>
-                                    <a href="#" class="list-group-item list-group-item-action border-0" onclick="showSentMessagesModal(); return false;" style="color: #1f2937; padding: 0.75rem 1rem;">
+                                    <a href="#" class="list-group-item list-group-item-action border-0" onclick="window.showSentMessagesModal && window.showSentMessagesModal(); return false;" style="color: #1f2937; padding: 0.75rem 1rem;">
                                         <i class="fas fa-paper-plane me-2" style="color: #1f2937;"></i> Sent Messages
                                     </a>
                                 </div>
@@ -739,7 +739,7 @@
                                                 <small class="text-muted">Generate a beautiful, print-ready profile document</small>
                                 </div>
                             </div>
-                                        <button class="btn btn-sm w-100 mt-2" onclick="printProfile()" style="background: var(--primary-purple); color: white; border: none;">
+                                        <button class="btn btn-sm w-100 mt-2" onclick="window.printProfile && window.printProfile()" style="background: var(--primary-purple); color: white; border: none;">
                                             <i class="fas fa-eye me-1"></i> Preview & Print
                                         </button>
                                     </div>

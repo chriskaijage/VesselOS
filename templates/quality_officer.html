@@ -64,7 +64,7 @@
     <div class="col-xl-3 col-md-6">
         <div class="card metric-card border-start border-5 border-warning">
             <div class="card-body text-center">
-                <button class="btn btn-warning w-100 py-3" onclick="showAccessRequestModal()">
+                <button class="btn btn-warning w-100 py-3" onclick="window.showAccessRequestModal && window.showAccessRequestModal()">
                     <i class="fas fa-clock-history me-2"></i> Request Access Extension
                 </button>
             </div>
@@ -117,7 +117,7 @@
                     <i class="fas fa-user-circle me-2"></i>
                     <span>My Profile</span>
                 </a>
-                <button class="btn btn-warning w-100 d-flex align-items-center justify-content-center" onclick="showAccessRequestModal()">
+                <button class="btn btn-warning w-100 d-flex align-items-center justify-content-center" onclick="window.showAccessRequestModal && window.showAccessRequestModal()">
                     <i class="fas fa-clock me-2"></i>
                     <span>Request Access Extension</span>
                 </button>
@@ -167,7 +167,7 @@
                         <a href="{{ url_for('evaluate') }}" class="btn btn-sm btn-primary">
                             <i class="fas fa-plus me-1"></i> New
                         </a>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="loadMyEvaluations()">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="window.loadMyEvaluations && window.loadMyEvaluations()">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
@@ -292,7 +292,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitAccessRequest()">Submit Request</button>
+                <button type="button" class="btn btn-primary" onclick="window.submitAccessRequest && window.submitAccessRequest()">Submit Request</button>
             </div>
         </div>
     </div>
@@ -395,7 +395,7 @@ function updateSurveyStatus(surveyEndDate, daysRemaining) {
                         <h6 class="alert-heading mb-1">Survey Period Expiring Soon</h6>
                         <p class="mb-0">Survey ends on: <strong>${surveyEndDate}</strong></p>
                         <p class="mb-0">Only <strong class="text-warning">${daysRemaining}</strong> days remaining</p>
-                        <button class="btn btn-sm btn-warning mt-2" onclick="showAccessRequestModal()">
+                        <button class="btn btn-sm btn-warning mt-2" onclick="window.showAccessRequestModal && window.showAccessRequestModal()">
                             <i class="fas fa-clock me-1"></i> Request Extension
                         </button>
                     </div>
@@ -411,7 +411,7 @@ function updateSurveyStatus(surveyEndDate, daysRemaining) {
                         <h6 class="alert-heading mb-1">Survey Period Expired</h6>
                         <p class="mb-0">Your survey period ended on <strong>${surveyEndDate}</strong></p>
                         <p class="mb-2">You cannot conduct new evaluations until access is extended.</p>
-                        <button class="btn btn-sm btn-danger" onclick="showAccessRequestModal()">
+                        <button class="btn btn-sm btn-danger" onclick="window.showAccessRequestModal && window.showAccessRequestModal()">
                             <i class="fas fa-clock-history me-1"></i> Request Access Extension
                         </button>
                     </div>
