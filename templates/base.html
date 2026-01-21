@@ -3304,28 +3304,29 @@ function showFilePreview(fileUrl, fileName) {
     // ==================== GLOBAL MESSAGING FUNCTION STUBS ====================
     // These are defined here so they're globally available immediately
     // They will be properly defined later in this script
+    // Stubs silently ignore early calls - real functions will be assigned on DOMContentLoaded
     
-    window.toggleMessagingPanel = function() { console.warn('toggleMessagingPanel called before initialization'); };
-    window.switchMessagingTab = function(tab) { console.warn('switchMessagingTab called before initialization'); };
-    window.sendQuickMessage = function() { console.warn('sendQuickMessage called before initialization'); };
-    window.openComposeTab = function() { console.warn('openComposeTab called before initialization'); };
-    window.toggleEmojiPicker = function() { console.warn('toggleEmojiPicker called before initialization'); };
-    window.insertEmoji = function(emoji) { console.warn('insertEmoji called before initialization'); };
-    window.openMessageThread = function(id, name) { console.warn('openMessageThread called before initialization'); };
-    window.sendReply = function(id) { console.warn('sendReply called before initialization'); };
-    window.openMessageDetail = function(id) { console.warn('openMessageDetail called before initialization'); };
-    window.loadMessagingTab = function(tab) { console.warn('loadMessagingTab called before initialization'); };
-    window.loadUnreadCount = function() { console.warn('loadUnreadCount called before initialization'); };
-    window.handleAttachmentUpload = function(input, context) { console.warn('handleAttachmentUpload called before initialization'); };
-    window.removeAttachment = function(index, context) { console.warn('removeAttachment called before initialization'); };
-    window.showEmojiPicker = function() { console.warn('showEmojiPicker called before initialization'); };
-    window.quickSearchUsers = function(query) { console.warn('quickSearchUsers called before initialization'); };
-    window.saveAsDraft = function() { console.warn('saveAsDraft called before initialization'); };
-    window.openUserSearchModal = function() { console.warn('openUserSearchModal called before initialization'); };
-    window.showUserProfile = function(userId) { console.warn('showUserProfile called before initialization'); };
-    window.toggleSidebar = function() { console.warn('toggleSidebar called before initialization'); };
-    window.toggleSidebarCollapse = function() { console.warn('toggleSidebarCollapse called before initialization'); };
-    window.setTheme = function(theme) { console.warn('setTheme called before initialization'); };
+    window.toggleMessagingPanel = function() { /* Waiting for initialization */ };
+    window.switchMessagingTab = function(tab) { /* Waiting for initialization */ };
+    window.sendQuickMessage = function() { /* Waiting for initialization */ };
+    window.openComposeTab = function() { /* Waiting for initialization */ };
+    window.toggleEmojiPicker = function() { /* Waiting for initialization */ };
+    window.insertEmoji = function(emoji) { /* Waiting for initialization */ };
+    window.openMessageThread = function(id, name) { /* Waiting for initialization */ };
+    window.sendReply = function(id) { /* Waiting for initialization */ };
+    window.openMessageDetail = function(id) { /* Waiting for initialization */ };
+    window.loadMessagingTab = function(tab) { /* Waiting for initialization */ };
+    window.loadUnreadCount = function() { /* Waiting for initialization */ };
+    window.handleAttachmentUpload = function(input, context) { /* Waiting for initialization */ };
+    window.removeAttachment = function(index, context) { /* Waiting for initialization */ };
+    window.showEmojiPicker = function() { /* Waiting for initialization */ };
+    window.quickSearchUsers = function(query) { /* Waiting for initialization */ };
+    window.saveAsDraft = function() { /* Waiting for initialization */ };
+    window.openUserSearchModal = function() { /* Waiting for initialization */ };
+    window.showUserProfile = function(userId) { /* Waiting for initialization */ };
+    window.toggleSidebar = function() { /* Waiting for initialization */ };
+    window.toggleSidebarCollapse = function() { /* Waiting for initialization */ };
+    window.setTheme = function(theme) { /* Waiting for initialization */ };
     
     // ==================== GLOBAL BUTTON FUNCTION STUBS ====================
     // These stubs ensure all onclick handlers work even if called before full initialization
