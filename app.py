@@ -8381,9 +8381,8 @@ def api_emergency_requests():
 
 @app.route('/api/emergency-details/<emergency_id>')
 @login_required
-@role_required(['port_engineer', 'harbour_master', 'quality_officer'])
 def api_emergency_details(emergency_id):
-    """Get emergency request details."""
+    """Get emergency request details - accessible to all authenticated users."""
     conn = get_db_connection()
     try:
         c = conn.cursor()

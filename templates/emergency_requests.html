@@ -1132,9 +1132,18 @@ function updateAuthorizationPanel(emergency) {
 }
 
 function showEmergencyDetails(emergencyId, event) {
-    if (event) event.stopPropagation();
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
     
     const modalContent = document.getElementById('emergencyDetailsContent');
+    if (!modalContent) {
+        console.error('Emergency details modal content element not found');
+        alert('Error: Modal element not found. Please refresh the page.');
+        return;
+    }
+    
     modalContent.innerHTML = `
         <div class="text-center py-4">
             <div class="spinner-border text-primary" role="status">
@@ -1144,15 +1153,34 @@ function showEmergencyDetails(emergencyId, event) {
         </div>
     `;
     
-    const modal = new bootstrap.Modal(document.getElementById('emergencyDetailsModal'));
-    modal.show();
+    try {
+        const modal = new bootstrap.Modal(document.getElementById('emergencyDetailsModal'));
+        modal.show();
+    } catch (err) {
+        console.error('Error opening modal:', err);
+        alert('Error opening modal. Please refresh the page.');
+        return;
+    }
     
     fetch(`/api/emergency-details/${emergencyId}`)
         .then(response => {
+            // Check if response is JSON
             const contentType = response.headers.get('content-type');
+            
+            // Handle non-200 status codes
+            if (!response.ok) {
+                if (response.status === 403) {
+                    throw new Error('You do not have permission to view this emergency.');
+                } else if (response.status === 404) {
+                    throw new Error('Emergency not found.');
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            }
+            
             if (!contentType || !contentType.includes('application/json')) {
                 return response.text().then(text => {
-                    throw new Error('Server returned non-JSON response');
+                    throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
                 });
             }
             return response.json();
@@ -1164,7 +1192,7 @@ function showEmergencyDetails(emergencyId, event) {
                 modalContent.innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-circle me-2"></i>
-                        Failed to load emergency details: ${data.error || 'Unknown error'}
+                        <strong>Error:</strong> ${data.error || 'Unknown error occurred'}
                     </div>
                 `;
             }
@@ -1174,7 +1202,8 @@ function showEmergencyDetails(emergencyId, event) {
             modalContent.innerHTML = `
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-circle me-2"></i>
-                    Network error: Failed to load emergency details. ${error.message || ''}
+                    <strong>Failed to load emergency details:</strong>
+                    <p class="mb-0 mt-2">${error.message || 'Network error occurred'}</p>
                 </div>
             `;
         });
