@@ -365,64 +365,75 @@ let maintenanceData = null;
 
 // Load harbour master data
 function loadMaintenanceData() {
-    fetch('/api/dashboard-data')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                maintenanceData = data.data;
-                
-                // Update stats
-                document.getElementById('totalRequests').textContent = data.data.total_requests || 0;
-                document.getElementById('activeRequests').textContent = data.data.in_progress || 0;
-                document.getElementById('avgResponse').textContent = '4.2';
-                document.getElementById('lowStock').textContent = data.data.low_stock || 0;
-                
-                // Update performance summary
-                document.getElementById('perfCompletion').textContent = '92%';
-                document.getElementById('perfTime').textContent = '4.2h';
-                document.getElementById('perfCost').textContent = '$1,250';
-                document.getElementById('perfSatisfaction').textContent = '94%';
-                
-                // Check for emergencies
-                if (data.data.pending_emergencies > 0) {
-                    document.getElementById('emergencySection').style.display = 'block';
-                    loadEmergencyRequests();
-                } else {
-                    document.getElementById('emergencySection').style.display = 'none';
-                }
-                
-                // Load service requests
-                loadServiceRequests();
-                
-                // Load role interactions
-                loadRoleInteractions();
-                
-                // Load inventory status
-                loadInventoryStatus();
-                
-                // Load assigned requests
-                loadAssignedRequests();
-                
-                // Load recent evaluations
-                loadRecentEvaluations();
-            }
-        });
-}
-
-function loadServiceRequests() {
-    fetch('/api/maintenance-requests')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateServiceRequestsTable(data.requests);
-            } else {
-                loadSampleServiceRequests();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading service requests:', error);
-            loadSampleServiceRequests();
-        });
+    // Load all data in parallel instead of sequentially for better performance
+    Promise.all([
+        fetch('/api/dashboard-data').then(r => r.json()),
+        fetch('/api/emergency-requests').then(r => r.json()),
+        fetch('/api/maintenance-requests').then(r => r.json()),
+        fetch('/api/role-interactions').then(r => r.json()).catch(() => ({success: false})),
+        fetch('/api/inventory-status').then(r => r.json()).catch(() => ({success: false})),
+        fetch('/api/assigned-requests').then(r => r.json()).catch(() => ({success: false})),
+        fetch('/api/recent-evaluations').then(r => r.json()).catch(() => ({success: false}))
+    ])
+    .then(([dashData, emergencyData, serviceData, roleData, invData, assignData, evalData]) => {
+        // Update dashboard stats
+        if (dashData.success) {
+            document.getElementById('totalRequests').textContent = dashData.total_requests || 0;
+            document.getElementById('activeRequests').textContent = dashData.active_ships || 0;
+            document.getElementById('avgResponse').textContent = (dashData.avg_response || 0).toFixed(1) + 'h';
+            document.getElementById('lowStock').textContent = dashData.low_stock || 0;
+            
+            // Update performance summary
+            document.getElementById('perfCompletion').textContent = dashData.satisfaction + '%';
+            document.getElementById('perfTime').textContent = (dashData.avg_response || 0).toFixed(1) + 'h';
+            document.getElementById('perfSatisfaction').textContent = dashData.satisfaction + '%';
+        }
+        
+        // Update emergency section
+        if (emergencyData.success && emergencyData.data && emergencyData.data.length > 0) {
+            document.getElementById('emergencySection').style.display = 'block';
+            updateEmergencyRequests(emergencyData.data);
+        } else {
+            document.getElementById('emergencySection').style.display = 'none';
+        }
+        
+        // Update service requests
+        if (serviceData.success && serviceData.requests) {
+            updateServiceRequestsTable(serviceData.requests);
+        }
+        
+        // Update role interactions (if available)
+        if (roleData.success && roleData.interactions) {
+            updateRoleInteractions(roleData.interactions);
+        }
+        
+        // Update inventory status (if available)
+        if (invData.success && invData.inventory) {
+            updateInventoryStatus(invData.inventory);
+        }
+        
+        // Update assigned requests (if available)
+        if (assignData.success && assignData.requests) {
+            updateAssignedRequests(assignData.requests);
+        }
+        
+        // Update evaluations (if available)
+        if (evalData.success && evalData.evaluations) {
+            updateRecentEvaluations(evalData.evaluations);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading dashboard data:', error);
+        // Show user-friendly error message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-warning alert-dismissible fade show';
+        alertDiv.innerHTML = `
+            <strong>Loading Data...</strong> Some dashboard elements are loading. Please wait.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        const container = document.querySelector('.dashboard-content') || document.body;
+        container.insertBefore(alertDiv, container.firstChild);
+    });
 }
 
 function updateServiceRequestsTable(requests) {
@@ -538,7 +549,17 @@ function loadEmergencyRequests() {
                         <h6 class="alert-heading">${emergency.ship_name}</h6>
                         <p class="mb-1">${emergency.issue}</p>
                         <small class="text-white-50">
-                            <i class="fas fa-clock me-1"></i> ${emergency.time}
+function updateEmergencyRequests(emergencies) {
+    let html = '';
+    emergencies.forEach(emergency => {
+        html += `
+            <div class="emergency-alert mb-2 p-3 border-start border-danger bg-light">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h6 class="mb-1">${emergency.title || emergency.request_type}</h6>
+                        <p class="text-muted mb-2 small">${emergency.description || emergency.ship_name}</p>
+                        <small class="text-danger">
+                            <i class="fas fa-clock me-1"></i> ${emergency.time || new Date(emergency.created_at).toLocaleString()}
                         </small>
                     </div>
                     <div>
@@ -554,51 +575,100 @@ function loadEmergencyRequests() {
     document.getElementById('emergencyRequests').innerHTML = html;
 }
 
-function loadRoleInteractions() {
-    fetch('/api/inter-role-actions')
+function loadEmergencyRequests() {
+    fetch('/api/emergency-requests')
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                const container = document.getElementById('roleInteractions');
-                const section = document.getElementById('roleInteractionsSection');
-                const count = document.getElementById('actionCount');
-                
-                if (data.actions.length === 0) {
-                    container.innerHTML = `
-                        <div class="col-12 text-center py-3">
-                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                            <p class="text-muted">No pending actions</p>
-                            <small class="text-muted">All systems operational</small>
-                        </div>
-                    `;
-                    count.textContent = '0';
-                } else {
-                    count.textContent = data.actions.length;
-                    
-                    let html = '';
-                    data.actions.forEach(action => {
-                        html += `
-                            <div class="col-12 mb-2">
-                                <div class="alert alert-${action.badge_color} d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <i class="fas fa-${action.icon} me-2"></i>
-                                        <strong>${action.title}</strong>
-                                        <p class="mb-0 small">${action.description}</p>
-                                    </div>
-                                    <div>
-                                        <span class="badge bg-white text-${action.badge_color} me-2">${action.count}</span>
-                                        <a href="${action.action_url}" class="btn btn-sm btn-outline-${action.badge_color === 'danger' ? 'light' : action.badge_color}">
-                                            View
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = html;
-                }
+            if (data.success && data.data) {
+                updateEmergencyRequests(data.data);
             }
+        })
+        .catch(error => console.error('Error loading emergency requests:', error));
+}
+
+function updateRoleInteractions(actions) {
+    const container = document.getElementById('roleInteractions');
+    const section = document.getElementById('roleInteractionsSection');
+    const count = document.getElementById('actionCount');
+    
+    if (!actions || actions.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-3">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">No pending actions</p>
+                <small class="text-muted">All systems operational</small>
+            </div>
+        `;
+        count.textContent = '0';
+    } else {
+        count.textContent = actions.length;
+        
+        let html = '';
+        actions.forEach(action => {
+            html += `
+                <div class="col-12 mb-2">
+                    <div class="alert alert-${action.badge_color} d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-${action.icon} me-2"></i>
+                            <strong>${action.title}</strong>
+                            <p class="mb-0 small">${action.description}</p>
+                        </div>
+                        <div>
+                            <span class="badge bg-white text-${action.badge_color} me-2">${action.count}</span>
+                            <a href="${action.action_url}" class="btn btn-sm btn-outline-${action.badge_color === 'danger' ? 'light' : action.badge_color}">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
         });
+        container.innerHTML = html;
+    }
+}
+
+function updateInventoryStatus(inventory) {
+    const lowStockItems = (inventory || []).filter(item => item.status === 'LOW' || item.status === 'CRITICAL');
+    let html = '';
+    
+    if (lowStockItems.length === 0) {
+        html = `
+            <div class="text-center py-2">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">All inventory items are stocked</p>
+            </div>
+        `;
+    } else {
+        html = '<div class="list-group">';
+        lowStockItems.slice(0, 5).forEach(item => {
+            const criticality = item.status === 'CRITICAL' ? 'danger' : 'warning';
+            
+            html += `
+                <div class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${item.part_name}</h6>
+                        <small class="text-${criticality}">${item.status}</small>
+                    </div>
+                    <p class="mb-1 small">${item.part_number} • Stock: ${item.current_stock}/${item.minimum_stock}</p>
+                    <button class="btn btn-sm btn-outline-warning mt-1" 
+                            onclick="showReorderModal('${item.part_number}', '${item.part_name}', ${item.current_stock})">
+                        <i class="fas fa-shopping-cart me-1"></i> Reorder
+                    </button>
+                </div>
+            `;
+        });
+        
+        if (lowStockItems.length > 5) {
+            html += `
+                <a href="/inventory" class="list-group-item list-group-item-action text-center text-primary">
+                    View all ${lowStockItems.length} items <i class="fas fa-arrow-right"></i>
+                </a>
+            `;
+        }
+        html += '</div>';
+    }
+    
+    document.getElementById('inventoryStatus').innerHTML = html;
 }
 
 function loadInventoryStatus() {
@@ -606,70 +676,24 @@ function loadInventoryStatus() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const lowStockItems = data.inventory.filter(item => item.status === 'LOW' || item.status === 'CRITICAL');
-                let html = '';
-                
-                if (lowStockItems.length === 0) {
-                    html = `
-                        <div class="text-center py-2">
-                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                            <p class="text-muted">All inventory items are stocked</p>
-                        </div>
-                    `;
-                } else {
-                    html = '<div class="list-group">';
-                    lowStockItems.slice(0, 5).forEach(item => {
-                        const criticality = item.status === 'CRITICAL' ? 'danger' : 'warning';
-                        
-                        html += `
-                            <div class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">${item.part_name}</h6>
-                                    <small class="text-${criticality}">${item.status}</small>
-                                </div>
-                                <p class="mb-1 small">${item.part_number} • Stock: ${item.current_stock}/${item.minimum_stock}</p>
-                                <button class="btn btn-sm btn-outline-warning mt-1" 
-                                        onclick="showReorderModal('${item.part_number}', '${item.part_name}', ${item.current_stock})">
-                                    <i class="fas fa-shopping-cart me-1"></i> Reorder
-                                </button>
-                            </div>
-                        `;
-                    });
-                    
-                    if (lowStockItems.length > 5) {
-                        html += `
-                            <a href="/inventory" class="list-group-item list-group-item-action text-center text-primary">
-                                View all ${lowStockItems.length} items <i class="fas fa-arrow-right"></i>
-                            </a>
-                        `;
-                    }
-                    html += '</div>';
-                }
-                
-                document.getElementById('inventoryStatus').innerHTML = html;
+                updateInventoryStatus(data.inventory);
             }
-        });
+        })
+        .catch(error => console.error('Error loading inventory:', error));
 }
 
-function loadAssignedRequests() {
-    // Sample assigned requests
-    const assigned = [
-        { request_id: 'MR-20240124-111521', ship_name: 'SS Sea Voyager', type: 'Part Replacement', deadline: 'Today, 5 PM' },
-        { request_id: 'MR-20240122-162312', ship_name: 'MV Coastal', type: 'Emergency Repair', deadline: 'ASAP' },
-        { request_id: 'MR-20240121-093421', ship_name: 'MV Horizon', type: 'Maintenance', deadline: 'Tomorrow, 10 AM' }
-    ];
-    
+function updateAssignedRequests(requests) {
     let html = '<div class="list-group">';
-    assigned.forEach(req => {
+    (requests || []).forEach(req => {
         const deadlineClass = req.deadline === 'ASAP' ? 'danger' : req.deadline.includes('Today') ? 'warning' : 'info';
         
         html += `
             <div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
                     <h6 class="mb-1">${req.ship_name}</h6>
-                    <small class="text-${deadlineClass}">${req.deadline}</small>
+                    <small class="text-${deadlineClass}">${req.deadline || 'TBD'}</small>
                 </div>
-                <p class="mb-1 small">${req.type}</p>
+                <p class="mb-1 small">${req.request_type || req.type}</p>
                 <button class="btn btn-sm btn-outline-primary mt-1" onclick="viewRequestDetails('${req.request_id}')">
                     <i class="fas fa-eye me-1"></i> View Details
                 </button>
@@ -681,26 +705,29 @@ function loadAssignedRequests() {
     document.getElementById('assignedRequests').innerHTML = html;
 }
 
-function loadRecentEvaluations() {
-    // Sample evaluations
-    const evaluations = [
-        { evaluation_id: 'EVAL-001', vessel: 'MV Ocean Carrier', sqi: 82.5, rating: 'Excellent', date: 'Today' },
-        { evaluation_id: 'EVAL-002', vessel: 'SS Sea Voyager', sqi: 65.2, rating: 'Average', date: 'Yesterday' },
-        { evaluation_id: 'EVAL-003', vessel: 'MV Coastal', sqi: 91.3, rating: 'Excellent', date: '2 days ago' }
+function loadAssignedRequests() {
+    // Sample assigned requests - fallback if API doesn't exist
+    const assigned = [
+        { request_id: 'MR-20240124-111521', ship_name: 'SS Sea Voyager', type: 'Part Replacement', deadline: 'Today, 5 PM' },
+        { request_id: 'MR-20240122-162312', ship_name: 'MV Coastal', type: 'Emergency Repair', deadline: 'ASAP' },
+        { request_id: 'MR-20240121-093421', ship_name: 'MV Horizon', type: 'Maintenance', deadline: 'Tomorrow, 10 AM' }
     ];
-    
+    updateAssignedRequests(assigned);
+}
+
+function updateRecentEvaluations(evaluations) {
     let html = '<div class="row">';
-    evaluations.forEach(eval => {
+    (evaluations || []).forEach(eval => {
         const ratingClass = eval.rating === 'Excellent' ? 'success' : eval.rating === 'Good' ? 'primary' : 'warning';
         
         html += `
             <div class="col-md-4 mb-3">
                 <div class="card">
                     <div class="card-body text-center">
-                        <div class="h3 mb-2 text-${ratingClass}">${eval.sqi}</div>
-                        <h6>${eval.vessel}</h6>
-                        <span class="badge bg-${ratingClass}">${eval.rating}</span>
-                        <p class="small text-muted mt-2">${eval.date}</p>
+                        <div class="h3 mb-2 text-${ratingClass}">${eval.sqi || eval.score || 0}</div>
+                        <h6>${eval.vessel || eval.ship_name}</h6>
+                        <span class="badge bg-${ratingClass}">${eval.rating || 'N/A'}</span>
+                        <p class="small text-muted mt-2">${eval.date || 'Today'}</p>
                     </div>
                 </div>
             </div>
@@ -710,6 +737,18 @@ function loadRecentEvaluations() {
     
     document.getElementById('recentEvaluations').innerHTML = html;
 }
+
+function loadRecentEvaluations() {
+    // Sample evaluations - fallback if API doesn't exist
+    const evaluations = [
+        { evaluation_id: 'EVAL-001', vessel: 'MV Ocean Carrier', sqi: 82.5, rating: 'Excellent', date: 'Today' },
+        { evaluation_id: 'EVAL-002', vessel: 'SS Sea Voyager', sqi: 65.2, rating: 'Average', date: 'Yesterday' },
+        { evaluation_id: 'EVAL-003', vessel: 'MV Coastal', sqi: 91.3, rating: 'Excellent', date: '2 days ago' }
+    ];
+    updateRecentEvaluations(evaluations);
+}
+
+
 
 function showReorderModal(partNumber, partName, currentStock) {
     document.getElementById('reorderPartNumber').value = partNumber;
