@@ -5549,11 +5549,12 @@ def api_messaging_conversation(thread_id):
         try:
             c = conn.cursor()
 
-            # Get conversation messages
+            # Get conversation messages - INCLUDE ATTACHMENTS
             query = """
                 SELECT m.message_id, m.message, m.created_at,
                        u.first_name || ' ' || u.last_name as sender_name,
-                       u.user_id as sender_id
+                       u.user_id as sender_id,
+                       m.attachment_path, m.attachment_filename
                 FROM messaging_system m
                 JOIN users u ON m.sender_id = u.user_id
                 WHERE m.message_type = 'message'
@@ -5568,6 +5569,26 @@ def api_messaging_conversation(thread_id):
             c.execute(query, params)
             messages = [dict(row) for row in c.fetchall()]
 
+            # Process attachments for each message
+            processed_messages = []
+            for msg in messages:
+                msg_dict = dict(msg)
+                # Parse attachments
+                attachments = []
+                try:
+                    if msg_dict.get('attachment_path'):
+                        paths = json.loads(msg_dict['attachment_path'])
+                        filenames = json.loads(msg_dict['attachment_filename']) if msg_dict.get('attachment_filename') else []
+                        for idx, path in enumerate(paths):
+                            attachments.append({
+                                'index': idx,
+                                'filename': filenames[idx] if idx < len(filenames) else path
+                            })
+                except:
+                    pass
+                msg_dict['attachments'] = attachments
+                processed_messages.append(msg_dict)
+
             # Mark messages as read
             c.execute("""
                 UPDATE messaging_system
@@ -5580,7 +5601,7 @@ def api_messaging_conversation(thread_id):
 
             conn.commit()
 
-            return jsonify({'success': True, 'messages': messages})
+            return jsonify({'success': True, 'messages': processed_messages})
 
         except Exception as e:
             app.logger.error(f"Error getting conversation: {e}")
