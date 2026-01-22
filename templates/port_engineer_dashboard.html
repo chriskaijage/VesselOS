@@ -1782,28 +1782,45 @@ function submitAuthorization(emergencyId) {
         return;
     }
     
-    fetch('/api/emergency-authorize', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            emergency_id: emergencyId, 
-            auth_code: authCode,
-            manager_id: '{{ current_user.id }}'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Emergency authorized successfully!', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('authorizationModal')).hide();
-            loadManagerData();
+    // Fetch CSRF token first
+    fetch('/api/csrf-token')
+        .then(csrfResponse => csrfResponse.json())
+        .then(csrfData => {
+            if (!csrfData.csrf_token) {
+                throw new Error('Failed to get CSRF token');
+            }
             
-            // Send notifications to relevant personnel via messaging
-            sendBulkNotificationsForEmergency(emergencyId);
-        } else {
-            showAlert('Error: ' + (data.error || 'Authorization failed'), 'danger');
-        }
-    });
+            // Now make the authorization request with CSRF token
+            return fetch('/api/emergency-authorize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfData.csrf_token
+                },
+                body: JSON.stringify({
+                    emergency_id: emergencyId, 
+                    auth_code: authCode,
+                    manager_id: '{{ current_user.id }}'
+                })
+            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Emergency authorized successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('authorizationModal')).hide();
+                loadManagerData();
+                
+                // Send notifications to relevant personnel via messaging
+                sendBulkNotificationsForEmergency(emergencyId);
+            } else {
+                showAlert('Error: ' + (data.error || 'Authorization failed'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Authorization error:', error);
+            showAlert('Error: ' + error.message, 'danger');
+        });
 }
 
 function sendBulkNotificationsForEmergency(emergencyId) {
