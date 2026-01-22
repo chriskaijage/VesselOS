@@ -2554,6 +2554,9 @@ function showFilePreview(fileUrl, fileName) {
             max-width: 80%;
             position: relative;
             color: white;
+            transition: all 0.2s ease;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
         .message-bubble * {
@@ -2564,12 +2567,48 @@ function showFilePreview(fileUrl, fileName) {
             color: white !important;
         }
         
+        .message-bubble:hover .message-actions {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .message-actions {
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            margin-top: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .message-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .message-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
         .message-bubble.sent {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
             color: white;
             margin-left: auto;
             border-bottom-right-radius: 4px;
             box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .message-bubble.sent:hover,
+        .message-bubble.received:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
         .message-bubble.received {
@@ -3981,19 +4020,32 @@ function showFilePreview(fileUrl, fileName) {
             messages.forEach(msg => {
                 const bubbleClass = msg.direction === 'sent' ? 'sent' : 'received';
                 const messageText = msg.message || msg.reply_text || '';
+                const canDelete = msg.direction === 'sent';
                 
                 html += `
                     <div class="message-bubble ${bubbleClass}" data-message-id="${msg.message_id}">
-                        ${messageText ? `<div>${messageText}</div>` : ''}
-                        ${msg.attachments && msg.attachments.length > 0 ? `
-                            <div class="message-attachments mt-2">
-                                ${msg.attachments.map(att => {
-                                    const downloadUrl = `/api/messaging/download-attachment/${msg.message_id}/${att.index}`;
-                                    return renderAttachment(att, downloadUrl);
-                                }).join('')}
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                            <div style="flex: 1;">
+                                ${messageText ? `<div style="word-break: break-word;">${messageText}</div>` : ''}
+                                ${msg.attachments && msg.attachments.length > 0 ? `
+                                    <div class="message-attachments mt-2">
+                                        ${msg.attachments.map(att => {
+                                            const downloadUrl = `/api/messaging/download-attachment/${msg.message_id}/${att.index}`;
+                                            return renderAttachment(att, downloadUrl);
+                                        }).join('')}
+                                    </div>
+                                ` : ''}
+                                <div class="message-time">${formatDateTime(msg.created_at)}</div>
                             </div>
-                        ` : ''}
-                        <div class="message-time">${formatDateTime(msg.created_at)}</div>
+                        </div>
+                        <div class="message-actions">
+                            <button class="message-action-btn" onclick="replyToMessage('${msg.message_id}', '${messageText.replace(/'/g, "\\'").substring(0, 50)}')\" title=\"Reply\">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                            ${canDelete ? `<button class="message-action-btn" onclick="deleteMessage('${msg.message_id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
+                        </div>
                     </div>
                 `;
                 
@@ -4001,18 +4053,28 @@ function showFilePreview(fileUrl, fileName) {
                 if (msg.replies && msg.replies.length > 0) {
                     msg.replies.forEach(reply => {
                         const replyBubbleClass = reply.sender_id === currentUser.id ? 'sent' : 'received';
+                        const canDeleteReply = reply.sender_id === currentUser.id;
                         html += `
                             <div class="message-bubble ${replyBubbleClass}" data-reply-id="${reply.reply_id}">
-                                ${reply.reply_text ? `<div>${reply.reply_text}</div>` : ''}
-                                ${reply.attachments && reply.attachments.length > 0 ? `
-                                    <div class="message-attachments mt-2">
-                                        ${reply.attachments.map(att => {
-                                            const downloadUrl = `/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}`;
-                                            return renderAttachment(att, downloadUrl);
-                                        }).join('')}
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                                    <div style="flex: 1;">
+                                        ${reply.reply_text ? `<div style="word-break: break-word;">${reply.reply_text}</div>` : ''}
+                                        ${reply.attachments && reply.attachments.length > 0 ? `
+                                            <div class="message-attachments mt-2">
+                                                ${reply.attachments.map(att => {
+                                                    const downloadUrl = `/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}`;
+                                                    return renderAttachment(att, downloadUrl);
+                                                }).join('')}
+                                            </div>
+                                        ` : ''}
+                                        <div class="message-time">${formatDateTime(reply.created_at)}</div>
                                     </div>
-                                ` : ''}
-                                <div class="message-time">${formatDateTime(reply.created_at)}</div>
+                                </div>
+                                <div class="message-actions">
+                                    ${canDeleteReply ? `<button class="message-action-btn" onclick="deleteReply('${msg.message_id}', '${reply.reply_id}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>` : ''}
+                                </div>
                             </div>
                         `;
                     });
@@ -4253,6 +4315,82 @@ function showFilePreview(fileUrl, fileName) {
             if (textarea) textarea.disabled = false;
             showAlert('danger', 'Network error sending reply');
         });
+    }
+
+    // ========== Message Delete and Reply Functions ==========
+    
+    function deleteMessage(messageId) {
+        if (!confirm('Delete this message? This action cannot be undone.')) {
+            return;
+        }
+        
+        fetch(`/api/messaging/delete-message/${messageId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Message deleted');
+                // Refresh thread to remove deleted message
+                const userNameElement = document.querySelector('.conversation-header h6');
+                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
+                setTimeout(() => {
+                    openMessageThread(currentConversationId, displayName);
+                }, 300);
+            } else {
+                showAlert('danger', data.error || 'Failed to delete message');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting message:', error);
+            showAlert('danger', 'Network error deleting message');
+        });
+    }
+    
+    function deleteReply(messageId, replyId) {
+        if (!confirm('Delete this reply? This action cannot be undone.')) {
+            return;
+        }
+        
+        fetch(`/api/messaging/delete-reply/${messageId}/${replyId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Reply deleted');
+                // Refresh thread to remove deleted reply
+                const userNameElement = document.querySelector('.conversation-header h6');
+                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
+                setTimeout(() => {
+                    openMessageThread(currentConversationId, displayName);
+                }, 300);
+            } else {
+                showAlert('danger', data.error || 'Failed to delete reply');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting reply:', error);
+            showAlert('danger', 'Network error deleting reply');
+        });
+    }
+    
+    function replyToMessage(messageId, messagePreview) {
+        const textarea = document.getElementById('threadReplyText');
+        if (textarea) {
+            textarea.focus();
+            // Show indication that user is replying to a message
+            textarea.placeholder = `Replying to: "${messagePreview}..."`;
+            setTimeout(() => {
+                textarea.placeholder = 'Type your reply...';
+            }, 3000);
+        }
     }
 
     function quickSearchUsers(query) {

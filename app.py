@@ -6602,6 +6602,70 @@ def api_messaging_download_reply_attachment(message_id, reply_id):
         app.logger.error(f"Error in download reply attachment: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ==================== DELETE MESSAGE & REPLY ENDPOINTS ====================
+
+@app.route('/api/messaging/delete-message/<message_id>', methods=['DELETE'])
+@login_required
+def api_messaging_delete_message(message_id):
+    """Delete a message sent by current user."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Verify the message belongs to the current user
+        c.execute("""
+            SELECT sender_id FROM messaging_system
+            WHERE message_id = ?
+        """, (message_id,))
+        
+        message = c.fetchone()
+        if not message:
+            return jsonify({'success': False, 'error': 'Message not found'}), 404
+        
+        if message['sender_id'] != current_user.id:
+            return jsonify({'success': False, 'error': 'Cannot delete another user\'s message'}), 403
+        
+        # Delete the message
+        c.execute("DELETE FROM messaging_system WHERE message_id = ?", (message_id,))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Message deleted'})
+    except Exception as e:
+        app.logger.error(f"Error deleting message: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/messaging/delete-reply/<message_id>/<reply_id>', methods=['DELETE'])
+@login_required
+def api_messaging_delete_reply(message_id, reply_id):
+    """Delete a reply sent by current user."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Verify the reply belongs to the current user
+        c.execute("""
+            SELECT sender_id FROM message_replies
+            WHERE reply_id = ? AND message_id = ?
+        """, (reply_id, message_id))
+        
+        reply = c.fetchone()
+        if not reply:
+            return jsonify({'success': False, 'error': 'Reply not found'}), 404
+        
+        if reply['sender_id'] != current_user.id:
+            return jsonify({'success': False, 'error': 'Cannot delete another user\'s reply'}), 403
+        
+        # Delete the reply
+        c.execute("DELETE FROM message_replies WHERE reply_id = ? AND message_id = ?", (reply_id, message_id))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Reply deleted'})
+    except Exception as e:
+        app.logger.error(f"Error deleting reply: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ==================== SERVE ATTACHMENT FILES ====================
 
 @app.route('/uploads/messages/<path:filename>')
