@@ -36,6 +36,9 @@ function showFilePreview(fileUrl, fileName) {
     <meta name="viewport" content="width=1024px, initial-scale=1.0, user-scalable=yes">
     <title>{% block title %}Marine Service Center{% endblock %}</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    
     <!-- Theme Initialization Script (runs before rendering) -->
     <script>
         (function() {
