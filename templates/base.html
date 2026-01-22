@@ -4102,8 +4102,8 @@ function showFilePreview(fileUrl, fileName) {
             clearInterval(threadRefreshInterval);
         }
         
-        // Auto-refresh thread every 1 second for real-time updates
-        // Fetches new messages instantly when they arrive
+        // Auto-refresh thread every 5 seconds for real-time updates
+        // Balances responsiveness with rate limiting (stays under 50/hour default limit)
         threadRefreshInterval = setInterval(() => {
             if (currentConversationId) {
                 fetch(`/api/messaging/thread/${currentConversationId}`)
@@ -4125,7 +4125,7 @@ function showFilePreview(fileUrl, fileName) {
                     })
                     .catch(error => console.log('Thread refresh check (non-critical):', error.message));
             }
-        }, 1000);
+        }, 5000);
         
         // Initialize emoji picker
         initEmojiPicker();

@@ -59,7 +59,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["5000 per day", "500 per hour"],
 )
 
 # Enable gzip compression for faster page loads
