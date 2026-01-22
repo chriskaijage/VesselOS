@@ -8328,17 +8328,33 @@ def api_dashboard_data():
 @login_required
 @role_required(['port_engineer', 'harbour_master', 'quality_officer'])
 def api_emergency_requests():
-    """Get all emergency requests."""
+    """Get emergency requests - only pending by default (can filter by status parameter)."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
-        c.execute("""
-            SELECT emergency_id, ship_name, emergency_type, severity_level,
-                   status, created_at, reported_by, location_name, latitude, longitude,
-                   description, immediate_actions, resources_required, authorized_by, authorized_at
-            FROM emergency_requests
-            ORDER BY created_at DESC
-        """)
+        
+        # Get status filter from query parameter (default to pending)
+        status_filter = request.args.get('status', 'pending')
+        
+        if status_filter == 'all':
+            # Get all emergencies
+            c.execute("""
+                SELECT emergency_id, ship_name, emergency_type, severity_level,
+                       status, created_at, reported_by, location_name, latitude, longitude,
+                       description, immediate_actions, resources_required, authorized_by, authorized_at
+                FROM emergency_requests
+                ORDER BY created_at DESC
+            """)
+        else:
+            # Get only specific status (default: pending)
+            c.execute("""
+                SELECT emergency_id, ship_name, emergency_type, severity_level,
+                       status, created_at, reported_by, location_name, latitude, longitude,
+                       description, immediate_actions, resources_required, authorized_by, authorized_at
+                FROM emergency_requests
+                WHERE status = ?
+                ORDER BY created_at DESC
+            """, (status_filter,))
 
         emergencies = []
         for row in c.fetchall():
@@ -9438,58 +9454,129 @@ def api_get_maintenance_requests():
 @app.route('/api/maintenance-requests')
 @login_required
 def api_maintenance_requests():
-    """Get maintenance requests - filtered by user role."""
+    """Get maintenance requests - filtered by user role and status."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
         
+        # Get status filter from query parameter (default to pending for managers)
+        status_filter = request.args.get('status', None)
+        
         # Filter based on user role
         if current_user.role == 'chief_engineer':
             # Chief Engineer sees only their own requests
-            c.execute("""
-                SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                       status, created_at, requested_by
-                FROM maintenance_requests
-                WHERE requested_by = ?
-                ORDER BY created_at DESC
-                LIMIT 50
-            """, (current_user.email,))
+            if status_filter:
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    WHERE requested_by = ? AND status = ?
+                    ORDER BY created_at DESC
+                    LIMIT 50
+                """, (current_user.email, status_filter))
+            else:
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    WHERE requested_by = ?
+                    ORDER BY created_at DESC
+                    LIMIT 50
+                """, (current_user.email,))
         elif current_user.role == 'captain':
             # Captain sees all requests (read-only view)
-            c.execute("""
-                SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                       status, created_at, requested_by
-                FROM maintenance_requests
-                ORDER BY created_at DESC
-                LIMIT 50
-            """)
+            if status_filter:
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    WHERE status = ?
+                    ORDER BY created_at DESC
+                    LIMIT 50
+                """, (status_filter,))
+            else:
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    ORDER BY created_at DESC
+                    LIMIT 50
+                """)
         elif current_user.role in ['harbour_master', 'port_engineer']:
-            # Harbour Master and Port Engineer see all requests
-            c.execute("""
-                SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                       status, created_at, requested_by
-                FROM maintenance_requests
-                ORDER BY 
-                    CASE priority
-                        WHEN 'critical' THEN 1
-                        WHEN 'high' THEN 2
-                        WHEN 'medium' THEN 3
-                        WHEN 'low' THEN 4
-                        ELSE 5
-                    END,
-                    created_at DESC
-                LIMIT 50
-            """)
+            # Harbour Master and Port Engineer see pending requests by default
+            if status_filter == 'all':
+                # Show all requests
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    ORDER BY 
+                        CASE priority
+                            WHEN 'critical' THEN 1
+                            WHEN 'high' THEN 2
+                            WHEN 'medium' THEN 3
+                            WHEN 'low' THEN 4
+                            ELSE 5
+                        END,
+                        created_at DESC
+                    LIMIT 50
+                """)
+            elif status_filter:
+                # Show specific status
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    WHERE status = ?
+                    ORDER BY 
+                        CASE priority
+                            WHEN 'critical' THEN 1
+                            WHEN 'high' THEN 2
+                            WHEN 'medium' THEN 3
+                            WHEN 'low' THEN 4
+                            ELSE 5
+                        END,
+                        created_at DESC
+                    LIMIT 50
+                """, (status_filter,))
+            else:
+                # Default: show pending requests
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    WHERE status = 'pending'
+                    ORDER BY 
+                        CASE priority
+                            WHEN 'critical' THEN 1
+                            WHEN 'high' THEN 2
+                            WHEN 'medium' THEN 3
+                            WHEN 'low' THEN 4
+                            ELSE 5
+                        END,
+                        created_at DESC
+                    LIMIT 50
+                """)
         else:
             # Other users see only their own requests
-            c.execute("""
-                SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                       status, created_at, requested_by
-                FROM maintenance_requests
-                WHERE requested_by = ?
-                ORDER BY created_at DESC
-                LIMIT 50
-            """, (current_user.email,))
+            if status_filter:
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    WHERE requested_by = ? AND status = ?
+                    ORDER BY created_at DESC
+                    LIMIT 50
+                """, (current_user.email, status_filter))
+            else:
+                c.execute("""
+                    SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
+                           status, created_at, requested_by
+                    FROM maintenance_requests
+                    WHERE requested_by = ?
+                    ORDER BY created_at DESC
+                    LIMIT 50
+                """, (current_user.email,))
 
         requests = []
         for row in c.fetchall():
