@@ -3924,7 +3924,16 @@ function showFilePreview(fileUrl, fileName) {
     }
     
     // Helper function to render attachment (image or file)
-    function renderAttachment(att, downloadUrl) {
+    function renderAttachment(att, downloadUrl, messageId = null, attachmentPreview = null) {
+        const previewText = attachmentPreview || (att.type === 'image' ? '📷 Image' : att.type === 'video' ? '🎥 Video' : `📎 ${att.filename}`);
+        const replyButton = messageId ? `
+            <button class="btn btn-sm btn-outline-light ms-2" 
+                    onclick="replyToMessage('${messageId}', '${previewText.replace(/'/g, "\\'")}', '${messageId}'); return false;" 
+                    title="Reply to this attachment">
+                <i class="fas fa-reply"></i>
+            </button>
+        ` : '';
+        
         if (isImageFile(att.filename)) {
             // For images, use /uploads/messages/ endpoint to display inline
             // Use att.path if available (filename stored in database), otherwise use att.filename
@@ -3932,17 +3941,18 @@ function showFilePreview(fileUrl, fileName) {
             
             // Render as image preview
             return `
-                <div class="message-image mt-2" style="max-width: 300px;">
+                <div class="message-image mt-2" style="max-width: 300px; position: relative;">
                     <img src="${imageDisplayUrl}" 
                          alt="${att.filename}" 
                          class="img-fluid rounded" 
                          style="max-width: 100%; max-height: 400px; object-fit: cover; cursor: pointer;"
                          onerror="this.src='/images/placeholder.png';"
                          onclick="openImageViewer('${imageDisplayUrl}', '${att.filename}')">
-                    <div class="mt-2 text-center">
+                    <div class="mt-2 d-flex justify-content-center align-items-center gap-2">
                         <a href="${downloadUrl}" download="${att.filename}" class="btn btn-sm btn-outline-light">
                             <i class="fas fa-download me-1"></i>Save
                         </a>
+                        ${replyButton}
                     </div>
                 </div>
             `;
@@ -3955,9 +3965,12 @@ function showFilePreview(fileUrl, fileName) {
                         <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
                         <span class="small" style="color: white;">${att.filename}</span>
                     </div>
-                    <a href="${downloadUrl}" class="btn btn-sm btn-outline-light" title="Download ${att.filename}">
-                        <i class="fas fa-download"></i>
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="${downloadUrl}" class="btn btn-sm btn-outline-light" title="Download ${att.filename}">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        ${replyButton}
+                    </div>
                 </div>
             `;
         }
@@ -4029,9 +4042,10 @@ function showFilePreview(fileUrl, fileName) {
                                 ${messageText ? `<div style="word-break: break-word;">${messageText}</div>` : ''}
                                 ${msg.attachments && msg.attachments.length > 0 ? `
                                     <div class="message-attachments mt-2">
-                                        ${msg.attachments.map(att => {
+                                        ${msg.attachments.map((att, attIdx) => {
                                             const downloadUrl = `/api/messaging/download-attachment/${msg.message_id}/${att.index}`;
-                                            return renderAttachment(att, downloadUrl);
+                                            const attachmentPreview = att.type === 'image' ? '📷 Image' : att.type === 'video' ? '🎥 Video' : `📎 ${att.filename}`;
+                                            return renderAttachment(att, downloadUrl, msg.message_id, attachmentPreview);
                                         }).join('')}
                                     </div>
                                 ` : ''}
@@ -4039,9 +4053,12 @@ function showFilePreview(fileUrl, fileName) {
                             </div>
                         </div>
                         <div class="message-actions">
-                            <button class="message-action-btn" onclick="replyToMessage('${msg.message_id}', '${messageText.replace(/'/g, "\\'").substring(0, 50)}')\" title=\"Reply\">
+                            <button class="message-action-btn" onclick="replyToMessage('${msg.message_id}', '${messageText.replace(/'/g, "\\'").substring(0, 50)}', '${msg.message_id}')" title="Reply">
                                 <i class="fas fa-reply"></i>
                             </button>
+                            ${canDelete ? `<button class="message-action-btn" onclick="editMessage('${msg.message_id}', '${messageText.replace(/'/g, "\\'")}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>` : ''}
                             ${canDelete ? `<button class="message-action-btn" onclick="deleteMessage('${msg.message_id}')" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
@@ -4054,16 +4071,44 @@ function showFilePreview(fileUrl, fileName) {
                     msg.replies.forEach(reply => {
                         const replyBubbleClass = reply.sender_id === currentUser.id ? 'sent' : 'received';
                         const canDeleteReply = reply.sender_id === currentUser.id;
+                        
+                        // WhatsApp-style quoted message display
+                        let quotedMessageHtml = '';
+                        if (reply.reply_to_message_id && reply.replied_to_message) {
+                            const repliedMsg = reply.replied_to_message;
+                            const repliedSenderName = repliedMsg.sender_id === currentUser.id ? 'You' : (repliedMsg.sender_name || 'User');
+                            const repliedText = repliedMsg.message || repliedMsg.message_text || '';
+                            const hasRepliedAttachments = repliedMsg.attachments && repliedMsg.attachments.length > 0;
+                            
+                            quotedMessageHtml = `
+                                <div style="border-left: 3px solid ${replyBubbleClass === 'sent' ? '#25D366' : '#0084ff'}; padding-left: 0.5rem; margin-bottom: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; padding: 0.5rem;">
+                                    <div style="font-weight: 600; font-size: 0.75rem; color: ${replyBubbleClass === 'sent' ? '#25D366' : '#0084ff'}; margin-bottom: 0.25rem;">
+                                        ${repliedSenderName}
+                                    </div>
+                                    ${hasRepliedAttachments ? `
+                                        <div style="display: flex; align-items: center; gap: 0.25rem; margin-bottom: 0.25rem;">
+                                            <i class="fas fa-${repliedMsg.attachments[0].type === 'image' ? 'image' : repliedMsg.attachments[0].type === 'video' ? 'video' : 'paperclip'}" style="color: #666; font-size: 0.7rem;"></i>
+                                            <span style="color: #666; font-size: 0.7rem;">${repliedMsg.attachments[0].filename || 'Attachment'}</span>
+                                        </div>
+                                    ` : ''}
+                                    <div style="color: #333; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                        ${repliedText.substring(0, 100)}${repliedText.length > 100 ? '...' : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
                         html += `
                             <div class="message-bubble ${replyBubbleClass}" data-reply-id="${reply.reply_id}">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
                                     <div style="flex: 1;">
+                                        ${quotedMessageHtml}
                                         ${reply.reply_text ? `<div style="word-break: break-word;">${reply.reply_text}</div>` : ''}
                                         ${reply.attachments && reply.attachments.length > 0 ? `
                                             <div class="message-attachments mt-2">
                                                 ${reply.attachments.map(att => {
                                                     const downloadUrl = `/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}`;
-                                                    return renderAttachment(att, downloadUrl);
+                                                    return renderAttachment(att, downloadUrl, msg.message_id);
                                                 }).join('')}
                                             </div>
                                         ` : ''}
@@ -4271,6 +4316,9 @@ function showFilePreview(fileUrl, fileName) {
         document.getElementById('threadAttachmentPreview').innerHTML = '';
         document.getElementById('threadAttachment').value = '';
         
+        // Clear reply preview
+        cancelReply();
+        
         fetch('/api/messaging/quick-send', {
             method: 'POST',
             body: formData
@@ -4317,7 +4365,11 @@ function showFilePreview(fileUrl, fileName) {
         });
     }
 
-    // ========== Message Delete and Reply Functions ==========
+    // ========== Message Delete, Edit and Reply Functions ==========
+    
+    let editingMessageId = null;
+    let replyingToMessageId = null;
+    let replyingToMessageData = null; // Store full message data for WhatsApp-style replies
     
     function deleteMessage(messageId) {
         if (!confirm('Delete this message? This action cannot be undone.')) {
@@ -4347,6 +4399,74 @@ function showFilePreview(fileUrl, fileName) {
         .catch(error => {
             console.error('Error deleting message:', error);
             showAlert('danger', 'Network error deleting message');
+        });
+    }
+    
+    function editMessage(messageId, messageText) {
+        const textarea = document.getElementById('threadReplyText');
+        if (!textarea) return;
+        
+        // Clear any reply preview when editing
+        cancelReply();
+        
+        editingMessageId = messageId;
+        textarea.value = messageText;
+        textarea.focus();
+        textarea.placeholder = 'Edit your message...';
+        
+        const sendBtn = document.querySelector('.quick-reply-area .btn-primary');
+        if (sendBtn) {
+            sendBtn.innerHTML = '<i class="fas fa-check me-1"></i> Save';
+            sendBtn.onclick = function() { saveEditedMessage(messageId); };
+        }
+    }
+    
+    function saveEditedMessage(messageId) {
+        const textarea = document.getElementById('threadReplyText');
+        const messageText = textarea.value.trim();
+        
+        if (!messageText) {
+            showAlert('warning', 'Message cannot be empty');
+            return;
+        }
+        
+        fetch('/api/messaging/edit-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                message_id: messageId,
+                message: messageText
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Message updated');
+                textarea.value = '';
+                textarea.placeholder = 'Type your reply...';
+                editingMessageId = null;
+                const sendBtn = document.querySelector('.quick-reply-area .btn-primary');
+                if (sendBtn) {
+                    sendBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Send';
+                    sendBtn.onclick = function() { sendThreadReply(); };
+                }
+                
+                // Refresh thread
+                const userNameElement = document.querySelector('.conversation-header h6');
+                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
+                setTimeout(() => {
+                    openMessageThread(currentConversationId, displayName);
+                }, 300);
+            } else {
+                showAlert('danger', data.error || 'Failed to update message');
+            }
+        })
+        .catch(error => {
+            console.error('Error editing message:', error);
+            showAlert('danger', 'Network error updating message');
         });
     }
     
@@ -4381,16 +4501,48 @@ function showFilePreview(fileUrl, fileName) {
         });
     }
     
-    function replyToMessage(messageId, messagePreview) {
+    function replyToMessage(messageId, messagePreview, replyToId) {
         const textarea = document.getElementById('threadReplyText');
         if (textarea) {
             textarea.focus();
+            replyingToMessageId = replyToId || messageId;
+            
             // Show indication that user is replying to a message
             textarea.placeholder = `Replying to: "${messagePreview}..."`;
+            
+            // Add quoted message preview if it exists
+            const quotedMsg = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (quotedMsg && quotedMsg.textContent) {
+                const msgText = quotedMsg.querySelector('div[style*="word-break"]')?.textContent || messagePreview;
+                const replyPreview = document.getElementById('threadReplyPreview');
+                if (!replyPreview) {
+                    const preview = document.createElement('div');
+                    preview.id = 'threadReplyPreview';
+                    preview.className = 'alert alert-info mt-2';
+                    preview.style.cssText = 'margin: 0.5rem 0; padding: 0.5rem; font-size: 0.9rem; border-left: 3px solid #17a2b8;';
+                    preview.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div><strong>Replying to:</strong> ${msgText.substring(0, 100)}</div>
+                            <button type="button" class="btn btn-sm" onclick="cancelReply()" style="padding: 0;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    textarea.parentElement.insertBefore(preview, textarea);
+                }
+            }
+            
             setTimeout(() => {
                 textarea.placeholder = 'Type your reply...';
             }, 3000);
         }
+    }
+    
+    function cancelReply() {
+        replyingToMessageId = null;
+        replyingToMessageData = null;
+        const preview = document.getElementById('threadReplyPreview');
+        if (preview) preview.remove();
     }
 
     function quickSearchUsers(query) {

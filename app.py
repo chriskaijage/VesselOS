@@ -5430,7 +5430,7 @@ def api_messaging_thread(other_party_id):
             for message in messages:
                 c.execute("""
                     SELECT r.reply_id, r.reply_text, r.sender_id, r.attachment_path, 
-                           r.attachment_filename, r.created_at,
+                           r.attachment_filename, r.reply_to_message_id, r.created_at,
                            u.first_name || ' ' || u.last_name as sender_name
                     FROM message_replies r
                     LEFT JOIN users u ON r.sender_id = u.user_id
@@ -5439,11 +5439,42 @@ def api_messaging_thread(other_party_id):
                 """, (message['message_id'],))
                 replies = [dict(row) for row in c.fetchall()]
                 
-                # Parse reply attachments
+                # Parse reply attachments and get original message info for WhatsApp-style replies
                 for reply in replies:
                     reply_attachments = []
                     reply_path = reply.get('attachment_path')
                     reply_filename = reply.get('attachment_filename')
+                    
+                    # If this reply is replying to another message, get the original message info
+                    if reply.get('reply_to_message_id'):
+                        c.execute("""
+                            SELECT m.message_id, m.message, m.sender_id, m.attachment_path, m.attachment_filename,
+                                   u.first_name || ' ' || u.last_name as sender_name
+                            FROM messaging_system m
+                            LEFT JOIN users u ON m.sender_id = u.user_id
+                            WHERE m.message_id = ?
+                        """, (reply['reply_to_message_id'],))
+                        original_msg = c.fetchone()
+                        if original_msg:
+                            original_msg_dict = dict(original_msg)
+                            # Parse attachments for original message
+                            original_attachments = []
+                            try:
+                                if original_msg_dict.get('attachment_path'):
+                                    paths = json.loads(original_msg_dict['attachment_path'])
+                                    filenames = json.loads(original_msg_dict['attachment_filename']) if original_msg_dict.get('attachment_filename') else []
+                                    for idx, path in enumerate(paths):
+                                        original_attachments.append({
+                                            'index': idx,
+                                            'filename': filenames[idx] if idx < len(filenames) else path,
+                                            'path': path,
+                                            'type': 'image' if any(ext in path.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']) else 
+                                                   'video' if any(ext in path.lower() for ext in ['.mp4', '.avi', '.mov', '.webm']) else 'file'
+                                        })
+                            except:
+                                pass
+                            original_msg_dict['attachments'] = original_attachments
+                            reply['replied_to_message'] = original_msg_dict
                     
                     if reply_path and reply_filename:
                         try:
@@ -5653,6 +5684,7 @@ def api_messaging_quick_send():
         message_text = request.form.get('message')
         priority = request.form.get('priority', 'normal')
         thread_context = request.form.get('thread_context', 'message')
+        reply_to_message_id = request.form.get('reply_to_message_id')  # WhatsApp-style reply
 
         if not subject or not message_text:
             return jsonify({'success': False, 'error': 'Subject and message are required'})
@@ -5750,6 +5782,30 @@ def api_messaging_quick_send():
                     """, (message_id, current_user.id, email,
                           subject, message_text, priority, created_at))
 
+            # If replying to a specific message (WhatsApp-style), create a reply entry
+            if reply_to_message_id:
+                # Get the original message to reply to
+                c.execute("""
+                    SELECT message_id, sender_id, title, message, attachment_path, attachment_filename
+                    FROM messaging_system
+                    WHERE message_id = ?
+                """, (reply_to_message_id,))
+                original_message = c.fetchone()
+                
+                if original_message:
+                    # Create reply in message_replies table
+                    reply_id = generate_id('REPLY')
+                    reply_attachment_path = json.dumps(attachment_paths) if attachment_paths else None
+                    reply_attachment_filename = json.dumps(attachment_filenames) if attachment_filenames else None
+                    
+                    c.execute("""
+                        INSERT INTO message_replies
+                        (reply_id, message_id, sender_id, reply_text, attachment_path, attachment_filename, 
+                         reply_to_message_id, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (reply_id, reply_to_message_id, current_user.id, message_text,
+                          reply_attachment_path, reply_attachment_filename, reply_to_message_id, created_at))
+            
             conn.commit()
             
             # Return response IMMEDIATELY (before notifications/logging)
@@ -5825,6 +5881,9 @@ def api_messaging_quick_reply():
             if not message['allow_replies']:
                 return jsonify({'success': False, 'error': 'Replies not allowed for this message'})
 
+            # Get reply_to_message_id if provided (WhatsApp-style reply)
+            reply_to_message_id = request.form.get('reply_to_message_id')
+
             # Handle attachment
             attachment_filename = None
             attachment_path = None
@@ -5853,9 +5912,11 @@ def api_messaging_quick_reply():
             current_time = datetime.now()
             c.execute("""
                 INSERT INTO message_replies
-                (reply_id, message_id, sender_id, reply_text, attachment_path, attachment_filename, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (reply_id, message_id, current_user.id, reply_text, attachment_path, attachment_filename, current_time))
+                (reply_id, message_id, sender_id, reply_text, attachment_path, attachment_filename, 
+                 reply_to_message_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (reply_id, message_id, current_user.id, reply_text, attachment_path, attachment_filename, 
+                  reply_to_message_id, current_time))
 
             # If replying to someone else, create a mirrored message
             if message['sender_id'] != current_user.id:
@@ -6352,6 +6413,9 @@ def api_messaging_reply():
             if not message_dict['allow_replies'] or message_dict['message_type'] != 'message':
                 return jsonify({'success': False, 'error': 'This message does not allow replies'})
 
+            # Get reply_to_message_id if provided (WhatsApp-style reply)
+            reply_to_message_id = request.form.get('reply_to_message_id')
+
             # Handle attachment
             attachment_filename = None
             attachment_path = None
@@ -6382,9 +6446,11 @@ def api_messaging_reply():
             current_time = datetime.now()
             c.execute("""
                 INSERT INTO message_replies
-                (reply_id, message_id, sender_id, reply_text, attachment_path, attachment_filename, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (reply_id, message_id, current_user.id, reply_text, attachment_path, attachment_filename, current_time))
+                (reply_id, message_id, sender_id, reply_text, attachment_path, attachment_filename, 
+                 reply_to_message_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (reply_id, message_id, current_user.id, reply_text, attachment_path, attachment_filename, 
+                  reply_to_message_id, current_time))
 
             # Send mirrored message to original sender if they are different from current user
             if message_dict['sender_id'] != current_user.id:
@@ -6664,6 +6730,49 @@ def api_messaging_delete_reply(message_id, reply_id):
         return jsonify({'success': True, 'message': 'Reply deleted'})
     except Exception as e:
         app.logger.error(f"Error deleting reply: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/messaging/edit-message', methods=['POST'])
+@login_required
+def api_messaging_edit_message():
+    """Edit a message sent by current user."""
+    try:
+        data = request.get_json()
+        message_id = data.get('message_id')
+        message_text = data.get('message', '').strip()
+        
+        if not message_text:
+            return jsonify({'success': False, 'error': 'Message cannot be empty'}), 400
+        
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Verify the message belongs to the current user
+        c.execute("""
+            SELECT sender_id FROM messaging_system
+            WHERE message_id = ?
+        """, (message_id,))
+        
+        message = c.fetchone()
+        if not message:
+            return jsonify({'success': False, 'error': 'Message not found'}), 404
+        
+        if message['sender_id'] != current_user.id:
+            return jsonify({'success': False, 'error': 'Cannot edit another user\'s message'}), 403
+        
+        # Update the message
+        c.execute("""
+            UPDATE messaging_system
+            SET message = ?, edited_at = ?
+            WHERE message_id = ?
+        """, (message_text, datetime.utcnow().isoformat(), message_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Message updated'})
+    except Exception as e:
+        app.logger.error(f"Error editing message: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== SERVE ATTACHMENT FILES ====================
@@ -10664,6 +10773,13 @@ def init_db():
         c.execute("CREATE INDEX IF NOT EXISTS idx_messaging_created_at ON messaging_system (created_at)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_messaging_is_read ON messaging_system (is_read)")
         
+        # Add edited_at column if it doesn't exist (for message edit tracking)
+        try:
+            c.execute("ALTER TABLE messaging_system ADD COLUMN edited_at TIMESTAMP")
+            print("[OK] Added edited_at column to messaging_system table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
         # Create message_replies table
         c.execute('''
             CREATE TABLE IF NOT EXISTS message_replies (
@@ -10835,6 +10951,22 @@ def init_db():
         # Add access_expiry field for DMPO HQ officer access management
         try:
             c.execute("ALTER TABLE users ADD COLUMN access_expiry TIMESTAMP")
+        except Exception:
+            pass
+        
+        # Add reply context and edit tracking to message_replies
+        try:
+            c.execute("ALTER TABLE message_replies ADD COLUMN reply_to_message_id TEXT")
+        except Exception:
+            pass
+        try:
+            c.execute("ALTER TABLE message_replies ADD COLUMN edited_at TIMESTAMP")
+        except Exception:
+            pass
+        
+        # Add edit tracking to messaging_system
+        try:
+            c.execute("ALTER TABLE messaging_system ADD COLUMN edited_at TIMESTAMP")
         except Exception:
             pass
 
