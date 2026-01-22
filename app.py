@@ -50,7 +50,27 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'marine-service-secure-k
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'zip', 'rar'}
-app.config['DATABASE'] = 'marine.db'
+
+# Database path - use persistent storage on Render if available, otherwise current directory
+PERSISTENT_VOLUME = os.environ.get('PERSISTENT_VOLUME', '')
+if PERSISTENT_VOLUME and os.path.isdir(PERSISTENT_VOLUME):
+    DB_PATH = os.path.join(PERSISTENT_VOLUME, 'marine.db')
+else:
+    DB_PATH = 'marine.db'
+
+# Ensure database directory exists
+DB_DIR = os.path.dirname(DB_PATH) or '.'
+if DB_DIR != '.' and not os.path.exists(DB_DIR):
+    try:
+        os.makedirs(DB_DIR, mode=0o755, exist_ok=True)
+        print(f"[OK] Created database directory: {DB_DIR}")
+    except Exception as e:
+        print(f"[WARNING] Could not create database directory {DB_DIR}: {e}")
+
+app.config['DATABASE'] = DB_PATH
+print(f"[OK] Using database file: {DB_PATH}")
+
+
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'

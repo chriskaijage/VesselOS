@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: marine-service-center
+    plan: free
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.5
+      - key: PERSISTENT_VOLUME
+        value: /var/data
+    
+    # Mount a persistent disk for the SQLite database
+    disks:
+      - name: data
+        mountPath: /var/data
+        sizeGB: 1
+    
+    # Configure file size limits and timeouts
+    autoDeploy: true
+    maxInstanceCount: 1
