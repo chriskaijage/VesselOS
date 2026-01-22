@@ -3887,14 +3887,19 @@ function showFilePreview(fileUrl, fileName) {
     // Helper function to render attachment (image or file)
     function renderAttachment(att, downloadUrl) {
         if (isImageFile(att.filename)) {
+            // For images, use /uploads/messages/ endpoint to display inline
+            // Use att.path if available (filename stored in database), otherwise use att.filename
+            const imageDisplayUrl = `/uploads/messages/${att.path || att.filename}`;
+            
             // Render as image preview
             return `
                 <div class="message-image mt-2" style="max-width: 300px;">
-                    <img src="${downloadUrl}" 
+                    <img src="${imageDisplayUrl}" 
                          alt="${att.filename}" 
                          class="img-fluid rounded" 
                          style="max-width: 100%; max-height: 400px; object-fit: cover; cursor: pointer;"
-                         onclick="openImageViewer('${downloadUrl}', '${att.filename}')">
+                         onerror="this.src='/images/placeholder.png';"
+                         onclick="openImageViewer('${imageDisplayUrl}', '${att.filename}')">
                     <div class="mt-2 text-center">
                         <a href="${downloadUrl}" download="${att.filename}" class="btn btn-sm btn-outline-light">
                             <i class="fas fa-download me-1"></i>Save
