@@ -3877,6 +3877,79 @@ function showFilePreview(fileUrl, fileName) {
 
     let threadRefreshInterval = null;
     
+    // Helper function to check if file is an image
+    function isImageFile(filename) {
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'];
+        const extension = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+        return imageExtensions.includes(extension);
+    }
+    
+    // Helper function to render attachment (image or file)
+    function renderAttachment(att, downloadUrl) {
+        if (isImageFile(att.filename)) {
+            // Render as image preview
+            return `
+                <div class="message-image mt-2" style="max-width: 300px;">
+                    <img src="${downloadUrl}" 
+                         alt="${att.filename}" 
+                         class="img-fluid rounded" 
+                         style="max-width: 100%; max-height: 400px; object-fit: cover; cursor: pointer;"
+                         onclick="openImageViewer('${downloadUrl}', '${att.filename}')">
+                    <div class="mt-2 text-center">
+                        <a href="${downloadUrl}" download="${att.filename}" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-download me-1"></i>Save
+                        </a>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Render as file download
+            return `
+                <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded mt-2" 
+                     style="background: rgba(255, 255, 255, 0.2); color: white;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
+                        <span class="small" style="color: white;">${att.filename}</span>
+                    </div>
+                    <a href="${downloadUrl}" class="btn btn-sm btn-outline-light" title="Download ${att.filename}">
+                        <i class="fas fa-download"></i>
+                    </a>
+                </div>
+            `;
+        }
+    }
+    
+    // Helper function to open image viewer modal
+    function openImageViewer(imageUrl, imageName) {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'imageViewerModal';
+        modal.setAttribute('tabindex', '-1');
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header bg-dark border-secondary">
+                        <h6 class="modal-title text-light">${imageName}</h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body bg-dark text-center">
+                        <img src="${imageUrl}" alt="${imageName}" class="img-fluid" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+                    </div>
+                    <div class="modal-footer bg-dark border-secondary">
+                        <a href="${imageUrl}" download="${imageName}" class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+        modal.addEventListener('hidden.bs.modal', () => modal.remove());
+    }
+
     function renderMessageThread(content, messages, userName) {
         const displayName = userName || 'Unknown';
         const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -3909,20 +3982,10 @@ function showFilePreview(fileUrl, fileName) {
                         ${messageText ? `<div>${messageText}</div>` : ''}
                         ${msg.attachments && msg.attachments.length > 0 ? `
                             <div class="message-attachments mt-2">
-                                ${msg.attachments.map(att => `
-                                    <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded" 
-                                         style="background: rgba(255, 255, 255, 0.2); color: white;">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
-                                            <span class="small" style="color: white;">${att.filename}</span>
-                                        </div>
-                                        <a href="/api/messaging/download-attachment/${msg.message_id}/${att.index}" 
-                                           class="btn btn-sm btn-outline-light" 
-                                           title="Download ${att.filename}">
-                                            <i class="fas fa-download"></i>
-                                        </a>
-                                    </div>
-                                `).join('')}
+                                ${msg.attachments.map(att => {
+                                    const downloadUrl = `/api/messaging/download-attachment/${msg.message_id}/${att.index}`;
+                                    return renderAttachment(att, downloadUrl);
+                                }).join('')}
                             </div>
                         ` : ''}
                         <div class="message-time">${formatDateTime(msg.created_at)}</div>
@@ -3938,20 +4001,10 @@ function showFilePreview(fileUrl, fileName) {
                                 ${reply.reply_text ? `<div>${reply.reply_text}</div>` : ''}
                                 ${reply.attachments && reply.attachments.length > 0 ? `
                                     <div class="message-attachments mt-2">
-                                        ${reply.attachments.map(att => `
-                                            <div class="attachment-item d-flex align-items-center justify-content-between p-2 mb-1 rounded" 
-                                                 style="background: rgba(255, 255, 255, 0.2); color: white;">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-paperclip me-2" style="color: rgba(255, 255, 255, 0.9);"></i>
-                                                    <span class="small" style="color: white;">${att.filename}</span>
-                                                </div>
-                                                <a href="/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}" 
-                                                   class="btn btn-sm btn-outline-light" 
-                                                   title="Download ${att.filename}">
-                                                    <i class="fas fa-download"></i>
-                                                </a>
-                                            </div>
-                                        `).join('')}
+                                        ${reply.attachments.map(att => {
+                                            const downloadUrl = `/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}`;
+                                            return renderAttachment(att, downloadUrl);
+                                        }).join('')}
                                     </div>
                                 ` : ''}
                                 <div class="message-time">${formatDateTime(reply.created_at)}</div>
