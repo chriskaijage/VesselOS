@@ -7076,7 +7076,7 @@ def api_manager_approve_user():
 @login_required
 @role_required(['port_engineer'])
 def api_manager_quality_officers():
-    """Get all DMPO HQ with their status."""
+    """Get all active DMPO HQ with their status."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
@@ -7084,8 +7084,8 @@ def api_manager_quality_officers():
             SELECT user_id, email, first_name, last_name, rank, survey_end_date,
                    is_active, is_approved, created_at
             FROM users
-            WHERE role = 'quality_officer'
-            ORDER BY is_active DESC, survey_end_date ASC
+            WHERE role = 'quality_officer' AND is_active = 1
+            ORDER BY survey_end_date ASC
         """)
 
         officers = []
