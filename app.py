@@ -4573,6 +4573,17 @@ def api_print_profile_data():
         app.logger.error(f"Error in print profile data: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/favicon.ico')
+def favicon():
+    """Serve favicon (logo.png)."""
+    import os
+    static_path = os.path.join(app.root_path, 'static', 'images')
+    if os.path.exists(os.path.join(static_path, 'logo.png')):
+        return send_from_directory(static_path, 'logo.png', mimetype='image/png')
+    else:
+        # Fallback if logo.png doesn't exist
+        return '', 204  # No Content
+
 @app.route('/static/uploads/signatures/<filename>')
 @login_required
 def serve_signature(filename):

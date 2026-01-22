@@ -36,8 +36,12 @@ function showFilePreview(fileUrl, fileName) {
     <meta name="viewport" content="width=1024px, initial-scale=1.0, user-scalable=yes">
     <title>{% block title %}Marine Service Center{% endblock %}</title>
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <!-- Favicon - Multiple formats for better browser compatibility -->
+    <link rel="icon" type="image/png" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
     
     <!-- Theme Initialization Script (runs before rendering) -->
     <script>
