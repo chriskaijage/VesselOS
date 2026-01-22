@@ -10747,6 +10747,12 @@ def init_db():
             c.execute("ALTER TABLE users ADD COLUMN two_factor_secret TEXT")
         except Exception:
             pass
+        
+        # Add access_expiry field for DMPO HQ officer access management
+        try:
+            c.execute("ALTER TABLE users ADD COLUMN access_expiry TIMESTAMP")
+        except Exception:
+            pass
 
         conn.commit()
         print("[OK] Database tables initialized successfully")
