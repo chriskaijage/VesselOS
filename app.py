@@ -26,6 +26,7 @@ from flask import Flask, render_template, request, jsonify, send_file, redirect,
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user, AnonymousUserMixin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_compress import Compress
 
 # Email and SMS imports
 import smtplib
@@ -60,6 +61,9 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
 )
+
+# Enable gzip compression for faster page loads
+Compress(app)
 
 # ==================== EMAIL CONFIGURATION ====================
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
@@ -12200,6 +12204,25 @@ def before_first_request_func():
         except Exception as e:
             print(f"[WARNING] Warning during database check: {e}")
             app.db_initialized = True
+
+@app.after_request
+def add_caching_headers(response):
+    """Add caching headers to optimize performance."""
+    # Cache static files (CSS, JS, images) for 1 month
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=2592000'  # 30 days
+    # Don't cache HTML templates or API responses
+    elif request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    else:
+        # Cache HTML pages for 1 minute (allows back button without reload)
+        response.headers['Cache-Control'] = 'public, max-age=60'
+    
+    # Add compression headers
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 # ==================== MAIN APPLICATION ====================
 
