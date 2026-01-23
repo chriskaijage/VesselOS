@@ -11,11 +11,12 @@ services:
       - key: PERSISTENT_VOLUME
         value: /var/data
     
-    # Mount a persistent disk for the SQLite database
+    # Persistent disk: database + uploads (messages, attachments, profiles, documents, etc.)
+    # Data survives deploys; previous files and conversations are retained.
     disks:
       - name: data
         mountPath: /var/data
-        sizeGB: 1
+        sizeGB: 10
     
     # Configure file size limits and timeouts
     autoDeploy: true

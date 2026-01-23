@@ -47,7 +47,6 @@ except ImportError:
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'marine-service-secure-key-2026-v2')
-app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'zip', 'rar'}
 
@@ -55,8 +54,13 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', '
 PERSISTENT_VOLUME = os.environ.get('PERSISTENT_VOLUME', '')
 if PERSISTENT_VOLUME and os.path.isdir(PERSISTENT_VOLUME):
     DB_PATH = os.path.join(PERSISTENT_VOLUME, 'marine.db')
+    UPLOAD_FOLDER = os.path.join(PERSISTENT_VOLUME, 'uploads')
+    print(f"[OK] Using persistent volume: {PERSISTENT_VOLUME} (DB + uploads survive deploys)")
 else:
     DB_PATH = 'marine.db'
+    UPLOAD_FOLDER = 'uploads'
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Ensure database directory exists
 DB_DIR = os.path.dirname(DB_PATH) or '.'
@@ -69,6 +73,7 @@ if DB_DIR != '.' and not os.path.exists(DB_DIR):
 
 app.config['DATABASE'] = DB_PATH
 print(f"[OK] Using database file: {DB_PATH}")
+print(f"[OK] Upload folder: {app.config['UPLOAD_FOLDER']}")
 
 
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
@@ -108,8 +113,8 @@ if SMS_ENABLED:
         app.logger.warning("Twilio library not installed. SMS notifications disabled.")
         SMS_ENABLED = False
 
-        # Create upload directories
-for folder in ['profile_pics', 'documents', 'documents/inventory', 'reports', 'maintenance_requests', 'signatures', 'messages', 'messages/replies']:
+# Create upload directories (on persistent volume on Render)
+for folder in ['profile_pics', 'documents', 'documents/inventory', 'documents/inspection', 'reports', 'maintenance_requests', 'signatures', 'messages', 'messages/replies', 'machinery_manuals']:
     folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
     os.makedirs(folder_path, exist_ok=True)
 
@@ -1933,8 +1938,8 @@ def api_upload_machinery_folder():
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
             """, (folder_id, folder_name, ship_name, description, current_user.user_id, current_time, current_time))
             
-            # Create upload directory
-            upload_dir = os.path.join('uploads', 'machinery_manuals', folder_id)
+            # Create upload directory (uses persistent volume on Render)
+            upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'machinery_manuals', folder_id)
             os.makedirs(upload_dir, exist_ok=True)
             
             uploaded_count = 0
