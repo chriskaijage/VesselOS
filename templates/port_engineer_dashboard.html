@@ -620,7 +620,7 @@ function formatDateTime(dateString) {
 // Real-time auto-refresh intervals
 let refreshIntervals = {};
 
-// Load port engineer data with auto-refresh every 5 seconds
+// Load port engineer data with auto-refresh every 30 seconds
 function loadManagerData() {
     fetch('/api/manager/dashboard-data')
         .then(response => response.json())
@@ -642,13 +642,13 @@ function loadManagerData() {
     setupAutoRefresh();
 }
 
-// Setup auto-refresh for all dashboard components every 5 seconds
+// Setup auto-refresh for all dashboard components every 30 seconds (optimized from 5s)
 function setupAutoRefresh() {
     // Clear existing intervals
     Object.values(refreshIntervals).forEach(interval => clearInterval(interval));
     refreshIntervals = {};
     
-    // Auto-refresh main dashboard data every 5 seconds
+    // Auto-refresh main dashboard data every 30 seconds
     refreshIntervals.dashboard = setInterval(() => {
         fetch('/api/manager/dashboard-data')
             .then(response => response.json())
@@ -658,21 +658,9 @@ function setupAutoRefresh() {
                 }
             })
             .catch(error => console.error('Dashboard refresh error:', error));
-    }, 5000);
+    }, 30000);
     
-    // Auto-refresh recent activity every 5 seconds
-    refreshIntervals.activity = setInterval(() => {
-        fetch('/api/manager/recent-activity')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    updateRecentActivity(data.activities);
-                }
-            })
-            .catch(error => console.error('Activity refresh error:', error));
-    }, 5000);
-    
-    // Auto-refresh pending users every 5 seconds
+    // Auto-refresh pending users every 30 seconds (reduced from 5s)
     refreshIntervals.users = setInterval(() => {
         fetch('/api/manager/pending-users')
             .then(response => response.json())
@@ -682,9 +670,9 @@ function setupAutoRefresh() {
                 }
             })
             .catch(error => console.error('Users refresh error:', error));
-    }, 5000);
+    }, 30000);
     
-    // Auto-refresh maintenance requests every 5 seconds
+    // Auto-refresh maintenance requests every 30 seconds (reduced from 5s)
     refreshIntervals.maintenance = setInterval(() => {
         fetch('/api/manager/pending-maintenance')
             .then(response => response.json())
@@ -694,9 +682,21 @@ function setupAutoRefresh() {
                 }
             })
             .catch(error => console.error('Maintenance refresh error:', error));
-    }, 5000);
+    }, 30000);
     
-    // Auto-refresh emergency requests every 5 seconds
+    // Auto-refresh pending maintenance every 30 seconds (reduced from 5s)
+    refreshIntervals.maintenance = setInterval(() => {
+        fetch('/api/manager/pending-maintenance')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updatePendingMaintenanceTable(data.requests);
+                }
+            })
+            .catch(error => console.error('Maintenance refresh error:', error));
+    }, 30000);
+    
+    // Auto-refresh emergency requests every 60 seconds (reduced from 5s)
     refreshIntervals.emergency = setInterval(() => {
         fetch('/api/manager/emergency-requests')
             .then(response => response.json())
@@ -706,9 +706,9 @@ function setupAutoRefresh() {
                 }
             })
             .catch(error => console.error('Emergency refresh error:', error));
-    }, 5000);
+    }, 60000);
     
-    // Auto-refresh messaging stats every 5 seconds
+    // Auto-refresh messaging stats every 60 seconds (reduced from 5s)
     refreshIntervals.messaging = setInterval(() => {
         fetch('/api/messaging/stats')
             .then(response => response.json())
@@ -720,7 +720,7 @@ function setupAutoRefresh() {
                 }
             })
             .catch(error => console.error('Messaging refresh error:', error));
-    }, 5000);
+    }, 60000);
 }
 
 function updateManagerStats(data) {
@@ -1868,7 +1868,7 @@ function generateSystemReport() {
 // ==================== EVENT LISTENERS ====================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Port Engineer Dashboard initialized - Starting real-time updates every 5 seconds');
+    console.log('🚀 Port Engineer Dashboard initialized - Starting optimized updates every 30-60 seconds');
     
     // Initial data load
     loadManagerData();
@@ -1896,7 +1896,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initMessaging();
     }
     
-    console.log('✅ Dashboard fully initialized with 5-second real-time updates');
+    console.log('✅ Dashboard fully initialized with optimized 30-60 second updates');
 });
 
 // Cleanup on page visibility change
