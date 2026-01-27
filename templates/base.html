@@ -4521,10 +4521,8 @@ function showFilePreview(fileUrl, fileName) {
             if (data.success) {
                 showAlert('success', 'Message deleted');
                 // Refresh thread to remove deleted message
-                const userNameElement = document.querySelector('.conversation-header h6');
-                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
                 setTimeout(() => {
-                    openMessageThread(currentConversationId, displayName);
+                    openMessageThread(currentConversationId, 'User');
                 }, 300);
             } else {
                 showAlert('danger', data.error || 'Failed to delete message');
@@ -4589,10 +4587,8 @@ function showFilePreview(fileUrl, fileName) {
                 }
                 
                 // Refresh thread
-                const userNameElement = document.querySelector('.conversation-header h6');
-                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
                 setTimeout(() => {
-                    openMessageThread(currentConversationId, displayName);
+                    openMessageThread(currentConversationId, 'User');
                 }, 300);
             } else {
                 showAlert('danger', data.error || 'Failed to update message');
@@ -4620,10 +4616,8 @@ function showFilePreview(fileUrl, fileName) {
             if (data.success) {
                 showAlert('success', 'Reply deleted');
                 // Refresh thread to remove deleted reply
-                const userNameElement = document.querySelector('.conversation-header h6');
-                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
                 setTimeout(() => {
-                    openMessageThread(currentConversationId, displayName);
+                    openMessageThread(currentConversationId, 'User');
                 }, 300);
             } else {
                 showAlert('danger', data.error || 'Failed to delete reply');
