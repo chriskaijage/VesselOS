@@ -1307,7 +1307,7 @@ function showActivityRefreshIndicator() {
 
 // ==================== MESSAGING INTEGRATION FUNCTIONS ====================
 
-function messageUser(userId, userName) {
+window.messageUser = function(userId, userName) {
     // Use the existing messaging panel functionality
     openComposeTab();
     
@@ -1326,7 +1326,7 @@ function messageUser(userId, userName) {
             subjectField.value = `Message for ${userName}`;
         }
     }, 500);
-}
+};
 
 function notifyEmergencyTeam(emergencyId) {
     fetch(`/api/emergency-details/${emergencyId}`)
@@ -1391,8 +1391,10 @@ function replyToNotification(notificationId) {
 
 // ==================== USER MANAGEMENT FUNCTIONS ====================
 
-function approveUser(userId, approve) {
+window.approveUser = function(userId, approve) {
     const action = approve ? 'approve' : 'reject';
+    
+    console.log(`Attempting to ${action} user: ${userId}`);
     
     fetch('/api/manager/approve-user', {
         method: 'POST',
@@ -1403,8 +1405,12 @@ function approveUser(userId, approve) {
             manager_id: '{{ current_user.id }}'
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             // Show success message
             showAlert(`User ${action}d successfully!`, 'success');
@@ -1423,10 +1429,14 @@ function approveUser(userId, approve) {
         } else {
             showAlert('Error: ' + (data.error || 'Failed to process approval'), 'danger');
         }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        showAlert('Error: ' + error.message, 'danger');
     });
-}
+};
 
-function sendUserMessage(userId, subject, message, priority = 'normal') {
+window.sendUserMessage = function(userId, subject, message, priority = 'normal') {
     fetch('/api/messaging/quick-send', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1444,9 +1454,9 @@ function sendUserMessage(userId, subject, message, priority = 'normal') {
             console.error('Failed to send message to user:', data.error);
         }
     });
-}
+};;
 
-function viewUserDetails(userId) {
+window.viewUserDetails = function(userId) {
     fetch(`/api/manager/user-details/${userId}`)
         .then(response => response.json())
         .then(data => {
@@ -1521,7 +1531,7 @@ function viewUserDetails(userId) {
                 modal.show();
             }
         });
-}
+};
 
 // ==================== QUALITY OFFICER MANAGEMENT FUNCTIONS ====================
 
