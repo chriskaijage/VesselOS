@@ -7217,44 +7217,39 @@ def api_manager_approve_user():
                 # Approve user
                 c.execute("UPDATE users SET is_approved = 1 WHERE user_id = ?", (user_id,))
                 action = 'approved'
-
-                # Create notification for the user
-                c.execute("SELECT first_name, last_name, email FROM users WHERE user_id = ?", (user_id,))
-                user = c.fetchone()
-                if user:
-                    create_notification(
-                        user_id,
-                        'Account Approved',
-                        f'Your account has been approved by the port engineer. You can now log in to the system.',
-                        'success',
-                        '/login'
-                    )
+                notif_type = 'success'
+                notif_msg = 'Your account has been approved by the port engineer. You can now log in to the system.'
             else:
                 # Reject user (deactivate)
                 c.execute("UPDATE users SET is_active = 0 WHERE user_id = ?", (user_id,))
                 action = 'rejected'
+                notif_type = 'warning'
+                notif_msg = 'Your account registration has been reviewed and rejected. Please contact the port engineer for details.'
 
-                # Create notification for the user
-                c.execute("SELECT first_name, last_name, email FROM users WHERE user_id = ?", (user_id,))
-                user = c.fetchone()
-                if user:
-                    create_notification(
-                        user_id,
-                        'Account Rejected',
-                        f'Your account registration has been reviewed and rejected. Please contact the port engineer for details.',
-                        'warning',
-                        '/contact'
-                    )
+            # Get user details for notification within same transaction
+            c.execute("SELECT first_name, last_name, email FROM users WHERE user_id = ?", (user_id,))
+            user = c.fetchone()
+            
+            # Create notification within same transaction
+            current_time = datetime.now()
+            if user:
+                c.execute("INSERT INTO notifications (user_id, title, message, type, action_url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                         (user_id, 'Account ' + ('Approved' if approve else 'Rejected'), notif_msg, notif_type, '/login' if approve else '/contact', current_time))
 
-            # Log the action
-            log_activity(f'user_{action}', f'User {user_id} {action} by port engineer')
+            # Log the action within same transaction
+            user_ip = request.remote_addr if request else "127.0.0.1"
+            c.execute("INSERT INTO activity_logs (user_id, activity, details, ip_address, timestamp) VALUES (?, ?, ?, ?, ?)",
+                      (current_user.id, f'user_{action}', f'User {user_id} {action} by port engineer', user_ip, current_time))
+            
+            c.execute("INSERT INTO audit_trail (timestamp, user_id, action_type, entity_type, ip_address, status) VALUES (?, ?, ?, ?, ?, ?)",
+                      (current_time, current_user.id, f'user_{action}', 'user', user_ip, 'completed'))
 
             conn.commit()
             return jsonify({'success': True, 'action': action})
         except Exception as e:
             conn.rollback()
             app.logger.error(f"Error approving user: {e}")
-            return jsonify({'success': False, 'error': 'Database error'})
+            return jsonify({'success': False, 'error': f'Database error: {str(e)}'})
         finally:
             conn.close()
     except Exception as e:
