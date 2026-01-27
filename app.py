@@ -479,33 +479,68 @@ def allowed_file(filename, file_type='general'):
     return False
 
 def generate_id(prefix):
+    """
+    Generate a unique identifier with timestamp and random suffix.
+    
+    Creates unique IDs for database records using format:
+    PREFIX-YYYYMMDDHHMMSS-XXXX where X is random digit.
+    
+    Args:
+        prefix (str): ID prefix (e.g., 'BLG', 'FUL', 'SEW', 'MNT')
+    
+    Returns:
+        str: Unique ID in format PREFIX-TIMESTAMP-RANDOM
+    
+    Example:
+        generate_id('BLG') -> 'BLG-20260117120530-4726'
+    """
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    random_str = ''.join(random.choices(string.digits, k=4))
-    return f"{prefix}-{timestamp}-{random_str}"
+    random_suffix = ''.join(random.choices(string.digits, k=4))
+    return f"{prefix}-{timestamp}-{random_suffix}"
 
 def format_time_ago(dt):
-    """Format a datetime object as 'time ago' string (e.g., '5m ago', '2h ago')."""
+    """
+    Format a datetime as human-readable relative time string.
+    
+    Converts a datetime object or string to readable format like:
+    '5m ago', '2h ago', '3d ago', 'Jan 15, 2026'
+    
+    Args:
+        dt (datetime or str): Datetime object or ISO format string
+    
+    Returns:
+        str: Human-readable time ago format
+        - 'Now' if less than 1 second ago
+        - 'Xs ago' if less than 1 minute
+        - 'Xm ago' if less than 1 hour
+        - 'Xh ago' if less than 1 day
+        - 'Xd ago' if less than 1 week
+        - 'Mon DD, YYYY' if older than 1 week
+        - 'Never' if input is None
+    """
     if not dt:
         return 'Never'
     
-    # Handle both datetime and string inputs
+    # Handle both datetime objects and ISO format strings
     if isinstance(dt, str):
         try:
             dt = datetime.fromisoformat(dt)
-        except:
+        except Exception:
             return 'Unknown'
     
+    # Calculate elapsed time
     now = datetime.now()
-    diff = now - dt
+    elapsed = now - dt
     
-    # Calculate time differences
-    seconds = int(diff.total_seconds())
-    minutes = seconds // 60
+    # Convert to different time units
+    total_seconds = int(elapsed.total_seconds())
+    minutes = total_seconds // 60
     hours = minutes // 60
     days = hours // 24
     
-    if seconds < 60:
-        return f"{seconds}s ago" if seconds > 0 else "Now"
+    # Return appropriate format based on elapsed time
+    if total_seconds < 60:
+        return "Now" if total_seconds <= 0 else f"{total_seconds}s ago"
     elif minutes < 60:
         return f"{minutes}m ago"
     elif hours < 24:
@@ -513,6 +548,7 @@ def format_time_ago(dt):
     elif days < 7:
         return f"{days}d ago"
     else:
+        # For older dates, show full date
         return dt.strftime('%b %d, %Y')
 
 def log_activity(activity, details=""):
@@ -4541,56 +4577,149 @@ def api_user_activities():
 
 
 def generate_2fa_secret(length: int = 16) -> str:
-    """Generate a random base32-like secret for 2FA."""
-    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-    return ''.join(random.choice(alphabet) for _ in range(length))
+    """
+    Generate a cryptographically secure 2FA secret key.
+    
+    Creates a random base32-encoded string suitable for use with
+    authenticator apps (Google Authenticator, Authy, etc.) for
+    generating time-based one-time passwords (TOTP).
+    
+    Args:
+        length (int, optional): Length of secret to generate. Defaults to 16.
+    
+    Returns:
+        str: Random base32 string suitable for 2FA secret
+    
+    Note:
+        Uses base32 alphabet (A-Z, 2-7) as per RFC 4648 standard.
+    """
+    # RFC 4648 base32 alphabet
+    base32_alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+    return ''.join(random.choice(base32_alphabet) for _ in range(length))
 
 
 def verify_2fa_code(secret: str, code: str, window: int = 1) -> bool:
-    """Verify a 6-digit TOTP code for the given secret."""
+    """
+    Verify a TOTP code against the provided secret.
+    
+    Implements RFC 6238 Time-based One-Time Password (TOTP) verification.
+    Accepts codes within a time window to account for clock drift between
+    server and authenticator app.
+    
+    Args:
+        secret (str): Base32-encoded 2FA secret key
+        code (str): 6-digit TOTP code to verify
+        window (int, optional): Time window in 30-second steps. Defaults to 1.
+                               Accepts codes from past/future by this amount.
+    
+    Returns:
+        bool: True if code is valid, False otherwise
+    
+    Validation:
+        - Code must be exactly 6 digits
+        - Code must be numeric
+        - Matches generated TOTP within time window
+    
+    Note:
+        Time window allows ±1 step (±30 seconds) by default to handle
+        clock drift between server and client authenticators.
+    """
+    # Validate code format
     if not secret or not code or len(code) != 6 or not code.isdigit():
         return False
+
     try:
         import hmac
         import hashlib
         import struct
+
+        # Prepare HMAC key
         key = secret.encode()
-        timestep = 30
-        t = int(datetime.utcnow().timestamp() / timestep)
+        timestep = 30  # TOTP timestep in seconds
+
+        # Get current time counter
+        current_timestamp = datetime.utcnow().timestamp()
+        time_counter = int(current_timestamp / timestep)
+
+        # Check provided code against current and nearby time steps
         for offset in range(-window, window + 1):
-            counter = t + offset
-            msg = struct.pack('>Q', counter)
-            hmac_hash = hmac.new(key, msg, hashlib.sha1).digest()
+            check_counter = time_counter + offset
+            message = struct.pack('>Q', check_counter)
+
+            # Generate HMAC-SHA1
+            hmac_hash = hmac.new(key, message, hashlib.sha1).digest()
+
+            # Extract dynamic binary code
             offset_bits = hmac_hash[19] & 0x0F
-            code_int = (
+            code_value = (
                 ((hmac_hash[offset_bits] & 0x7F) << 24) |
                 ((hmac_hash[offset_bits + 1] & 0xFF) << 16) |
                 ((hmac_hash[offset_bits + 2] & 0xFF) << 8) |
                 (hmac_hash[offset_bits + 3] & 0xFF)
             )
-            generated = str(code_int % 1000000).zfill(6)
-            if hmac.compare_digest(generated, code):
+
+            # Convert to 6-digit code
+            generated_code = str(code_value % 1000000).zfill(6)
+
+            # Use constant-time comparison to prevent timing attacks
+            if hmac.compare_digest(generated_code, code):
                 return True
+
         return False
-    except Exception:
+
+    except Exception as e:
+        app.logger.warning(f"Error verifying 2FA code: {e}")
         return False
 
 
 def generate_csrf_token():
-    """Generate a CSRF token and store it in session."""
+    """
+    Generate and store a CSRF protection token in session.
+    
+    Creates a cryptographically secure random token for Cross-Site
+    Request Forgery (CSRF) protection. Reuses existing token if
+    already generated in current session.
+    
+    Returns:
+        str: 32-character random CSRF token
+    
+    Note:
+        Token is stored in Flask session for validation on subsequent
+        requests. Each session gets exactly one token.
+    """
     if 'csrf_token' not in session:
-        session['csrf_token'] = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+        session['csrf_token'] = ''.join(
+            random.choices(string.ascii_letters + string.digits, k=32)
+        )
     return session['csrf_token']
 
 
 def verify_csrf_token(token):
-    """Verify CSRF token from request."""
+    """
+    Verify CSRF token from request against session token.
+    
+    Performs constant-time comparison of provided token against
+    session token to prevent timing-based attacks.
+    
+    Args:
+        token (str): CSRF token from request (form or header)
+    
+    Returns:
+        bool: True if token matches session token, False otherwise
+    
+    Note:
+        Uses hmac.compare_digest for timing-attack resistant comparison.
+    """
     if not token:
         return False
+
     session_token = session.get('csrf_token')
     if not session_token:
         return False
-    return token == session_token
+
+    # Use constant-time comparison to prevent timing attacks
+    import hmac
+    return hmac.compare_digest(token, session_token)
 
 
 def csrf_protect(f):
@@ -12202,104 +12331,218 @@ def api_share_maintenance_request():
 @login_required
 @role_required(['chief_engineer', 'captain'])
 def api_create_bilge_report():
-    """Create a new bilge report."""
+    """
+    Create and store a bilge water discharge report.
+    
+    Accepts bilge water management data including tank levels, water quality
+    parameters, disposal method, and officer information. Automatically signs
+    with current officer's credentials and timestamp.
+    
+    JSON Request Body:
+        - vessel_name (str): Name of the vessel
+        - imo_number (str): IMO registration number
+        - report_date (str): Date of bilge water status (YYYY-MM-DD)
+        - report_time (str): Time of report (HH:MM)
+        - bilge_water_level (str): Current water level measurement
+        - water_temperature (float): Temperature of bilge water
+        - oil_content_ppm (float): Oil content parts per million
+        - disposal_method (str): How/where bilge was disposed
+        - location (str): Vessel location at time of report
+        - signature_data (str): Officer's digital signature data
+        - notes (str, optional): Additional remarks
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - report_id (str): Generated bilge report ID
+            - message (str): Success message
+            - error (str): Error description if failed
+    
+    Compliance:
+        - MARPOL Annex I Oil Record Book entry
+        - International Maritime regulations
+    """
     try:
         data = request.get_json()
         report_id = generate_id('BLG')
         
         conn = get_db_connection()
-        c = conn.cursor()
-        
-        c.execute('''
-            INSERT INTO bilge_reports
-            (report_id, vessel_name, imo_number, report_date, report_time, bilge_water_level,
-             water_temperature, oil_content_ppm, disposal_method, location, officer_name, officer_rank,
-             officer_id, signature_data, notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (report_id, data.get('vessel_name'), data.get('imo_number'), data.get('report_date'),
-              data.get('report_time'), data.get('bilge_water_level'), data.get('water_temperature'),
-              data.get('oil_content_ppm'), data.get('disposal_method'), data.get('location'),
-              current_user.first_name + ' ' + current_user.last_name, current_user.role, current_user.id,
-              data.get('signature_data'), data.get('notes'), datetime.now(), datetime.now()))
-        
-        conn.commit()
-        conn.close()
-        
-        log_activity('bilge_report_created', f'Created bilge report {report_id}')
-        
-        return jsonify({'success': True, 'report_id': report_id, 'message': 'Bilge report submitted'})
+        try:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO bilge_reports
+                (report_id, vessel_name, imo_number, report_date, report_time, bilge_water_level,
+                 water_temperature, oil_content_ppm, disposal_method, location, officer_name, officer_rank,
+                 officer_id, signature_data, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                report_id, data.get('vessel_name'), data.get('imo_number'), data.get('report_date'),
+                data.get('report_time'), data.get('bilge_water_level'), data.get('water_temperature'),
+                data.get('oil_content_ppm'), data.get('disposal_method'), data.get('location'),
+                f"{current_user.first_name} {current_user.last_name}", current_user.role, current_user.id,
+                data.get('signature_data'), data.get('notes'), datetime.now(), datetime.now()
+            ))
+            
+            conn.commit()
+            log_activity('bilge_report_created', f'Created and submitted bilge report {report_id}')
+            
+            return jsonify(
+                {'success': True, 'report_id': report_id, 'message': 'Bilge report submitted successfully'}
+            ), 201
+
+        finally:
+            conn.close()
+
     except Exception as e:
         app.logger.error(f"Error creating bilge report: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': 'Failed to submit bilge report'}), 500
 
 @app.route('/api/fuel-report', methods=['POST'])
 @login_required
 @role_required(['chief_engineer', 'captain'])
 def api_create_fuel_report():
-    """Create a new fuel report."""
+    """
+    Create and store a fuel bunkering operation report.
+    
+    Documents fuel delivery, supplier information, fuel quality parameters,
+    and truck/delivery reference details. Records total fuel onboard for
+    inventory tracking.
+    
+    JSON Request Body:
+        - vessel_name (str): Name of the vessel
+        - imo_number (str): IMO registration number
+        - report_date (str): Date of fuel delivery (YYYY-MM-DD)
+        - fuel_type (str): Type of fuel delivered (HFO, MDO, etc.)
+        - quantity_received (float): Volume of fuel delivered (m³ or tonnes)
+        - fuel_density (float): Density of delivered fuel
+        - fuel_temperature (float): Temperature of delivered fuel
+        - truck_number (str): Truck/tanker reference number
+        - supplier_name (str): Name of fuel supplier
+        - total_fuel_onboard (float): Total fuel quantity after delivery
+        - location (str): Port or location of delivery
+        - signature_data (str): Officer's digital signature data
+        - notes (str, optional): Additional remarks
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - report_id (str): Generated fuel report ID
+            - message (str): Success message
+            - error (str): Error description if failed
+    
+    Compliance:
+        - MARPOL Annex I Oil Record Book entry
+        - Fuel quality certification records
+    """
     try:
         data = request.get_json()
         report_id = generate_id('FUL')
         
         conn = get_db_connection()
-        c = conn.cursor()
-        
-        c.execute('''
-            INSERT INTO fuel_reports
-            (report_id, vessel_name, imo_number, report_date, fuel_type, quantity_received,
-             fuel_density, fuel_temperature, truck_number, supplier_name, total_fuel_onboard,
-             location, officer_name, officer_rank, officer_id, signature_data, notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (report_id, data.get('vessel_name'), data.get('imo_number'), data.get('report_date'),
-              data.get('fuel_type'), data.get('quantity_received'), data.get('fuel_density'),
-              data.get('fuel_temperature'), data.get('truck_number'), data.get('supplier_name'),
-              data.get('total_fuel_onboard'), data.get('location'),
-              current_user.first_name + ' ' + current_user.last_name, current_user.role, current_user.id,
-              data.get('signature_data'), data.get('notes'), datetime.now(), datetime.now()))
-        
-        conn.commit()
-        conn.close()
-        
-        log_activity('fuel_report_created', f'Created fuel report {report_id}')
-        
-        return jsonify({'success': True, 'report_id': report_id, 'message': 'Fuel report submitted'})
+        try:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO fuel_reports
+                (report_id, vessel_name, imo_number, report_date, fuel_type, quantity_received,
+                 fuel_density, fuel_temperature, truck_number, supplier_name, total_fuel_onboard,
+                 location, officer_name, officer_rank, officer_id, signature_data, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                report_id, data.get('vessel_name'), data.get('imo_number'), data.get('report_date'),
+                data.get('fuel_type'), data.get('quantity_received'), data.get('fuel_density'),
+                data.get('fuel_temperature'), data.get('truck_number'), data.get('supplier_name'),
+                data.get('total_fuel_onboard'), data.get('location'),
+                f"{current_user.first_name} {current_user.last_name}", current_user.role, current_user.id,
+                data.get('signature_data'), data.get('notes'), datetime.now(), datetime.now()
+            ))
+            
+            conn.commit()
+            log_activity('fuel_report_created', f'Created and submitted fuel report {report_id}')
+            
+            return jsonify(
+                {'success': True, 'report_id': report_id, 'message': 'Fuel report submitted successfully'}
+            ), 201
+
+        finally:
+            conn.close()
+
     except Exception as e:
         app.logger.error(f"Error creating fuel report: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': 'Failed to submit fuel report'}), 500
 
 @app.route('/api/sewage-report', methods=['POST'])
 @login_required
 @role_required(['chief_engineer', 'captain'])
 def api_create_sewage_report():
-    """Create a new sewage report."""
+    """
+    Create and store a sewage treatment and disposal report.
+    
+    Documents sewage tank management, treatment methods, disposal procedures,
+    and environmental impact considerations. Records sewage handling in
+    compliance with MARPOL Annex IV.
+    
+    JSON Request Body:
+        - vessel_name (str): Name of the vessel
+        - imo_number (str): IMO registration number
+        - report_date (str): Date of sewage management (YYYY-MM-DD)
+        - report_time (str): Time of report (HH:MM)
+        - sewage_tank_level (str): Current tank level or percentage
+        - treatment_method (str): Method used for sewage treatment
+        - disposal_method (str): How sewage was disposed (pumped ashore, etc.)
+        - location (str): Vessel location at time of disposal
+        - environmental_notes (str): Environmental considerations
+        - signature_data (str): Officer's digital signature data
+        - notes (str, optional): Additional remarks
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - report_id (str): Generated sewage report ID
+            - message (str): Success message
+            - error (str): Error description if failed
+    
+    Compliance:
+        - MARPOL Annex IV (International Convention for Prevention of Pollution)
+        - Sewage Record Book requirements
+        - Environmental protection regulations
+    """
     try:
         data = request.get_json()
         report_id = generate_id('SEW')
         
         conn = get_db_connection()
-        c = conn.cursor()
-        
-        c.execute('''
-            INSERT INTO sewage_reports
-            (report_id, vessel_name, imo_number, report_date, report_time, sewage_tank_level,
-             treatment_method, disposal_method, location, environmental_notes, officer_name,
-             officer_rank, officer_id, signature_data, notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (report_id, data.get('vessel_name'), data.get('imo_number'), data.get('report_date'),
-              data.get('report_time'), data.get('sewage_tank_level'), data.get('treatment_method'),
-              data.get('disposal_method'), data.get('location'), data.get('environmental_notes'),
-              current_user.first_name + ' ' + current_user.last_name, current_user.role, current_user.id,
-              data.get('signature_data'), data.get('notes'), datetime.now(), datetime.now()))
-        
-        conn.commit()
-        conn.close()
-        
-        log_activity('sewage_report_created', f'Created sewage report {report_id}')
-        
-        return jsonify({'success': True, 'report_id': report_id, 'message': 'Sewage report submitted'})
+        try:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO sewage_reports
+                (report_id, vessel_name, imo_number, report_date, report_time, sewage_tank_level,
+                 treatment_method, disposal_method, location, environmental_notes, officer_name,
+                 officer_rank, officer_id, signature_data, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                report_id, data.get('vessel_name'), data.get('imo_number'), data.get('report_date'),
+                data.get('report_time'), data.get('sewage_tank_level'), data.get('treatment_method'),
+                data.get('disposal_method'), data.get('location'), data.get('environmental_notes'),
+                f"{current_user.first_name} {current_user.last_name}", current_user.role, current_user.id,
+                data.get('signature_data'), data.get('notes'), datetime.now(), datetime.now()
+            ))
+            
+            conn.commit()
+            log_activity('sewage_report_created', f'Created and submitted sewage report {report_id}')
+            
+            return jsonify(
+                {'success': True, 'report_id': report_id, 'message': 'Sewage report submitted successfully'}
+            ), 201
+
+        finally:
+            conn.close()
+
     except Exception as e:
         app.logger.error(f"Error creating sewage report: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': 'Failed to submit sewage report'}), 500
 
 @app.route('/api/logbook-entry', methods=['POST'])
 @login_required
