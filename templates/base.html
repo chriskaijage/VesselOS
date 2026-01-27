@@ -2545,11 +2545,13 @@ function showFilePreview(fileUrl, fileName) {
 
         /* ==================== THREAD REPLY STYLING (WhatsApp-like) ==================== */
         .thread-reply-container {
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             padding: 1rem;
             border-radius: 12px;
             margin-top: 1rem;
-            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .thread-header-info {
@@ -2558,7 +2560,7 @@ function showFilePreview(fileUrl, fileName) {
             align-items: center;
             margin-bottom: 1rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .thread-contact-details {
@@ -2567,36 +2569,39 @@ function showFilePreview(fileUrl, fileName) {
 
         .thread-contact-phone {
             display: block;
-            color: #a0aec0;
+            color: var(--text-secondary);
             font-size: 0.85rem;
             margin-bottom: 0.25rem;
             font-family: 'Courier New', monospace;
         }
 
         .thread-contact-name {
-            color: #ffffff;
+            color: var(--text-primary);
             margin: 0;
             font-size: 1rem;
             font-weight: 600;
         }
 
         .thread-close-btn {
-            color: #ffffff !important;
-            opacity: 0.8;
+            color: var(--text-primary) !important;
+            opacity: 0.7;
             width: 30px;
             height: 30px;
             padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--border-color);
             border-radius: 50%;
             margin-left: 1rem;
+            background: var(--bg-hover);
+            transition: all 0.3s ease;
         }
 
         .thread-close-btn:hover {
             opacity: 1;
-            background: rgba(255, 255, 255, 0.1) !important;
+            background: var(--bg-active) !important;
+            border-color: var(--primary-color);
         }
 
         .thread-quick-reply-area {
@@ -2606,9 +2611,9 @@ function showFilePreview(fileUrl, fileName) {
         }
 
         .thread-reply-input {
-            background: rgba(255, 255, 255, 0.95);
-            color: #1a1a2e;
-            border: none;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 0.75rem 1.25rem;
             font-size: 0.9rem;
@@ -2616,18 +2621,20 @@ function showFilePreview(fileUrl, fileName) {
             min-height: 44px;
             max-height: 100px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
 
         .thread-reply-input:focus {
             outline: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            background: #ffffff;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+            background: var(--bg-primary);
         }
 
         .thread-reply-input::placeholder {
-            color: #cbd5e0;
+            color: var(--text-secondary);
+            opacity: 0.5;
         }
 
         .thread-attachment-preview {
@@ -2645,9 +2652,9 @@ function showFilePreview(fileUrl, fileName) {
         }
 
         .thread-action-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #ffffff;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            color: var(--primary-color);
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -2661,8 +2668,9 @@ function showFilePreview(fileUrl, fileName) {
         }
 
         .thread-action-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
             transform: scale(1.05);
         }
 
@@ -2671,9 +2679,9 @@ function showFilePreview(fileUrl, fileName) {
         }
 
         .thread-send-btn {
-            background: linear-gradient(135deg, #00d4ff 0%, #0084ff 100%);
+            background: var(--primary-color);
             border: none;
-            color: #ffffff;
+            color: white;
             width: 44px;
             height: 44px;
             border-radius: 50%;
@@ -2684,12 +2692,12 @@ function showFilePreview(fileUrl, fileName) {
             transition: all 0.3s ease;
             font-size: 1.1rem;
             padding: 0;
-            box-shadow: 0 2px 8px rgba(0, 132, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
             margin-left: 0.5rem;
         }
 
         .thread-send-btn:hover {
-            box-shadow: 0 4px 12px rgba(0, 132, 255, 0.5);
+            box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.5);
             transform: scale(1.05);
         }
 
