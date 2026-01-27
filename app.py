@@ -9181,17 +9181,54 @@ def api_dashboard_data():
 @login_required
 @role_required(['port_engineer', 'harbour_master', 'quality_officer'])
 def api_emergency_requests():
-    """Get emergency requests - only pending by default (can filter by status parameter)."""
+    """
+    Retrieve emergency requests with optional status filtering.
+    
+    Fetches active or filtered emergency requests containing critical
+    information for incident response. Supports filtering by status
+    (pending, active, resolved, all).
+    
+    Query Parameters:
+        - status (str, optional): Filter by status. Default: 'pending'
+                                 Values: 'pending', 'active', 'resolved', 'all'
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - emergencies (list): Array of emergency request objects
+            - error (str): Error description if failed
+    
+    Response Fields (per emergency):
+        - emergency_id (str): Unique emergency identifier
+        - ship_name (str): Name of affected vessel
+        - emergency_type (str): Type of emergency
+        - severity_level (str): Severity rating
+        - status (str): Current status
+        - created_at (str): Creation timestamp
+        - reported_by (str): Reporter ID
+        - location_name (str): Geographic location description
+        - latitude/longitude (float): GPS coordinates (or null)
+        - description (str): Detailed description
+        - immediate_actions (str): Actions taken
+        - resources_required (str): Required resources
+        - authorized_by (str): Authorizing officer
+        - authorized_at (str): Authorization timestamp
+    
+    Status Codes:
+        - 200: Emergencies retrieved successfully
+        - 401: Not authenticated
+        - 500: Database error
+    """
     conn = get_db_connection()
     try:
-        c = conn.cursor()
+        cursor = conn.cursor()
         
         # Get status filter from query parameter (default to pending)
         status_filter = request.args.get('status', 'pending')
         
         if status_filter == 'all':
-            # Get all emergencies
-            c.execute("""
+            # Retrieve all emergency requests
+            cursor.execute("""
                 SELECT emergency_id, ship_name, emergency_type, severity_level,
                        status, created_at, reported_by, location_name, latitude, longitude,
                        description, immediate_actions, resources_required, authorized_by, authorized_at
@@ -9199,8 +9236,8 @@ def api_emergency_requests():
                 ORDER BY created_at DESC
             """)
         else:
-            # Get only specific status (default: pending)
-            c.execute("""
+            # Retrieve emergency requests filtered by status
+            cursor.execute("""
                 SELECT emergency_id, ship_name, emergency_type, severity_level,
                        status, created_at, reported_by, location_name, latitude, longitude,
                        description, immediate_actions, resources_required, authorized_by, authorized_at
@@ -9210,43 +9247,67 @@ def api_emergency_requests():
             """, (status_filter,))
 
         emergencies = []
-        for row in c.fetchall():
+        for row in cursor.fetchall():
             emergency = dict(row)
-            # Ensure coordinates are properly serialized (None -> null, numbers as numbers)
+            
+            # Normalize GPS coordinates
             if emergency.get('latitude') is not None:
                 try:
                     emergency['latitude'] = float(emergency['latitude'])
                 except (ValueError, TypeError):
                     emergency['latitude'] = None
+            
             if emergency.get('longitude') is not None:
                 try:
                     emergency['longitude'] = float(emergency['longitude'])
                 except (ValueError, TypeError):
                     emergency['longitude'] = None
+            
             emergencies.append(emergency)
 
-        return jsonify({'success': True, 'emergencies': emergencies})
+        return jsonify({'success': True, 'emergencies': emergencies}), 200
+
     except Exception as e:
-        app.logger.error(f"Error getting emergency requests: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        app.logger.error(f"Error retrieving emergency requests: {e}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve emergency requests'}), 500
     finally:
         conn.close()
 
 @app.route('/api/emergency-details/<emergency_id>')
 @login_required
 def api_emergency_details(emergency_id):
-    """Get emergency request details - accessible to all authenticated users."""
+    """
+    Get detailed information for a specific emergency request.
+    
+    Retrieves comprehensive data for an emergency incident including
+    all metadata, location, personnel involved, and response actions.
+    
+    Args:
+        emergency_id (str): The emergency request ID
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - emergency (dict): Complete emergency data
+            - error (str): Error description if failed
+    
+    Status Codes:
+        - 200: Details retrieved successfully
+        - 401: Not authenticated
+        - 404: Emergency not found
+        - 500: Database error
+    """
     conn = get_db_connection()
     try:
-        c = conn.cursor()
-        c.execute("""
+        cursor = conn.cursor()
+        cursor.execute("""
             SELECT * FROM emergency_requests
             WHERE emergency_id = ?
         """, (emergency_id,))
 
-        emergency = c.fetchone()
+        emergency = cursor.fetchone()
         if not emergency:
-            return jsonify({'success': False, 'error': 'Emergency not found'})
+            return jsonify({'success': False, 'error': 'Emergency request not found'}), 404
 
         emergency_dict = dict(emergency)
         # Ensure coordinates are properly serialized (None -> null, numbers as numbers)
@@ -10446,14 +10507,65 @@ def api_maintenance_requests():
 
 @app.route('/api/maintenance-requests', methods=['POST'])
 def api_create_maintenance_request():
-    """Create a new maintenance request. Allows Chief Engineer, Captain, and unauthenticated users."""
+    """
+    Create a new maintenance/repair request for vessel equipment.
+    
+    Allows authenticated crew (Chief Engineer, Captain) and external parties
+    to submit maintenance requests. Automatically assesses severity based on
+    description analysis and criticality level.
+    
+    JSON Request Body (Required):
+        - ship_name (str): Name of the vessel
+        - imo_number (str): IMO registration number
+        - vessel_type (str): Type of vessel (cargo, tanker, etc.)
+        - location (str): Current location of vessel
+        - request_type (str): Type of maintenance (repair, parts, inspection, etc.)
+        - criticality (str): Urgency level (emergency, urgent, high, medium, low)
+        - description (str): Detailed description of issue
+        - requested_by_name (str): Name of requester
+        - requested_by_email (str): Email address
+        - requested_by_phone (str): Contact phone number
+    
+    JSON Request Body (Optional):
+        - emergency_contact (str): Alternative contact information
+        - eta (str): Estimated time of arrival (for parts)
+        - part_category (str): Equipment category
+        - part_number (str): Specific part/equipment number
+        - part_name (str): Name of part/equipment
+        - quantity (int): Quantity needed (default: 1)
+        - manufacturer (str): Equipment manufacturer
+        - company (str): Company/organization name
+        - notes (str): Additional notes
+    
+    Auto-Severity Assessment:
+        System automatically analyzes description for critical keywords:
+        fire, emergency, flooding, sinking, collision, etc.
+        Marks as CRITICAL if found or if priority is 'high'.
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - request_id (str): Generated maintenance request ID
+            - severity (str): Auto-assessed severity level
+            - message (str): Confirmation message
+            - error (str): Error description if failed
+    
+    Status Codes:
+        - 201: Request created successfully
+        - 400: Missing required fields
+        - 500: Database error
+    
+    Note:
+        Unauthenticated users can submit requests using email contact info.
+        Severity assessment triggers appropriate notifications to management.
+    """
     try:
         data = request.get_json()
         
         if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            return jsonify({'success': False, 'error': 'No request data provided'}), 400
 
-        # Extract data
+        # Extract request data
         ship_name = data.get('ship_name')
         imo_number = data.get('imo_number')
         vessel_type = data.get('vessel_type')
@@ -10466,7 +10578,7 @@ def api_create_maintenance_request():
         part_category = data.get('part_category')
         part_number = data.get('part_number')
         part_name = data.get('part_name')
-        quantity = data.get('quantity', 1)
+        quantity = int(data.get('quantity', 1))
         manufacturer = data.get('manufacturer')
         requested_by_name = data.get('requested_by_name')
         requested_by_email = data.get('requested_by_email')
@@ -10474,16 +10586,19 @@ def api_create_maintenance_request():
         company = data.get('company')
         notes = data.get('notes')
 
-        # Validate required fields
-        if not all([ship_name, imo_number, vessel_type, location, request_type,
-                   criticality, description, requested_by_name, requested_by_email,
-                   requested_by_phone]):
-            return jsonify({'success': False, 'error': 'Missing required fields'})
+        # Validate all required fields are present
+        required_fields = [
+            ship_name, imo_number, vessel_type, location, request_type,
+            criticality, description, requested_by_name, requested_by_email,
+            requested_by_phone
+        ]
+        if not all(required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
-        # Generate request ID
+        # Generate unique request ID
         request_id = generate_id('MRQ')
 
-        # Determine priority based on criticality
+        # Map criticality to priority
         priority_map = {
             'emergency': 'critical',
             'urgent': 'high',
@@ -10493,25 +10608,24 @@ def api_create_maintenance_request():
         }
         priority = priority_map.get(criticality, 'medium')
 
-        # AUTO-ASSESS SEVERITY BASED ON DESCRIPTION AND KEYWORDS
+        # Automatically assess severity based on description and type
         severity, assessment_details = assess_severity(description, request_type, priority)
 
         conn = get_db_connection()
         try:
-            c = conn.cursor()
+            cursor = conn.cursor()
             
-            # Determine initial status based on user role
+            # Determine initial status and requester ID
             initial_status = 'submitted'
             requester_id = None
             
-            # Check if authenticated user is Chief Engineer or Captain
             if current_user.is_authenticated:
                 requester_id = current_user.id
                 if current_user.role in ['chief_engineer', 'captain']:
-                    initial_status = 'submitted'  # Will be assessed and routed by system
+                    initial_status = 'submitted'
 
-            # Insert maintenance request WITH SEVERITY ASSESSMENT AND ALL FORM DATA
-            c.execute("""
+            # Insert maintenance request with all data and severity assessment
+            cursor.execute("""
                 INSERT INTO maintenance_requests
                 (request_id, ship_name, maintenance_type, request_type, priority, criticality, description,
                  location, estimated_duration, resources_needed, requested_by,
@@ -10520,55 +10634,55 @@ def api_create_maintenance_request():
                  requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
                  imo_number, vessel_type, company, eta)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?,
-                        ?, ?, ?, ?)
-            """, (request_id, ship_name, request_type, request_type, priority, criticality, description,
-                  location, 'To be determined', 'To be assessed', requested_by_email or requester_id,
-                  initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now(),
-                  part_number, part_name, part_category, quantity, manufacturer,
-                  requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
-                  imo_number, vessel_type, company, eta))
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                request_id, ship_name, request_type, request_type, priority, criticality, description,
+                location, 'TBD', 'To be assessed', requested_by_email or requester_id,
+                initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now(),
+                part_number, part_name, part_category, quantity, manufacturer,
+                requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
+                imo_number, vessel_type, company, eta
+            ))
 
-            # Log initial submission
-            log_workflow_action(request_id, 'submitted', requester_id, 
-                              f'Request submitted for {ship_name}. Auto-assessed as {severity} severity.')
+            # Log workflow action for audit trail
+            log_workflow_action(
+                request_id, 'submitted', requester_id,
+                f'Maintenance request for {ship_name}. Auto-assessed: {severity}'
+            )
 
-            # Log the activity (only if user is authenticated)
+            # Log activity (if authenticated user)
             if current_user.is_authenticated:
-                log_activity('maintenance_request_created',
-                           f'Created maintenance request {request_id} for {ship_name}. Severity: {severity}')
+                log_activity(
+                    'maintenance_request_created',
+                    f'Created request {request_id} for {ship_name}. Severity: {severity}'
+                )
             else:
-                app.logger.info(f'Maintenance request {request_id} created by unauthenticated user: {requested_by_email}. Severity: {severity}')
+                app.logger.info(
+                    f'Maintenance request {request_id} from {requested_by_email}: {severity} severity'
+                )
 
             conn.commit()
 
-            # NOTIFY BASED ON SEVERITY
+            # Send notifications based on severity level
             notify_on_severity(request_id, severity)
 
             return jsonify({
                 'success': True,
                 'request_id': request_id,
                 'severity': severity,
-                'message': f'Maintenance request submitted successfully. Auto-assessed severity: {severity}'
-            })
+                'message': f'Request submitted successfully. Auto-assessed: {severity}'
+            }), 201
 
         except Exception as e:
             conn.rollback()
-            import traceback
-            tb_str = traceback.format_exc()
-            app.logger.error(f"Error creating maintenance request: {e}\n{tb_str}")
-            print(f"ERROR: {e}\n{tb_str}")
-            return jsonify({'success': False, 'error': 'Database error: ' + str(e)}), 500
+            app.logger.error(f"Database error creating maintenance request: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': 'Failed to create maintenance request'}), 500
         finally:
             conn.close()
 
     except Exception as e:
-        import traceback
-        tb_str = traceback.format_exc()
-        app.logger.error(f"Error in create maintenance request: {e}\n{tb_str}")
-        print(f"ERROR: {e}\n{tb_str}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        app.logger.error(f"Error processing maintenance request: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to process request'}), 500
 
 
 @app.route('/api/maintenance-requests/<request_id>/attachments/upload', methods=['POST'])
