@@ -6975,8 +6975,8 @@ def api_messaging_message(message_id):
 
             message_dict['recipient_info'] = recipient_info
 
-            # Get replies
-            c.execute("""
+            # Get message replies
+            cursor.execute("""
                 SELECT r.*, u.first_name || ' ' || u.last_name as sender_name
                 FROM message_replies r
                 JOIN users u ON r.sender_id = u.user_id
@@ -6984,23 +6984,23 @@ def api_messaging_message(message_id):
                 ORDER BY r.created_at ASC
             """, (message_id,))
 
-            replies = [dict(row) for row in c.fetchall()]
+            replies = [dict(row) for row in cursor.fetchall()]
 
             return jsonify({
                 'success': True,
                 'message': message_dict,
                 'replies': replies
-            })
+            }), 200
 
         except Exception as e:
-            app.logger.error(f"Error getting message: {e}")
-            return jsonify({'success': False, 'error': str(e)})
+            app.logger.error(f"Error retrieving message {message_id}: {e}")
+            return jsonify({'success': False, 'error': 'Failed to retrieve message'}), 500
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in get message: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        app.logger.error(f"Error in message endpoint: {e}")
+        return jsonify({'success': False, 'error': 'Failed to process request'}), 500
 
 @app.route('/api/messaging/reply', methods=['POST'])
 @login_required
