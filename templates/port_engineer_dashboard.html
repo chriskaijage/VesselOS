@@ -897,15 +897,15 @@ function approveMaintenanceRequest(requestId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showAlert('success', `Maintenance request ${requestId} has been approved successfully.`);
+            showAlert(`Maintenance request ${requestId} has been approved successfully.`, 'success');
             loadPendingMaintenanceRequests();
             loadManagerData(); // Refresh stats
         } else {
-            showAlert('danger', 'Error: ' + (data.error || 'Failed to approve request'));
+            showAlert('Error: ' + (data.error || 'Failed to approve request'), 'danger');
         }
     })
     .catch(error => {
-        showAlert('danger', 'Network error: ' + error.message);
+        showAlert('Network error: ' + error.message, 'danger');
     });
 }
 
@@ -928,15 +928,15 @@ function rejectMaintenanceRequest(requestId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showAlert('warning', `Maintenance request ${requestId} has been rejected.`);
+            showAlert(`Maintenance request ${requestId} has been rejected.`, 'warning');
             loadPendingMaintenanceRequests();
             loadManagerData(); // Refresh stats
         } else {
-            showAlert('danger', 'Error: ' + (data.error || 'Failed to reject request'));
+            showAlert('Error: ' + (data.error || 'Failed to reject request'), 'danger');
         }
     })
     .catch(error => {
-        showAlert('danger', 'Network error: ' + error.message);
+        showAlert('Network error: ' + error.message, 'danger');
     });
 }
 
@@ -945,7 +945,7 @@ function viewMaintenanceRequestDetails(requestId) {
     window.open(`/view-request/${requestId}`, '_blank');
 }
 
-function showAlert(type, message) {
+function showAlert(message, type = 'info') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
     alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
@@ -1407,6 +1407,9 @@ window.approveUser = function(userId, approve) {
     })
     .then(response => {
         console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
     })
     .then(data => {
@@ -1420,10 +1423,10 @@ window.approveUser = function(userId, approve) {
             
             // Send notification to user via messaging system
             if (approve) {
-                sendUserMessage(userId, 'Account Approved', 
+                window.sendUserMessage(userId, 'Account Approved', 
                     'Your account has been approved by the port engineer. You can now log in to the Marine Service Center system.\n\nPlease use your registered credentials to access the system.', 'normal');
             } else {
-                sendUserMessage(userId, 'Account Rejected', 
+                window.sendUserMessage(userId, 'Account Rejected', 
                     'Your account registration has been rejected by the port engineer. Please contact the system administrator for more details regarding this decision.', 'normal');
             }
         } else {
@@ -1846,20 +1849,6 @@ function sendBulkNotificationsForEmergency(emergencyId) {
 
 // ==================== UTILITY FUNCTIONS ====================
 
-function showAlert(message, type) {
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-    alert.style.zIndex = '1060';
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.appendChild(alert);
-    
-    setTimeout(() => {
-        alert.remove();
-    }, 5000);
-}
 
 function generateSystemReport() {
     // Generate comprehensive system report
