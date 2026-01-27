@@ -4289,14 +4289,6 @@ function showFilePreview(fileUrl, fileName) {
         
         html += `
             <div class="thread-reply-container">
-                <div class="thread-header-info">
-                    <div class="thread-contact-details">
-                        <span class="thread-contact-phone" id="threadContactPhone">+255 733 126 834 ~${currentConversationId}</span>
-                        <h6 class="thread-contact-name" id="threadContactName">${displayName}</h6>
-                    </div>
-                    <button type="button" class="btn btn-close thread-close-btn" onclick="switchMessagingTab('threads')" aria-label="Close"></button>
-                </div>
-                
                 <div class="thread-quick-reply-area">
                     <textarea id="threadReplyText" class="thread-reply-input" placeholder="Type your reply..." onfocus="showEmojiPicker()"></textarea>
                     <div id="threadAttachmentPreview" class="thread-attachment-preview"></div>
@@ -4322,17 +4314,7 @@ function showFilePreview(fileUrl, fileName) {
         fetch(`/api/user/status/${currentConversationId}`)
             .then(response => response.json())
             .then(statusData => {
-                if (statusData.success) {
-                    const userStatus = statusData.user;
-                    const threadContactPhone = document.getElementById('threadContactPhone');
-                    const threadContactName = document.getElementById('threadContactName');
-                    if (threadContactPhone) {
-                        threadContactPhone.textContent = userStatus.phone || `~${currentConversationId}`;
-                    }
-                    if (threadContactName) {
-                        threadContactName.textContent = userStatus.first_name ? `${userStatus.first_name} ${userStatus.last_name || ''}` : displayName;
-                    }
-                }
+                // Status check completed (no longer updating removed elements)
             })
             .catch(error => console.error('Error fetching user status:', error));
         
