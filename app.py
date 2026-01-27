@@ -1,38 +1,55 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-MARINE SERVICE CENTER EXPERT SYSTEM - INTERNATIONAL STANDARD
-Enhanced with Ship Maintenance Requests, Advanced Reporting, and Full Role Management
+Marine Service Center Expert System.
+
+A comprehensive web application for managing ship maintenance, reporting,
+and quality assurance with role-based access control and real-time collaboration.
+
+Features:
+    - User management with role-based access control
+    - Ship maintenance request tracking and approval workflow
+    - Quality assurance evaluations and reporting
+    - Real-time messaging and notifications
+    - Comprehensive audit logging and activity tracking
+    - Multiple report types (maintenance, billing, quality, emissions)
 """
 
 import os
 import sys
 import io
-
-# Ensure UTF-8 encoding for output on Windows
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 import json
 import sqlite3
 import random
 import string
 import csv
-import io
 from datetime import datetime, timedelta
 from functools import wraps
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash, session, send_from_directory
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user, AnonymousUserMixin
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_compress import Compress
 
-# Email and SMS imports
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+
+from flask import (
+    Flask, render_template, request, jsonify, send_file,
+    redirect, url_for, flash, session, send_from_directory
+)
+from flask_login import (
+    LoginManager, UserMixin, login_user, login_required,
+    logout_user, current_user, AnonymousUserMixin
+)
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_compress import Compress
+
+# Ensure UTF-8 encoding for output on Windows
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+# Optional dependencies
 try:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import letter, A4
@@ -44,23 +61,50 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-# Initialize Flask app
+
+# =====================================================================
+# APPLICATION INITIALIZATION
+# =====================================================================
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'marine-service-secure-key-2026-v2')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'zip', 'rar'}
+app.config['ALLOWED_EXTENSIONS'] = {
+    'png', 'jpg', 'jpeg', 'gif', 'pdf',
+    'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'zip', 'rar'
+}
 
-# Database path - use persistent storage on Render if available, otherwise current directory
+# Configure session security
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Rate limiting configuration
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["5000 per day", "500 per hour"],
+)
+
+# Enable gzip compression for faster page loads
+Compress(app)
+
+
+# =====================================================================
+# DATABASE CONFIGURATION
+# =====================================================================
+
 PERSISTENT_VOLUME = os.environ.get('PERSISTENT_VOLUME', '')
 if PERSISTENT_VOLUME and os.path.isdir(PERSISTENT_VOLUME):
     DB_PATH = os.path.join(PERSISTENT_VOLUME, 'marine.db')
     UPLOAD_FOLDER = os.path.join(PERSISTENT_VOLUME, 'uploads')
-    print(f"[OK] Using persistent volume: {PERSISTENT_VOLUME} (DB + uploads survive deploys)")
+    print(f"[OK] Using persistent volume: {PERSISTENT_VOLUME}")
 else:
     DB_PATH = 'marine.db'
     UPLOAD_FOLDER = 'uploads'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['DATABASE'] = DB_PATH
 
 # Ensure database directory exists
 DB_DIR = os.path.dirname(DB_PATH) or '.'
@@ -71,33 +115,24 @@ if DB_DIR != '.' and not os.path.exists(DB_DIR):
     except Exception as e:
         print(f"[WARNING] Could not create database directory {DB_DIR}: {e}")
 
-app.config['DATABASE'] = DB_PATH
-print(f"[OK] Using database file: {DB_PATH}")
-print(f"[OK] Upload folder: {app.config['UPLOAD_FOLDER']}")
+print(f"[OK] Database path: {DB_PATH}")
+print(f"[OK] Upload folder: {UPLOAD_FOLDER}")
 
 
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# =====================================================================
+# EMAIL CONFIGURATION
+# =====================================================================
 
-# Basic rate limiting (in-memory for dev; configure a persistent backend for production)
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=["5000 per day", "500 per hour"],
-)
-
-# Enable gzip compression for faster page loads
-Compress(app)
-
-# ==================== EMAIL CONFIGURATION ====================
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'marineservice@gmail.com')
 SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', '')
 SMTP_ENABLED = bool(SENDER_PASSWORD)
 
-# ==================== SMS CONFIGURATION (Twilio) ====================
+
+# =====================================================================
+# SMS CONFIGURATION (Twilio)
+# =====================================================================
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
 TWILIO_PHONE = os.environ.get('TWILIO_PHONE', '+1234567890')
@@ -133,16 +168,48 @@ login_manager.anonymous_user = Anonymous
 
 # ==================== ROLE-BASED ACCESS CONTROL ====================
 def role_required(roles):
+    """
+    Decorator for role-based access control on routes.
+    
+    Restricts access to protected routes based on user role. Requires user to be
+    authenticated and have one of the specified roles. Returns appropriate error
+    responses for both API and web requests.
+    
+    Args:
+        roles (str or list): Single role string or list of role names that are
+                            allowed to access the decorated route.
+    
+    Returns:
+        function: Decorated function that performs role validation.
+    
+    Usage:
+        @app.route('/admin/dashboard')
+        @role_required(['admin', 'port_engineer'])
+        def admin_dashboard():
+            return render_template('admin.html')
+    
+    Note:
+        - API requests (paths starting with /api/) receive JSON error responses
+        - Web requests are redirected to dashboard with flash message
+        - Implicitly requires @login_required functionality
+    """
+    # Normalize roles to list if string provided
+    allowed_roles = [roles] if isinstance(roles, str) else roles
+    
     def decorator(f):
         @wraps(f)
         @login_required
         def decorated_function(*args, **kwargs):
-            if current_user.role not in roles:
-                # Check if the request is an API request
+            if current_user.role not in allowed_roles:
+                # Handle API vs web request response differently
                 if request.path.startswith('/api/'):
-                    return jsonify({'success': False, 'error': f'Access denied. {current_user.role.title()} role cannot access this API.'}), 403
+                    error_msg = f'Access denied. {current_user.role.title()} role cannot access this API.'
+                    return jsonify({'success': False, 'error': error_msg}), 403
                 else:
-                    flash(f'Access denied. {current_user.role.title()} role cannot access this page.', 'danger')
+                    flash(
+                        f'Access denied. {current_user.role.title()} role cannot access this resource.',
+                        'danger'
+                    )
                     return redirect(url_for('dashboard'))
             return f(*args, **kwargs)
         return decorated_function
@@ -168,17 +235,41 @@ def inject_current_user_profile():
 # ==================== DATABASE UTILITIES ====================
 
 def get_db_connection():
+    """
+    Establish and configure a database connection.
+
+    Returns:
+        sqlite3.Connection: Database connection with row factory and safety features enabled.
+    """
     conn = sqlite3.connect(app.config['DATABASE'], timeout=20)
     conn.row_factory = sqlite3.Row
-    # Enable WAL mode for better concurrency and durability
-    conn.execute('PRAGMA journal_mode=WAL')
-    # Ensure foreign keys are enforced
-    conn.execute('PRAGMA foreign_keys=ON')
+    conn.execute('PRAGMA journal_mode=WAL')  # Better concurrency
+    conn.execute('PRAGMA foreign_keys=ON')   # Enforce referential integrity
     return conn
 
-# ==================== USER MODEL ====================
+
+# =====================================================================
+# USER MODEL
+# =====================================================================
 
 class User(UserMixin):
+    """
+    User model representing an authenticated user in the system.
+
+    Attributes:
+        id (str): Unique user identifier
+        email (str): User's email address
+        first_name (str): User's first name
+        last_name (str): User's last name
+        role (str): User's role (e.g., 'port_engineer', 'chief_engineer')
+        rank (str): Professional rank/title
+        phone (str): Contact phone number
+        profile_pic (str): Path to profile picture
+        signature_path (str): Path to digital signature
+        is_approved (bool): Whether account is approved
+        survey_end_date (str): End date for survey access
+    """
+
     def __init__(self, user_data):
         self.id = user_data['user_id']
         self.email = user_data['email']
@@ -207,21 +298,40 @@ class User(UserMixin):
         self._is_active = bool(value)
 
     def get_full_name(self):
+        """
+        Get user's full name.
+        
+        Returns:
+            str: Full name formatted as "First Last"
+        """
         return f"{self.first_name} {self.last_name}"
 
 @login_manager.user_loader
 def load_user(user_id):
+    """
+    Load user object from database for session management.
+    
+    Called by Flask-Login to restore user session. Queries the database
+    to retrieve complete user information and returns a User object.
+    
+    Args:
+        user_id (str): The user ID to load from session
+    
+    Returns:
+        User: User object if found, None if user not found or error occurs
+    """
     conn = get_db_connection()
     try:
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
-        user_data = c.fetchone()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+        user_data = cursor.fetchone()
         if user_data:
             return User(dict(user_data))
     except Exception as e:
-        app.logger.error(f"Error loading user: {e}")
+        app.logger.error(f"Failed to load user {user_id} from database: {e}")
     finally:
         conn.close()
+    return None
 
 
 @app.route('/api/inventory/<part_number>/docs', methods=['GET'])
@@ -383,21 +493,39 @@ def format_time_ago(dt):
         return dt.strftime('%b %d, %Y')
 
 def log_activity(activity, details=""):
-    """Log activity with real-time timestamp."""
+    """
+    Log user activity to activity logs and audit trail.
+
+    Records all user actions for security auditing and activity tracking.
+    Logs are written to both activity_logs and audit_trail tables.
+
+    Args:
+        activity (str): Type of activity (e.g., 'user_login', 'report_generated')
+        details (str): Additional details about the activity
+
+    Returns:
+        None
+    """
     if current_user.is_authenticated:
         conn = get_db_connection()
         try:
             c = conn.cursor()
             current_time = datetime.now()
             user_ip = request.remote_addr if request else "127.0.0.1"
-            
-            # Log to activity_logs (main log)
-            c.execute("INSERT INTO activity_logs (user_id, activity, details, ip_address, timestamp) VALUES (?, ?, ?, ?, ?)",
-                      (current_user.id, activity, details, user_ip, current_time))
-            
-            # Also log to audit_trail for comprehensive tracking
-            c.execute("INSERT INTO audit_trail (timestamp, user_id, action_type, entity_type, ip_address, status) VALUES (?, ?, ?, ?, ?, ?)",
-                      (current_time, current_user.id, activity, "general", user_ip, "completed"))
+
+            # Log to activity_logs table
+            c.execute(
+                "INSERT INTO activity_logs (user_id, activity, details, ip_address, timestamp) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (current_user.id, activity, details, user_ip, current_time)
+            )
+
+            # Log to audit_trail for comprehensive security tracking
+            c.execute(
+                "INSERT INTO audit_trail (timestamp, user_id, action_type, entity_type, ip_address, status) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (current_time, current_user.id, activity, "general", user_ip, "completed")
+            )
             
             # Update last activity timestamp
             c.execute("UPDATE users SET last_activity = ? WHERE user_id = ?", (current_time, current_user.id))
@@ -548,16 +676,41 @@ def get_real_time_events(hours=1, severity_filter=None):
         conn.close()
 
 def create_notification(user_id, title, message, notif_type, action_url="#"):
-    """Create a notification with real-time timestamp."""
+    """
+    Create and store a user notification.
+    
+    Inserts a new notification record into the database with the provided details
+    and current timestamp. Notifications are used to inform users of important
+    system events such as message receipts, approvals, or maintenance updates.
+    
+    Args:
+        user_id (int): ID of the user receiving the notification
+        title (str): Short notification title (appears in notification header)
+        message (str): Detailed notification message body
+        notif_type (str): Type of notification (e.g., 'message', 'approval', 'maintenance')
+        action_url (str, optional): URL for user to navigate to on notification click.
+                                   Defaults to "#" for no action.
+    
+    Returns:
+        None
+    
+    Note:
+        Errors during creation are logged but do not raise exceptions, allowing
+        the application to continue functioning even if notification storage fails.
+    """
     conn = get_db_connection()
     try:
-        c = conn.cursor()
+        cursor = conn.cursor()
         current_time = datetime.now()
-        c.execute("INSERT INTO notifications (user_id, title, message, type, action_url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                  (user_id, title, message, notif_type, action_url, current_time))
+        cursor.execute(
+            """INSERT INTO notifications 
+               (user_id, title, message, type, action_url, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (user_id, title, message, notif_type, action_url, current_time)
+        )
         conn.commit()
     except Exception as e:
-        app.logger.error(f"Error creating notification: {e}")
+        app.logger.error(f"Failed to create notification for user {user_id}: {e}")
     finally:
         conn.close()
 
@@ -3416,62 +3569,96 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def login():
+    """
+    Handle user login with authentication and validation.
+    
+    GET: Display login form
+    POST: Process login credentials with the following checks:
+        - Account status (active/inactive)
+        - Approval status (pending/approved)
+        - Survey period validity (for quality officers)
+        - Two-factor authentication (if enabled)
+    
+    Returns:
+        GET: Rendered login form
+        POST: Redirect to dashboard on success, login form with error on failure
+    
+    Rate Limited: 10 requests per minute for security
+    """
+    # Redirect authenticated users to dashboard
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
 
+        # Query user from database
         conn = get_db_connection()
         try:
-            c = conn.cursor()
-            c.execute("SELECT * FROM users WHERE email = ?", (email,))
-            user_data = c.fetchone()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            user_data = cursor.fetchone()
         finally:
             conn.close()
 
-        if user_data:
-            user_dict = dict(user_data)
-            if check_password_hash(user_dict['password'], password):
-                if not user_dict['is_active']:
-                    flash('Your account has been deactivated.', 'danger')
+        if not user_data:
+            flash('Invalid email or password.', 'danger')
+            return render_template('login.html')
+
+        user_dict = dict(user_data)
+        
+        # Verify password hash
+        if not check_password_hash(user_dict['password'], password):
+            flash('Invalid email or password.', 'danger')
+            return render_template('login.html')
+
+        # Check account status
+        if not user_dict['is_active']:
+            flash('Your account has been deactivated. Contact the port engineer.', 'danger')
+            return render_template('login.html')
+
+        # Check approval status
+        if not user_dict['is_approved']:
+            flash('Your account is pending approval from the port engineer.', 'warning')
+            return render_template('login.html')
+
+        # Validate survey period for quality officers
+        if user_dict['role'] == 'quality_officer' and user_dict['survey_end_date']:
+            try:
+                survey_end = datetime.strptime(user_dict['survey_end_date'], '%Y-%m-%d').date()
+                if datetime.now().date() > survey_end:
+                    flash('Your survey period has expired. Request extension from port engineer.', 'warning')
                     return render_template('login.html')
-                if not user_dict['is_approved']:
-                    flash('Your account is pending approval from the port engineer.', 'warning')
-                    return render_template('login.html')
-                if user_dict['role'] == 'quality_officer' and user_dict['survey_end_date']:
-                    try:
-                        survey_end = datetime.strptime(user_dict['survey_end_date'], '%Y-%m-%d').date()
-                        if datetime.now().date() > survey_end:
-                            flash('Your survey period has expired. Please request access from the port engineer.', 'warning')
-                            return render_template('login.html')
-                    except ValueError:
-                        pass
+            except ValueError:
+                pass  # Invalid date format, allow login
 
-                # If 2FA is enabled, defer full login until code is verified
-                if user_dict.get('two_factor_enabled'):
-                    session['pending_2fa_user'] = user_dict['user_id']
-                    flash('Enter your 2FA code to complete login.', 'info')
-                    return redirect(url_for('two_factor'))
+        # Require 2FA verification if enabled
+        if user_dict.get('two_factor_enabled'):
+            session['pending_2fa_user'] = user_dict['user_id']
+            flash('Enter your 2FA code to complete login.', 'info')
+            return redirect(url_for('two_factor'))
 
-                user = User(user_dict)
-                login_user(user, remember=True)
+        # Successful authentication - create user session
+        user = User(user_dict)
+        login_user(user, remember=True)
 
-                conn = get_db_connection()
-                try:
-                    c = conn.cursor()
-                    c.execute("UPDATE users SET last_login = ?, last_activity = ? WHERE user_id = ?",
-                              (datetime.now(), datetime.now(), user.id))
-                    conn.commit()
-                finally:
-                    conn.close()
+        # Update login timestamp
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE users SET last_login = ?, last_activity = ? WHERE user_id = ?",
+                (datetime.now(), datetime.now(), user.id)
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
-                log_activity('login', 'User logged in')
-                flash(f'Welcome back, {user.first_name}!', 'success')
-                return redirect(url_for('dashboard'))
+        log_activity('login', 'User logged in successfully')
+        flash(f'Welcome back, {user.first_name}!', 'success')
+        return redirect(url_for('dashboard'))
 
-        flash('Invalid email or password.', 'danger')
     return render_template('login.html')
 
 
@@ -3525,50 +3712,73 @@ def two_factor():
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")
 def register():
+    """
+    Handle user registration with validation and profile creation.
+    
+    GET: Display registration form
+    POST: Process registration with the following validations:
+        - Email uniqueness check
+        - Password strength requirements (8+ chars, mixed case, digit, special char)
+        - Password match confirmation
+        - Generate unique user ID based on role
+        - Set survey period for quality officers
+        - Send notification to manager for approval
+    
+    Returns:
+        GET: Rendered registration form
+        POST: Redirect to login on success, form with error on failure
+    
+    Rate Limited: 5 requests per hour for security
+    """
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        role = request.form.get('role')
-        rank = request.form.get('rank')
-        phone = request.form.get('phone')
-        department = request.form.get('department', '')
-        location = request.form.get('location', '')
 
+    if request.method == 'POST':
+        # Extract form data
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        role = request.form.get('role', '')
+        rank = request.form.get('rank', '').strip()
+        phone = request.form.get('phone', '').strip()
+        department = request.form.get('department', '').strip()
+        location = request.form.get('location', '').strip()
+
+        # Validate password confirmation
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
-        # Basic password strength checks
-        # Basic password strength checks (keep in sync with api_change_password)
+
+        # Validate password strength
         if len(password) < 8:
             flash('Password must be at least 8 characters.', 'danger')
             return render_template('register.html')
-        if (password.lower() == password or
-                password.upper() == password or
-                not any(ch.isdigit() for ch in password) or
-                not any(ch in "!@#$%^&*()-_=+[]{};:,.?/\\|" for ch in password)):
-            flash('Password must include upper and lower case letters, a number, and a special character.', 'danger')
-            return render_template('register.html')
-        if (password.lower() == password or
-                password.upper() == password or
-                not any(ch.isdigit() for ch in password) or
-                not any(ch in "!@#$%^&*()-_=+[]{};:,.?/\\|" for ch in password)):
-            flash('Password must include upper and lower case letters, a number, and a special character.', 'danger')
+
+        has_upper = any(ch.isupper() for ch in password)
+        has_lower = any(ch.islower() for ch in password)
+        has_digit = any(ch.isdigit() for ch in password)
+        has_special = any(ch in "!@#$%^&*()-_=+[]{};:,.?/\\|" for ch in password)
+
+        if not (has_upper and has_lower and has_digit and has_special):
+            flash(
+                'Password must contain uppercase, lowercase, number, and special character.',
+                'danger'
+            )
             return render_template('register.html')
 
+        # Check for duplicate email
         conn = get_db_connection()
         try:
-            c = conn.cursor()
-            c.execute("SELECT email FROM users WHERE email = ?", (email,))
-            if c.fetchone():
-                flash('Email already registered.', 'danger')
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM users WHERE email = ?", (email,))
+            if cursor.fetchone():
+                flash('This email is already registered.', 'danger')
                 return render_template('register.html')
 
-            role_prefix = {
+            # Generate unique user ID
+            role_prefix_map = {
                 'harbour_master': 'MM',
                 'quality_officer': 'QO',
                 'port_engineer': 'PE',
@@ -3576,42 +3786,64 @@ def register():
                 'chief_engineer': 'CE',
                 'captain': 'CAP',
                 'port_manager': 'PM'
-            }.get(role, 'USR')
-            c.execute(f"SELECT COUNT(*) FROM users WHERE role = ?", (role,))
-            count = c.fetchone()[0] + 1
+            }
+            role_prefix = role_prefix_map.get(role, 'USR')
+
+            cursor.execute("SELECT COUNT(*) FROM users WHERE role = ?", (role,))
+            count = cursor.fetchone()[0] + 1
             user_id = f"{role_prefix}{count:03d}"
 
+            # Hash password securely
             hashed_password = generate_password_hash(password)
+
+            # Set survey end date for quality officers
             survey_end_date = None
             if role == 'quality_officer':
                 survey_days = int(request.form.get('survey_days', 90))
                 survey_end_date = (datetime.now() + timedelta(days=survey_days)).strftime('%Y-%m-%d')
 
-            c.execute('''INSERT INTO users
-                         (user_id, email, password, first_name, last_name, rank, role, phone, department, location, survey_end_date, is_approved)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (user_id, email, hashed_password, first_name, last_name, rank, role, phone, department, location, survey_end_date, 0))
+            # Insert new user with pending approval status
+            cursor.execute(
+                """INSERT INTO users
+                   (user_id, email, password, first_name, last_name, rank, role, 
+                    phone, department, location, survey_end_date, is_approved)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (user_id, email, hashed_password, first_name, last_name, rank, role,
+                 phone, department, location, survey_end_date, 0)
+            )
             conn.commit()
 
+            # Notify manager of new registration
             create_notification(
                 'MGR001',
                 'New User Registration',
-                f'{first_name} {last_name} ({role}) registered and needs approval',
+                f'{first_name} {last_name} ({role.replace("_", " ").title()}) registered and requires approval',
                 'info',
                 '/dashboard'
             )
+
             flash('Registration successful! Your account is pending approval.', 'success')
             return redirect(url_for('login'))
+
         except Exception as e:
-            app.logger.error(f"Error during registration: {e}")
+            app.logger.error(f"Registration error for email {email}: {e}")
             flash('Registration failed. Please try again.', 'danger')
         finally:
             conn.close()
+
     return render_template('register.html')
 
 @app.route('/logout')
 @login_required
 def logout():
+    """
+    Handle user logout and session termination.
+    
+    Clears user session, logs the activity, and redirects to login page.
+    
+    Returns:
+        Redirect to login page with success message
+    """
     log_activity('logout', 'User logged out')
     logout_user()
     flash('You have been logged out.', 'info')
@@ -3620,42 +3852,75 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    if current_user.role == 'port_engineer' or current_user.role == 'port_manager':
-        return render_template('port_engineer_dashboard.html')
-    elif current_user.role == 'quality_officer':
-        return render_template('quality_officer.html')
-    elif current_user.role == 'harbour_master':
-        return render_template('harbour_master.html')
-    elif current_user.role == 'chief_engineer':
-        return render_template('chief_engineer_dashboard.html')
-    elif current_user.role == 'captain':
-        return render_template('captain_dashboard.html')
-    else:
-        return render_template('dashboard.html')
+    """
+    Route dispatcher that directs users to their role-specific dashboard.
+    
+    Each user role has a customized dashboard with relevant controls and information.
+    Returns the appropriate template based on the current user's role.
+    
+    Returns:
+        Rendered template appropriate for user's role
+    """
+    role_dashboard_map = {
+        'port_engineer': 'port_engineer_dashboard.html',
+        'port_manager': 'port_engineer_dashboard.html',
+        'quality_officer': 'quality_officer.html',
+        'harbour_master': 'harbour_master.html',
+        'chief_engineer': 'chief_engineer_dashboard.html',
+        'captain': 'captain_dashboard.html'
+    }
+    
+    template = role_dashboard_map.get(current_user.role, 'dashboard.html')
+    return render_template(template)
 
 @app.route('/profile')
 @login_required
 def profile():
+    """
+    Display user profile with personal information and documents.
+    
+    Retrieves the current user's profile data and associated documents,
+    calculates total document storage size, and displays the profile page.
+    
+    Returns:
+        Rendered profile template with user data and documents
+    
+    Raises:
+        Redirects to dashboard on user not found or database error
+    """
     conn = get_db_connection()
     try:
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE user_id = ?", (current_user.id,))
-        user_data = c.fetchone()
+        cursor = conn.cursor()
+        
+        # Fetch current user data
+        cursor.execute("SELECT * FROM users WHERE user_id = ?", (current_user.id,))
+        user_data = cursor.fetchone()
+        
         if not user_data:
-            flash('User not found.', 'danger')
+            flash('User profile not found.', 'danger')
             return redirect(url_for('dashboard'))
+
         user_dict = dict(user_data)
 
-        c.execute("SELECT * FROM user_documents WHERE user_id = ? ORDER BY uploaded_at DESC", (current_user.id,))
-        documents = [dict(row) for row in c.fetchall()]
+        # Fetch user documents
+        cursor.execute(
+            "SELECT * FROM user_documents WHERE user_id = ? ORDER BY uploaded_at DESC",
+            (current_user.id,)
+        )
+        documents = [dict(row) for row in cursor.fetchall()]
 
-        # Calculate total document size
-        total_size = sum(doc.get('file_size', 0) for doc in documents)
-        total_document_size = total_size
+        # Calculate total document storage used
+        total_document_size = sum(doc.get('file_size', 0) for doc in documents)
 
-        return render_template('profile.html', user=user_dict, documents=documents, total_document_size=total_document_size)
+        return render_template(
+            'profile.html',
+            user=user_dict,
+            documents=documents,
+            total_document_size=total_document_size
+        )
+
     except Exception as e:
-        app.logger.error(f"Error loading profile: {e}")
+        app.logger.error(f"Error loading profile for user {current_user.id}: {e}")
         flash('Error loading profile data.', 'danger')
         return redirect(url_for('dashboard'))
     finally:
