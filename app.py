@@ -338,17 +338,40 @@ def load_user(user_id):
 @login_required
 @role_required(['port_engineer', 'harbour_master'])
 def api_inventory_docs(part_number):
-    """List documents attached to an inventory item."""
+    """
+    Retrieve all documents attached to an inventory item.
+    
+    Returns document metadata for a specific part number, including
+    file information and upload details.
+    
+    Args:
+        part_number (str): The inventory part number
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - docs (list): Array of document objects with id, filename, uploader, size, timestamp
+    
+    Status Codes:
+        - 200: Documents retrieved successfully
+        - 403: Insufficient permissions
+        - 401: Not authenticated
+    """
     conn = get_db_connection()
     try:
-        c = conn.cursor()
-        c.execute("SELECT id, original_filename, stored_filename, uploader_id, file_size, uploaded_at FROM inventory_documents WHERE part_number = ? ORDER BY uploaded_at DESC", (part_number,))
-        rows = c.fetchall()
-        docs = [dict(r) for r in rows]
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT id, original_filename, stored_filename, uploader_id, file_size, uploaded_at
+               FROM inventory_documents
+               WHERE part_number = ?
+               ORDER BY uploaded_at DESC""",
+            (part_number,)
+        )
+        docs = [dict(row) for row in cursor.fetchall()]
         return jsonify(success=True, docs=docs)
     except Exception as e:
-        app.logger.error(f"Error fetching inventory docs: {e}")
-        return jsonify(success=False, error=str(e))
+        app.logger.error(f"Failed to fetch documents for part {part_number}: {e}")
+        return jsonify(success=False, error='Failed to retrieve documents'), 500
     finally:
         conn.close()
 
@@ -789,49 +812,78 @@ def send_sms(phone_number, message_text):
 
 def send_notification_email(user_email, user_name, title, message, action_url="#"):
     """
-    Send formatted notification email.
+    Send formatted HTML notification email to user.
+    
+    Generates a professional HTML email with branded header, notification content,
+    and action button. Includes fallback plain text version for email clients that
+    don't support HTML.
     
     Args:
-        user_email: User's email address
-        user_name: User's name
-        title: Notification title
-        message: Notification message
-        action_url: Link to take action
+        user_email (str): Recipient's email address
+        user_name (str): Recipient's display name
+        title (str): Notification title/subject
+        message (str): Detailed notification message body
+        action_url (str, optional): URL for action button. Defaults to "#"
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    
+    Note:
+        Uses the send_email() function with SMTP configuration.
+        If SMTP is disabled, logs warning but returns False.
     """
+    # Generate professional HTML email body
     html_body = f"""
     <html>
-        <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5; padding: 20px; margin: 0;">
             <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <!-- Header -->
                 <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #007acc; padding-bottom: 20px;">
-                    <h2 style="color: #333; margin: 0;">[SHIP] Marine Service Center</h2>
-                    <p style="color: #666; margin: 5px 0 0 0;">International Standard System</p>
+                    <h2 style="color: #333; margin: 0;">Marine Service Center</h2>
+                    <p style="color: #666; margin: 5px 0 0 0;">International Maritime Standards System</p>
                 </div>
                 
+                <!-- Greeting -->
                 <div style="margin-bottom: 20px;">
-                    <p style="color: #666;">Hello <strong>{user_name}</strong>,</p>
+                    <p style="color: #666; font-size: 16px;">Hello <strong>{user_name}</strong>,</p>
                 </div>
                 
-                <div style="background-color: #f0f8ff; padding: 20px; border-left: 4px solid #007acc; margin-bottom: 20px;">
-                    <h3 style="color: #007acc; margin-top: 0;">{title}</h3>
-                    <p style="color: #333; line-height: 1.6;">{message}</p>
+                <!-- Notification Content -->
+                <div style="background-color: #f0f8ff; padding: 20px; border-left: 4px solid #007acc; margin-bottom: 30px; border-radius: 4px;">
+                    <h3 style="color: #007acc; margin-top: 0; font-size: 18px;">{title}</h3>
+                    <p style="color: #333; line-height: 1.6; font-size: 14px; margin-bottom: 0;">{message}</p>
                 </div>
                 
+                <!-- Action Button -->
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="{action_url}" style="display: inline-block; background-color: #007acc; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    <a href="{action_url}" style="display: inline-block; background-color: #007acc; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 14px; transition: background-color 0.3s;">
                         View Details
                     </a>
                 </div>
                 
+                <!-- Footer -->
                 <div style="border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                    <p>© 2026 Marine Service Center. All rights reserved.<br>
-                    This is an automated notification. Please do not reply to this email.</p>
+                    <p style="margin: 5px 0;">© 2026 Marine Service Center. All rights reserved.</p>
+                    <p style="margin: 5px 0;">This is an automated notification. Please do not reply to this email.</p>
                 </div>
             </div>
         </body>
     </html>
     """
     
-    plain_text = f"Marine Service Center - {title}\n\n{message}\n\nFor more details, visit: {action_url}"
+    # Generate plain text version for email clients without HTML support
+    plain_text = (
+        f"Marine Service Center - {title}\n"
+        f"{'-' * 40}\n\n"
+        f"{message}\n\n"
+        f"For more information and to take action, visit:\n{action_url}\n\n"
+        f"© 2026 Marine Service Center\n"
+        f"This is an automated notification. Please do not reply."
+    )
     
     return send_email(user_email, f"[SHIP] {title}", html_body, plain_text)
 
@@ -1092,7 +1144,46 @@ def api_inventory_item(part_number):
 @login_required
 @role_required(['port_engineer', 'harbour_master'])
 def api_inventory_update():
-    """Add or update inventory item."""
+    """
+    Add a new inventory item or update an existing one.
+    
+    Validates all required fields, numeric constraints, and reorder logic
+    before inserting or updating the inventory database. Automatically
+    determines stock status (CRITICAL/LOW/OK) based on quantity levels.
+    
+    JSON Request Body:
+        - part_number (str, required): Unique part identifier
+        - part_name (str, required): Display name for the part
+        - category (str, required): Inventory category
+        - current_stock (int, required): Current quantity on hand
+        - minimum_stock (int, required): Minimum safe quantity
+        - reorder_level (int, required): Quantity at which to trigger reorder
+        - unit_price (float, required): Cost per unit
+        - supplier (str, required): Supplier name
+        - manufacturer (str, optional): Part manufacturer
+        - location (str, optional): Storage location
+        - currency (str, optional): Price currency code (default: USD)
+        - shelf_life_months (int, optional): Product shelf life
+        - notes (str, optional): Additional notes
+    
+    Validation:
+        - All required fields must be present and non-empty
+        - Numeric fields must parse correctly
+        - All quantities and prices must be non-negative
+        - Reorder level must be less than minimum stock level
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - message (str): Success message
+            - error (str): Error description if failed
+    
+    Status Codes:
+        - 200: Item added or updated successfully
+        - 400: Validation error (missing/invalid fields)
+        - 409: Part number already exists (new insert)
+        - 500: Database error
+    """
     try:
         data = request.get_json()
         
@@ -1102,32 +1193,37 @@ def api_inventory_update():
         
         for field in required_fields:
             if field not in data or not str(data[field]).strip():
-                return jsonify(success=False, error=f'Missing required field: {field}')
+                return jsonify(success=False, error=f'Missing required field: {field}'), 400
         
-        # Validate numeric fields
+        # Validate and parse numeric fields
         try:
             current_stock = int(data['current_stock'])
             minimum_stock = int(data['minimum_stock'])
             reorder_level = int(data['reorder_level'])
             unit_price = float(data['unit_price'])
         except ValueError:
-            return jsonify(success=False, error='Invalid numeric values')
+            return jsonify(success=False, error='Invalid numeric values for stock or price'), 400
         
-        if current_stock < 0 or minimum_stock < 0 or reorder_level < 0 or unit_price < 0:
-            return jsonify(success=False, error='Values cannot be negative')
+        # Validate non-negative values
+        if any(v < 0 for v in [current_stock, minimum_stock, reorder_level, unit_price]):
+            return jsonify(success=False, error='Stock levels and price cannot be negative'), 400
         
+        # Validate reorder level logic
         if reorder_level >= minimum_stock:
-            return jsonify(success=False, error='Reorder level must be less than minimum stock')
+            return jsonify(
+                success=False, 
+                error='Reorder level must be less than minimum stock level'
+            ), 400
         
         conn = get_db_connection()
         try:
-            c = conn.cursor()
+            cursor = conn.cursor()
             
             # Check if item exists
-            c.execute("SELECT part_number FROM inventory WHERE part_number = ?", (data['part_number'],))
-            exists = c.fetchone() is not None
+            cursor.execute("SELECT part_number FROM inventory WHERE part_number = ?", (data['part_number'],))
+            exists = cursor.fetchone() is not None
             
-            # Calculate status
+            # Determine stock status
             if current_stock <= reorder_level:
                 status = 'CRITICAL'
             elif current_stock <= minimum_stock:
@@ -1136,8 +1232,8 @@ def api_inventory_update():
                 status = 'OK'
             
             if exists:
-                # Update existing item
-                c.execute('''
+                # Update existing inventory item
+                cursor.execute('''
                     UPDATE inventory 
                     SET part_name = ?, category = ?, current_stock = ?, minimum_stock = ?,
                         reorder_level = ?, unit_price = ?, supplier = ?, manufacturer = ?,
@@ -1145,65 +1241,50 @@ def api_inventory_update():
                         status = ?, last_updated = ?
                     WHERE part_number = ?
                 ''', (
-                    data['part_name'],
-                    data['category'],
-                    current_stock,
-                    minimum_stock,
-                    reorder_level,
-                    unit_price,
-                    data['supplier'],
-                    data.get('manufacturer'),
-                    data.get('location'),
-                    data.get('currency', 'USD'),
-                    data.get('shelf_life_months'),
-                    data.get('notes'),
-                    status,
-                    datetime.now(),
-                    data['part_number']
+                    data['part_name'], data['category'], current_stock, minimum_stock,
+                    reorder_level, unit_price, data['supplier'], data.get('manufacturer'),
+                    data.get('location'), data.get('currency', 'USD'),
+                    data.get('shelf_life_months'), data.get('notes'), status,
+                    datetime.now(), data['part_number']
                 ))
                 action = 'updated'
             else:
-                # Insert new item
-                c.execute('''
+                # Insert new inventory item
+                cursor.execute('''
                     INSERT INTO inventory 
                     (part_number, part_name, category, current_stock, minimum_stock,
                      reorder_level, unit_price, supplier, manufacturer, location,
                      currency, shelf_life_months, notes, status, last_updated)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
-                    data['part_number'],
-                    data['part_name'],
-                    data['category'],
-                    current_stock,
-                    minimum_stock,
-                    reorder_level,
-                    unit_price,
-                    data['supplier'],
-                    data.get('manufacturer'),
-                    data.get('location'),
-                    data.get('currency', 'USD'),
-                    data.get('shelf_life_months'),
-                    data.get('notes'),
-                    status,
-                    datetime.now()
+                    data['part_number'], data['part_name'], data['category'],
+                    current_stock, minimum_stock, reorder_level, unit_price,
+                    data['supplier'], data.get('manufacturer'), data.get('location'),
+                    data.get('currency', 'USD'), data.get('shelf_life_months'),
+                    data.get('notes'), status, datetime.now()
                 ))
                 action = 'added'
             
             conn.commit()
-            log_activity(f'inventory_{action}', f'{action.capitalize()} item: {data["part_number"]} - {data["part_name"]}')
+            log_activity(
+                f'inventory_{action}',
+                f'{action.capitalize()} item {data["part_number"]}: {data["part_name"]}'
+            )
             
-            return jsonify(success=True, message=f'Item {action} successfully')
+            return jsonify(success=True, message=f'Item {action} successfully'), 200
+
         except sqlite3.IntegrityError:
-            return jsonify(success=False, error='Part number already exists')
+            return jsonify(success=False, error='Part number already exists'), 409
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Error updating inventory: {e}")
-            return jsonify(success=False, error='Database error')
+            app.logger.error(f"Database error during inventory update: {e}")
+            return jsonify(success=False, error='Database error occurred'), 500
         finally:
             conn.close()
+
     except Exception as e:
-        app.logger.error(f"Error in inventory update: {e}")
-        return jsonify(success=False, error=str(e))   
+        app.logger.error(f"Error processing inventory update request: {e}")
+        return jsonify(success=False, error='Failed to process request'), 500   
 
 @app.route('/api/inventory/update-stock', methods=['POST'])
 @login_required
@@ -6492,13 +6573,32 @@ def api_messaging_unread_count():
 @app.route('/api/messaging/mark-read/<message_id>', methods=['POST'])
 @login_required
 def api_messaging_mark_read(message_id):
-    """Mark a message as read."""
+    """
+    Mark a message as read for the current user.
+    
+    Updates message read status and records the read timestamp.
+    Only updates if the message is addressed to the current user
+    (by specific ID, role, department, or broadcast).
+    
+    Args:
+        message_id (str): The ID of the message to mark as read
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - error (str): Error description if failed
+    
+    Status Codes:
+        - 200: Message marked as read successfully
+        - 401: Not authenticated
+    """
     try:
         conn = get_db_connection()
         try:
-            c = conn.cursor()
+            cursor = conn.cursor()
 
-            c.execute("""
+            # Mark message as read if user is recipient
+            cursor.execute("""
                 UPDATE messaging_system
                 SET is_read = 1, read_at = ?
                 WHERE message_id = ? AND (
@@ -6511,33 +6611,51 @@ def api_messaging_mark_read(message_id):
                     )) OR
                     (recipient_type = 'all')
                 )
-            """, (datetime.now(), message_id, current_user.id, current_user.role,
-                 current_user.id, current_user.department, current_user.id))
+            """, (
+                datetime.now(), message_id, current_user.id, current_user.role,
+                current_user.id, current_user.department, current_user.id
+            ))
 
             conn.commit()
-            return jsonify({'success': True})
+            return jsonify({'success': True}), 200
 
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Error marking message as read: {e}")
-            return jsonify({'success': False, 'error': str(e)})
+            app.logger.error(f"Error marking message {message_id} as read: {e}")
+            return jsonify({'success': False, 'error': 'Failed to mark message as read'}), 500
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in mark read: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        app.logger.error(f"Database connection error in mark_read: {e}")
+        return jsonify({'success': False, 'error': 'Database error'}), 500
 
 @app.route('/api/messaging/mark-all-read', methods=['POST'])
 @login_required
 def api_messaging_mark_all_read():
-    """Mark all messages as read for current user."""
+    """
+    Mark all unread messages as read for the current user.
+    
+    Batch operation to mark all messages addressed to the current user
+    as read and record the read timestamp.
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - marked (int): Number of messages marked as read
+            - error (str): Error description if failed
+    
+    Status Codes:
+        - 200: Messages marked successfully
+        - 401: Not authenticated
+    """
     try:
         conn = get_db_connection()
         try:
-            c = conn.cursor()
+            cursor = conn.cursor()
 
-            c.execute("""
+            # Mark all unread messages as read for current user
+            cursor.execute("""
                 UPDATE messaging_system
                 SET is_read = 1, read_at = ?
                 WHERE (
@@ -6550,34 +6668,57 @@ def api_messaging_mark_all_read():
                     )) OR
                     (recipient_type = 'all')
                 ) AND is_read = 0
-            """, (datetime.now(), current_user.id, current_user.role,
-                 current_user.id, current_user.department, current_user.id))
+            """, (
+                datetime.now(), current_user.id, current_user.role,
+                current_user.id, current_user.department, current_user.id
+            ))
 
+            marked_count = cursor.rowcount
             conn.commit()
-            return jsonify({'success': True, 'marked': c.rowcount})
+            return jsonify({'success': True, 'marked': marked_count}), 200
 
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Error marking all as read: {e}")
-            return jsonify({'success': False, 'error': str(e)})
+            app.logger.error(f"Error marking all messages as read for user {current_user.id}: {e}")
+            return jsonify({'success': False, 'error': 'Failed to mark messages as read'}), 500
         finally:
             conn.close()
 
     except Exception as e:
-        app.logger.error(f"Error in mark all read: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        app.logger.error(f"Database connection error in mark_all_read: {e}")
+        return jsonify({'success': False, 'error': 'Database error'}), 500
 
 @app.route('/api/messaging/message/<message_id>')
 @login_required
 def api_messaging_message(message_id):
-    """Get message details."""
+    """
+    Retrieve full message details including metadata and replies.
+    
+    Fetches complete message information along with sender details
+    and all associated replies, including reply authors and content.
+    
+    Args:
+        message_id (str): The ID of the message to retrieve
+    
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - message (dict): Message object with all details
+            - replies (list): Array of reply objects
+            - error (str): Error description if failed
+    
+    Status Codes:
+        - 200: Message retrieved successfully
+        - 401: Not authenticated
+        - 404: Message not found or not authorized
+    """
     try:
         conn = get_db_connection()
         try:
-            c = conn.cursor()
+            cursor = conn.cursor()
 
-            # Get message
-            c.execute("""
+            # Retrieve message with sender details
+            cursor.execute("""
                 SELECT m.*, u.first_name || ' ' || u.last_name as sender_name,
                        u.role as sender_role, u.user_id as sender_user_id
                 FROM messaging_system m
@@ -6592,10 +6733,12 @@ def api_messaging_message(message_id):
                     )) OR
                     (m.recipient_type = 'all')
                 )
-            """, (message_id, current_user.id, current_user.role, current_user.id,
-                 current_user.department, current_user.id))
+            """, (
+                message_id, current_user.id, current_user.role, current_user.id,
+                current_user.department, current_user.id
+            ))
 
-            message = c.fetchone()
+            message = cursor.fetchone()
             if not message:
                 return jsonify({'success': False, 'error': 'Message not found or access denied'})
 
