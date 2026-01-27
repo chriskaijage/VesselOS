@@ -65,21 +65,46 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Password *</label>
+                                            <label class="form-label">Password <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                                <input type="password" class="form-control" name="password" required 
+                                                <input type="password" class="form-control" id="password" name="password" required 
                                                        minlength="8" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}">
+                                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
                                             </div>
                                             <small class="form-text text-muted">Minimum 8 characters with uppercase, lowercase, and number</small>
+                                            
+                                            <!-- Password Strength Indicator -->
+                                            <div class="mt-2" id="passwordStrength" style="display: none;">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <small class="form-label mb-0">Password Strength:</small>
+                                                    <small id="strengthText" class="badge bg-secondary">—</small>
+                                                </div>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="progress-bar" id="strengthBar" style="width: 0%"></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Confirm Password *</label>
+                                            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                                <input type="password" class="form-control" name="confirm_password" required>
+                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirm_password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Password Match Indicator -->
+                                            <div class="mt-2" id="passwordMatchDiv" style="display: none;">
+                                                <small id="passwordMatchText" class="d-flex align-items-center">
+                                                    <i class="fas fa-circle me-2" style="font-size: 8px;"></i>
+                                                    <span>Passwords match</span>
+                                                </small>
                                             </div>
                                         </div>
                                     </div>
@@ -156,15 +181,6 @@
                             </div>
                         </div>
                         
-                        <!-- Password Strength Indicator -->
-                        <div class="mb-3" id="passwordStrength" style="display: none;">
-                            <label class="form-label">Password Strength:</label>
-                            <div class="progress mb-2" style="height: 8px;">
-                                <div class="progress-bar" id="strengthBar" style="width: 0%"></div>
-                            </div>
-                            <small id="strengthText" class="text-muted"></small>
-                        </div>
-                        
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-check-circle me-2"></i> Register Account
@@ -214,31 +230,31 @@ function toggleSurveyDays() {
     }
 }
 
-function validateForm() {
-    const password = document.querySelector('input[name="password"]').value;
-    const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
-    
-    if (password !== confirmPassword) {
-        alert('Passwords do not match!');
-        return false;
-    }
-    
-    // Password strength validation
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-        alert('Password must contain uppercase, lowercase letters and numbers!');
-        return false;
-    }
-    
-    return true;
-}
+// Toggle password visibility
+document.querySelectorAll('.toggle-password').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        const icon = this.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+});
 
 // Password strength indicator
-document.querySelector('input[name="password"]').addEventListener('input', function(e) {
+const passwordInput = document.getElementById('password');
+const confirmPasswordInput = document.getElementById('confirm_password');
+
+passwordInput.addEventListener('input', function(e) {
     const password = e.target.value;
     const strengthDiv = document.getElementById('passwordStrength');
     const strengthBar = document.getElementById('strengthBar');
@@ -252,24 +268,84 @@ document.querySelector('input[name="password"]').addEventListener('input', funct
     strengthDiv.style.display = 'block';
     
     let score = 0;
-    if (password.length >= 8) score += 25;
-    if (/[A-Z]/.test(password)) score += 25;
-    if (/[a-z]/.test(password)) score += 25;
+    if (password.length >= 8) score += 20;
+    if (password.length >= 12) score += 10;
+    if (/[A-Z]/.test(password)) score += 20;
+    if (/[a-z]/.test(password)) score += 20;
     if (/\d/.test(password)) score += 15;
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 10;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 15;
     
     strengthBar.style.width = score + '%';
     
-    if (score < 50) {
+    if (score < 40) {
         strengthBar.className = 'progress-bar bg-danger';
-        strengthText.textContent = 'Weak password';
-    } else if (score < 75) {
+        strengthText.className = 'badge bg-danger';
+        strengthText.textContent = 'Weak';
+    } else if (score < 60) {
         strengthBar.className = 'progress-bar bg-warning';
-        strengthText.textContent = 'Moderate password';
+        strengthText.className = 'badge bg-warning';
+        strengthText.textContent = 'Fair';
+    } else if (score < 80) {
+        strengthBar.className = 'progress-bar bg-info';
+        strengthText.className = 'badge bg-info';
+        strengthText.textContent = 'Good';
     } else {
         strengthBar.className = 'progress-bar bg-success';
-        strengthText.textContent = 'Strong password';
+        strengthText.className = 'badge bg-success';
+        strengthText.textContent = 'Strong';
     }
+    
+    // Check password match
+    checkPasswordMatch();
 });
+
+// Password match validation
+confirmPasswordInput.addEventListener('input', function() {
+    checkPasswordMatch();
+});
+
+function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const matchDiv = document.getElementById('passwordMatchDiv');
+    const matchText = document.getElementById('passwordMatchText');
+    
+    if (confirmPassword.length === 0) {
+        matchDiv.style.display = 'none';
+        return;
+    }
+    
+    matchDiv.style.display = 'block';
+    
+    if (password === confirmPassword) {
+        matchText.className = 'd-flex align-items-center text-success';
+        matchText.innerHTML = '<i class="fas fa-check-circle me-2"></i><span>Passwords match</span>';
+    } else {
+        matchText.className = 'd-flex align-items-center text-danger';
+        matchText.innerHTML = '<i class="fas fa-times-circle me-2"></i><span>Passwords do not match</span>';
+    }
+}
+
+function validateForm() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    // Password strength validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+        alert('Password must contain uppercase, lowercase letters and numbers!');
+        return false;
+    }
+    
+    return true;
+}
 </script>
 {% endblock %}
