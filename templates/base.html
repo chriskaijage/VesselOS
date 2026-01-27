@@ -4180,21 +4180,8 @@ function showFilePreview(fileUrl, fileName) {
         const displayName = userName || 'Unknown';
         const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         
-        // Build initial HTML with placeholder header
+        // Build initial HTML without header
         let html = `
-            <div class="conversation-header" id="threadHeader" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
-                <div class="position-relative">
-                    <div class="avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">${initials}</div>
-                </div>
-                <div class="info">
-                    <h6 style="margin: 0;" class="text-decoration-none">${displayName}</h6>
-                    <p style="margin: 0; font-size: 0.85rem;"><span class="text-muted">Loading status...</span></p>
-                </div>
-                <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="event.stopPropagation(); switchMessagingTab('threads')">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-            </div>
-            
             <div class="message-conversation" id="messageThread">
         `;
         
@@ -4331,57 +4318,19 @@ function showFilePreview(fileUrl, fileName) {
         
         content.innerHTML = html;
         
-        // Fetch and update header with profile picture and real status
+        // Update thread contact phone and name in reply area
         fetch(`/api/user/status/${currentConversationId}`)
             .then(response => response.json())
             .then(statusData => {
                 if (statusData.success) {
                     const userStatus = statusData.user;
-                    const profilePicUrl = userStatus.profile_pic 
-                        ? `/uploads/profile_pics/${userStatus.profile_pic}`
-                        : null;
-                    
-                    const threadHeader = document.getElementById('threadHeader');
-                    if (threadHeader) {
-                        // Update header with profile picture and status
-                        let headerHtml = `
-                            <div class="position-relative" onclick="showUserProfile('${currentConversationId}')" style="cursor: pointer;">
-                        `;
-                        
-                        if (profilePicUrl) {
-                            headerHtml += `<img src="${profilePicUrl}" alt="${displayName}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">`;
-                        } else {
-                            headerHtml += `<div class="avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">${initials}</div>`;
-                        }
-                        
-                        if (userStatus.is_online) {
-                            headerHtml += `<span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle" style="width: 12px; height: 12px;"></span>`;
-                        }
-                        
-                        headerHtml += `</div>`;
-                        
-                        const avatarDiv = threadHeader.querySelector('.position-relative');
-                        if (avatarDiv) {
-                            avatarDiv.replaceWith(new DOMParser().parseFromString(headerHtml, 'text/html').body.firstChild);
-                        }
-                        
-                        // Update status text
-                        const statusP = threadHeader.querySelector('.info p');
-                        if (statusP) {
-                            statusP.innerHTML = userStatus.is_online 
-                                ? '<span class="text-success fw-bold">● Online</span>' 
-                                : `<span class="text-muted">Last seen ${userStatus.last_seen_time}</span>`;
-                        }
-                        
-                        // Update thread contact phone and name in reply area
-                        const threadContactPhone = document.getElementById('threadContactPhone');
-                        const threadContactName = document.getElementById('threadContactName');
-                        if (threadContactPhone) {
-                            threadContactPhone.textContent = userStatus.phone || `~${currentConversationId}`;
-                        }
-                        if (threadContactName) {
-                            threadContactName.textContent = userStatus.first_name ? `${userStatus.first_name} ${userStatus.last_name || ''}` : displayName;
-                        }
+                    const threadContactPhone = document.getElementById('threadContactPhone');
+                    const threadContactName = document.getElementById('threadContactName');
+                    if (threadContactPhone) {
+                        threadContactPhone.textContent = userStatus.phone || `~${currentConversationId}`;
+                    }
+                    if (threadContactName) {
+                        threadContactName.textContent = userStatus.first_name ? `${userStatus.first_name} ${userStatus.last_name || ''}` : displayName;
                     }
                 }
             })
@@ -4488,10 +4437,10 @@ function showFilePreview(fileUrl, fileName) {
         });
         
         // Show loading state
-        const sendBtn = document.querySelector('.quick-reply-area .btn-primary');
+        const sendBtn = document.querySelector('.thread-send-btn');
         if (!sendBtn) return; // Safety check
         const originalText = sendBtn.innerHTML;
-        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         sendBtn.disabled = true;
         const textarea = document.getElementById('threadReplyText');
         if (textarea) textarea.disabled = true;
@@ -4527,14 +4476,10 @@ function showFilePreview(fileUrl, fileName) {
             if (data.success) {
                 showAlert('success', 'Reply sent!');
                 
-                // Get current user name from header
-                const userNameElement = document.querySelector('.conversation-header h6');
-                const displayName = userNameElement ? userNameElement.textContent : currentConversationId;
-                
                 // Refresh thread quickly to show server confirmation
                 setTimeout(() => {
                     console.log('🔄 Syncing thread...');
-                    openMessageThread(currentConversationId, displayName);
+                    openMessageThread(currentConversationId, 'User');
                 }, 200);
             } else {
                 console.error('Send failed:', data.error);
