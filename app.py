@@ -3620,7 +3620,7 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    if current_user.role == 'port_engineer':
+    if current_user.role == 'port_engineer' or current_user.role == 'port_manager':
         return render_template('port_engineer_dashboard.html')
     elif current_user.role == 'quality_officer':
         return render_template('quality_officer.html')
@@ -7169,7 +7169,7 @@ def api_manager_dashboard_data():
 
 @app.route('/api/manager/pending-users')
 @login_required
-@role_required(['port_engineer'])
+@role_required(['port_engineer', 'port_manager'])
 def api_manager_pending_users():
     """Get users pending approval."""
     conn = get_db_connection()
@@ -7198,7 +7198,7 @@ def api_manager_pending_users():
 
 @app.route('/api/manager/approve-user', methods=['POST'])
 @login_required
-@role_required(['port_engineer'])
+@role_required(['port_engineer', 'port_manager'])
 def api_manager_approve_user():
     """Approve or reject a user."""
     try:
