@@ -2542,6 +2542,160 @@ function showFilePreview(fileUrl, fileName) {
             max-height: 120px; /* Reduced max height */
             font-size: 0.875rem;
         }
+
+        /* ==================== THREAD REPLY STYLING (WhatsApp-like) ==================== */
+        .thread-reply-container {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .thread-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .thread-contact-details {
+            flex: 1;
+        }
+
+        .thread-contact-phone {
+            display: block;
+            color: #a0aec0;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .thread-contact-name {
+            color: #ffffff;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .thread-close-btn {
+            color: #ffffff !important;
+            opacity: 0.8;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            margin-left: 1rem;
+        }
+
+        .thread-close-btn:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .thread-quick-reply-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .thread-reply-input {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 20px;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.9rem;
+            resize: none;
+            min-height: 44px;
+            max-height: 100px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .thread-reply-input:focus {
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            background: #ffffff;
+        }
+
+        .thread-reply-input::placeholder {
+            color: #cbd5e0;
+        }
+
+        .thread-attachment-preview {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            padding: 0 0.5rem;
+        }
+
+        .thread-reply-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .thread-action-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            padding: 0;
+        }
+
+        .thread-action-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .thread-action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .thread-send-btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0084ff 100%);
+            border: none;
+            color: #ffffff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            padding: 0;
+            box-shadow: 0 2px 8px rgba(0, 132, 255, 0.3);
+            margin-left: 0.5rem;
+        }
+
+        .thread-send-btn:hover {
+            box-shadow: 0 4px 12px rgba(0, 132, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .thread-send-btn:active {
+            transform: scale(0.95);
+        }
         
         .message-conversation {
             max-height: calc(100vh - 400px); /* Responsive height based on viewport */
@@ -4139,20 +4293,30 @@ function showFilePreview(fileUrl, fileName) {
         html += `</div>`;
         
         html += `
-            <div class="quick-reply-area">
-                <textarea id="threadReplyText" placeholder="Type your reply..." onfocus="showEmojiPicker()"></textarea>
-                <div id="threadAttachmentPreview"></div>
-                <div class="d-flex gap-2 mt-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('threadAttachment').click()">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
-                    <input type="file" id="threadAttachment" style="display: none;" multiple onchange="handleAttachmentUpload(this, 'thread')">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEmojiPicker()">
-                        <i class="fas fa-smile"></i>
-                    </button>
-                    <button type="button" class="btn btn-primary ms-auto" onclick="sendThreadReply()">
-                        <i class="fas fa-paper-plane me-1"></i> Send
-                    </button>
+            <div class="thread-reply-container">
+                <div class="thread-header-info">
+                    <div class="thread-contact-details">
+                        <span class="thread-contact-phone" id="threadContactPhone">+255 733 126 834 ~${currentConversationId}</span>
+                        <h6 class="thread-contact-name" id="threadContactName">${displayName}</h6>
+                    </div>
+                    <button type="button" class="btn btn-close thread-close-btn" onclick="switchMessagingTab('threads')" aria-label="Close"></button>
+                </div>
+                
+                <div class="thread-quick-reply-area">
+                    <textarea id="threadReplyText" class="thread-reply-input" placeholder="Type your reply..." onfocus="showEmojiPicker()"></textarea>
+                    <div id="threadAttachmentPreview" class="thread-attachment-preview"></div>
+                    <div class="thread-reply-actions">
+                        <button type="button" class="thread-action-btn" onclick="document.getElementById('threadAttachment').click()" title="Attach file">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <input type="file" id="threadAttachment" style="display: none;" multiple onchange="handleAttachmentUpload(this, 'thread')">
+                        <button type="button" class="thread-action-btn" onclick="toggleEmojiPicker()" title="Add emoji">
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        <button type="button" class="thread-send-btn" onclick="sendThreadReply()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -4199,6 +4363,16 @@ function showFilePreview(fileUrl, fileName) {
                             statusP.innerHTML = userStatus.is_online 
                                 ? '<span class="text-success fw-bold">● Online</span>' 
                                 : `<span class="text-muted">Last seen ${userStatus.last_seen_time}</span>`;
+                        }
+                        
+                        // Update thread contact phone and name in reply area
+                        const threadContactPhone = document.getElementById('threadContactPhone');
+                        const threadContactName = document.getElementById('threadContactName');
+                        if (threadContactPhone) {
+                            threadContactPhone.textContent = userStatus.phone || `~${currentConversationId}`;
+                        }
+                        if (threadContactName) {
+                            threadContactName.textContent = userStatus.first_name ? `${userStatus.first_name} ${userStatus.last_name || ''}` : displayName;
                         }
                     }
                 }
