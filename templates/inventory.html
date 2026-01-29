@@ -164,7 +164,7 @@
         <div class="card mt-4">
             <div class="card-header bg-info text-white">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-folder me-2"></i> Inventory Files (CSV Uploads)</h5>
+                    <h5 class="mb-0"><i class="fas fa-folder me-2"></i> Inventory Folders</h5>
                     <button class="btn btn-sm btn-light" onclick="refreshInventoryFiles()">
                         <i class="fas fa-sync-alt me-1"></i> Refresh
                     </button>
@@ -1799,49 +1799,87 @@ function closeAndRefresh() {
     }, 300);
 }
 
-// Load and display inventory files
+// Load and display inventory files and folders
 function loadInventoryFiles() {
-    fetch('/api/inventory-files', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.data && data.data.length > 0) {
-            totalInventoryFolders = data.data.length;
-            displayInventoryFiles(data.data);
+    Promise.all([
+        fetch('/api/inventory-files', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+        fetch('/api/inventory-folders', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+    ])
+    .then(([filesData, foldersData]) => {
+        let files = (filesData.success && filesData.data) ? filesData.data : [];
+        let folders = (foldersData.success && foldersData.folders) ? foldersData.folders : [];
+        
+        if (files.length > 0 || folders.length > 0) {
+            totalInventoryFolders = files.length + folders.length;
+            displayInventoryFilesAndFolders(files, folders);
             updateInventorySummary();
         } else {
             totalInventoryFolders = 0;
             document.getElementById('inventoryFilesContainer').innerHTML = `
                 <div class="text-center py-4">
-                    <p class="text-muted"><i class="fas fa-folder-open me-2"></i> No inventory files uploaded yet.</p>
-                    <p class="text-muted small">Click "Upload Folders (CSV)" in the sidebar to add files.</p>
+                    <p class="text-muted"><i class="fas fa-folder-open me-2"></i> No inventory folders yet.</p>
+                    <p class="text-muted small">Click "Manage Folders" in the sidebar to create folders or upload CSV files.</p>
                 </div>
             `;
             updateInventorySummary();
         }
     })
     .catch(error => {
-        console.error('Error loading inventory files:', error);
+        console.error('Error loading inventory data:', error);
     });
 }
 
-function displayInventoryFiles(files) {
+function displayInventoryFilesAndFolders(files, folders) {
     let html = '<div class="row">';
     
+    // Display folders first
+    folders.forEach(folder => {
+        const createdDate = new Date(folder.created_at).toLocaleString();
+        const fileCount = folder.file_count || 0;
+        html += `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-left-primary" style="border-left: 4px solid #0d6efd;">
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate" title="${folder.name}">
+                            <i class="fas fa-folder text-primary me-2"></i> ${escapeHtml(folder.name)}
+                        </h6>
+                        <p class="card-text small text-muted">
+                            <strong>Type:</strong> Folder<br>
+                            <strong>Files:</strong> ${fileCount}<br>
+                            <strong>Created:</strong> ${new Date(folder.created_at).toLocaleDateString()}<br>
+                            <strong>By:</strong> ${escapeHtml(folder.created_by)}
+                        </p>
+                        <div class="btn-group-sm d-flex flex-wrap gap-1">
+                            <button class="btn btn-sm btn-primary" onclick="openFolderDetails('${folder.id}')" title="View folder">
+                                <i class="fas fa-folder-open"></i> Open
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="renameFolderFromMain('${folder.id}', '${escapeHtml(folder.name)}')" title="Rename folder">
+                                <i class="fas fa-edit"></i> Rename
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteFolderFromMain('${folder.id}', '${escapeHtml(folder.name)}')" title="Delete folder">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Display CSV files
     files.forEach(file => {
         const createdDate = new Date(file.created_at).toLocaleDateString();
         const partCount = file.part_count || 0;
         const fileUrl = `/uploads/inventory/${file.file_name}`;
         html += `
             <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card h-100 border-left-info">
+                <div class="card h-100 border-left-info" style="border-left: 4px solid #0dcaf0;">
                     <div class="card-body">
                         <h6 class="card-title text-truncate" title="${file.file_name}">
-                            <i class="fas fa-folder text-info me-2"></i> ${file.file_name}
+                            <i class="fas fa-file-csv text-info me-2"></i> ${file.file_name}
                         </h6>
                         <p class="card-text small text-muted">
+                            <strong>Type:</strong> CSV File<br>
                             <strong>Parts:</strong> ${partCount}<br>
                             <strong>Created:</strong> ${createdDate}
                         </p>
@@ -1870,6 +1908,43 @@ function displayInventoryFiles(files) {
     
     html += '</div>';
     document.getElementById('inventoryFilesContainer').innerHTML = html;
+}
+
+function renameFolderFromMain(folderId, currentName) {
+    const newName = prompt('Enter new folder name:', currentName);
+    if (newName && newName.trim() && newName !== currentName) {
+        fetch(`/api/rename-folder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ folder_id: folderId, new_name: newName.trim() })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Folder renamed successfully');
+                loadInventoryFiles();
+            } else {
+                showAlert('danger', 'Failed to rename folder: ' + data.error);
+            }
+        })
+        .catch(e => showAlert('danger', 'Error: ' + e.message));
+    }
+}
+
+function deleteFolderFromMain(folderId, folderName) {
+    if (confirm(`Are you sure you want to delete the folder "${folderName}" and all its contents?`)) {
+        fetch(`/api/delete-folder/${folderId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Folder deleted successfully');
+                loadInventoryFiles();
+            } else {
+                showAlert('danger', 'Failed to delete folder: ' + data.error);
+            }
+        })
+        .catch(e => showAlert('danger', 'Error: ' + e.message));
+    }
 }
 
 function expandFileDetails(fileId) {
