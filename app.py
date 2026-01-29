@@ -1522,13 +1522,9 @@ def api_inventory_import():
                     except (ValueError, TypeError):
                         unit_price = 0.0
                     
-                    # Validate values
+                    # Validate values - no negative values
                     if any(val < 0 for val in [current_stock, minimum_stock, reorder_level, unit_price]):
                         errors.append(f'Line {i}: Values cannot be negative')
-                        continue
-                    
-                    if reorder_level >= minimum_stock:
-                        errors.append(f'Line {i}: Reorder level must be less than minimum stock')
                         continue
                     
                     # Calculate status
