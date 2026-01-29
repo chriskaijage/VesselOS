@@ -1925,7 +1925,7 @@ def api_edit_inventory_file(folder_id, file_name):
 @app.route('/api/inventory-folders/<folder_id>/<file_name>/rename', methods=['POST'])
 @login_required
 @role_required(['port_engineer', 'harbour_master'])
-def api_rename_inventory_file(folder_id, file_name):
+def api_rename_folder_file(folder_id, file_name):
     """Rename a file within an inventory folder."""
     try:
         data = request.get_json()
