@@ -45,6 +45,9 @@
                 <button class="btn btn-secondary w-100 mt-3" onclick="uploadInventoryFolders()">
                     <i class="fas fa-folder-open me-2"></i> Upload Folders (CSV)
                 </button>
+                <button class="btn btn-info w-100 mt-2" onclick="manageFolders()">
+                    <i class="fas fa-folder-plus me-2"></i> Manage Folders
+                </button>
                 
                 <hr class="my-3">
                 
@@ -379,6 +382,125 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Folders Management Modal -->
+<div class="modal fade" id="folderManagementModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-folder me-2"></i> Inventory Folders</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <button class="btn btn-success btn-sm" onclick="showFolderUploadDialog()">
+                        <i class="fas fa-plus me-1"></i> New Folder
+                    </button>
+                </div>
+                
+                <div id="foldersList" style="max-height: 500px; overflow-y: auto;">
+                    <p class="text-muted text-center">Loading folders...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Folder Details Modal -->
+<div class="modal fade" id="folderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="folderDetailsTitle">Folder Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3" id="folderActionsBar" style="display:none;">
+                    <button class="btn btn-primary btn-sm" onclick="showFileUploadDialog()">
+                        <i class="fas fa-upload me-1"></i> Add Files
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="showRenameFolderDialog()">
+                        <i class="fas fa-edit me-1"></i> Rename Folder
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteFolderWithConfirm()">
+                        <i class="fas fa-trash me-1"></i> Delete Folder
+                    </button>
+                </div>
+                
+                <div id="folderFilesList">
+                    <p class="text-muted text-center">Loading files...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File Editor Modal -->
+<div class="modal fade" id="fileEditorModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fileEditorTitle">Edit File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="btn-group mb-2" role="group">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showRenameFileDialog()">
+                            <i class="fas fa-edit me-1"></i> Rename
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteFileWithConfirm()">
+                            <i class="fas fa-trash me-1"></i> Delete
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="downloadFile()">
+                            <i class="fas fa-download me-1"></i> Download
+                        </button>
+                    </div>
+                </div>
+                
+                <textarea id="fileContentEditor" class="form-control" style="height: 400px; font-family: monospace;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveFileContent()">
+                    <i class="fas fa-save me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Folder Upload Dialog -->
+<div class="modal fade" id="folderUploadDialog" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Inventory Folder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Folder Name</label>
+                    <input type="text" class="form-control" id="newFolderName" placeholder="e.g., Engine Parts Inventory">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Upload Files (Excel/CSV)</label>
+                    <input type="file" class="form-control" id="folderFiles" multiple accept=".xlsx,.xls,.csv">
+                    <small class="text-muted">You can upload files now or add them later. Files can be empty or incomplete.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitFolderUpload()">
+                    <i class="fas fa-upload me-1"></i> Create & Upload
+                </button>
             </div>
         </div>
     </div>
@@ -1370,7 +1492,8 @@ function uploadDocs() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            showAlert('success', data.message || 'Files uploaded');
+            const alertType = data.rejected && data.rejected.length > 0 ? 'warning' : 'success';
+            showAlert(alertType, data.message || 'Files uploaded');
             refreshDocsList(currentDocsPart);
         } else {
             showAlert('danger', data.error || 'Upload failed');
@@ -1889,6 +2012,360 @@ function requestPartLowStock(partNumber, fileId) {
 
 function refreshInventoryFiles() {
     loadInventoryFiles();
+}
+
+// ===== INVENTORY FOLDERS MANAGEMENT =====
+let currentFolder = null;
+let currentFile = null;
+
+function manageFolders() {
+    const modal = new bootstrap.Modal(document.getElementById('folderManagementModal'));
+    loadFolders();
+    modal.show();
+}
+
+function loadFolders() {
+    fetch('/api/inventory-folders')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                displayFolders(data.folders);
+            } else {
+                showAlert('danger', 'Failed to load folders: ' + data.error);
+            }
+        })
+        .catch(e => showAlert('danger', 'Error loading folders: ' + e.message));
+}
+
+function displayFolders(folders) {
+    const container = document.getElementById('foldersList');
+    
+    if (folders.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No folders yet. Click "New Folder" to create one.</p>';
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    folders.forEach(folder => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1"><i class="fas fa-folder me-2"></i>${escapeHtml(folder.name)}</h6>
+                        <small class="text-muted d-block">Files: ${folder.file_count} | Created: ${new Date(folder.created_at).toLocaleString()}</small>
+                        <small class="text-muted d-block">By: ${escapeHtml(folder.created_by)}</small>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="openFolderDetails('${folder.id}')">
+                        <i class="fas fa-folder-open me-1"></i> View
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function openFolderDetails(folderId) {
+    currentFolder = folderId;
+    const modal = new bootstrap.Modal(document.getElementById('folderDetailsModal'));
+    
+    // Get folder name from the API
+    fetch('/api/inventory-folders')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const folder = data.folders.find(f => f.id === folderId);
+                if (folder) {
+                    document.getElementById('folderDetailsTitle').textContent = `Folder: ${folder.name}`;
+                }
+            }
+            loadFolderFiles(folderId);
+            document.getElementById('folderActionsBar').style.display = 'block';
+            modal.show();
+        });
+}
+
+function loadFolderFiles(folderId) {
+    fetch('/api/inventory-folders')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const folder = data.folders.find(f => f.id === folderId);
+                if (folder) {
+                    displayFolderFiles(folder.files, folderId);
+                }
+            }
+        })
+        .catch(e => showAlert('danger', 'Error loading folder files: ' + e.message));
+}
+
+function displayFolderFiles(files, folderId) {
+    const container = document.getElementById('folderFilesList');
+    
+    if (files.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No files in this folder. Click "Add Files" to upload.</p>';
+        return;
+    }
+    
+    let html = '<div class="table-responsive"><table class="table table-sm"><tbody>';
+    files.forEach(file => {
+        html += `
+            <tr>
+                <td>
+                    <i class="fas fa-file me-2"></i>
+                    <strong>${escapeHtml(file)}</strong>
+                </td>
+                <td style="width: 200px;">
+                    <button class="btn btn-sm btn-primary" onclick="openFileEditor('${folderId}', '${file}')">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteFile('${folderId}', '${file}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+function openFileEditor(folderId, fileName) {
+    currentFolder = folderId;
+    currentFile = fileName;
+    
+    fetch(`/api/inventory-folders/${folderId}/${encodeURIComponent(fileName)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.file_type === 'csv') {
+                document.getElementById('fileEditorTitle').textContent = `Edit: ${fileName}`;
+                document.getElementById('fileContentEditor').value = data.content;
+                const modal = new bootstrap.Modal(document.getElementById('fileEditorModal'));
+                modal.show();
+            } else {
+                showAlert('info', 'Excel files must be edited in their native format. Download and edit locally.');
+            }
+        })
+        .catch(e => showAlert('danger', 'Error loading file: ' + e.message));
+}
+
+function saveFileContent() {
+    const content = document.getElementById('fileContentEditor').value;
+    
+    fetch(`/api/inventory-folders/${currentFolder}/${encodeURIComponent(currentFile)}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({content: content})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('fileEditorModal')).hide();
+            loadFolderFiles(currentFolder);
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(e => showAlert('danger', 'Error saving file: ' + e.message));
+}
+
+function showRenameFileDialog() {
+    const newName = prompt(`Rename file to (current: ${currentFile}):`, currentFile);
+    if (newName && newName !== currentFile) {
+        renameFile(currentFolder, currentFile, newName);
+    }
+}
+
+function renameFile(folderId, oldName, newName) {
+    fetch(`/api/inventory-folders/${folderId}/${encodeURIComponent(oldName)}/rename`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({newName: newName})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            currentFile = data.new_name;
+            bootstrap.Modal.getInstance(document.getElementById('fileEditorModal')).hide();
+            loadFolderFiles(folderId);
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(e => showAlert('danger', 'Error renaming file: ' + e.message));
+}
+
+function deleteFileWithConfirm() {
+    if (confirm(`Delete file "${currentFile}"?`)) {
+        deleteFile(currentFolder, currentFile);
+    }
+}
+
+function deleteFile(folderId, fileName) {
+    fetch(`/api/inventory-folders/${folderId}/${encodeURIComponent(fileName)}/delete`, {
+        method: 'POST'
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('fileEditorModal')).hide();
+            loadFolderFiles(folderId);
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(e => showAlert('danger', 'Error deleting file: ' + e.message));
+}
+
+function downloadFile() {
+    const link = document.createElement('a');
+    link.href = `/api/inventory-folders/${currentFolder}/${encodeURIComponent(currentFile)}`;
+    link.click();
+}
+
+function showFolderUploadDialog() {
+    document.getElementById('newFolderName').value = '';
+    document.getElementById('folderFiles').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('folderUploadDialog'));
+    modal.show();
+}
+
+function submitFolderUpload() {
+    const folderName = document.getElementById('newFolderName').value.trim();
+    if (!folderName) {
+        showAlert('warning', 'Please enter a folder name');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('folderName', folderName);
+    
+    const files = document.getElementById('folderFiles').files;
+    for (let file of files) {
+        formData.append('files', file);
+    }
+    
+    fetch('/api/inventory-folders/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('folderUploadDialog')).hide();
+            loadFolders();
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(e => showAlert('danger', 'Error uploading folder: ' + e.message));
+}
+
+function showFileUploadDialog() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.accept = '.xlsx,.xls,.csv';
+    fileInput.onchange = (e) => {
+        const files = e.target.files;
+        if (files.length > 0) {
+            uploadFilesToFolder(currentFolder, files);
+        }
+    };
+    fileInput.click();
+}
+
+function uploadFilesToFolder(folderId, files) {
+    const formData = new FormData();
+    for (let file of files) {
+        formData.append('files', file);
+    }
+    
+    fetch(`/api/inventory-folders/${folderId}/upload`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `Uploaded ${files.length} file(s)`);
+            loadFolderFiles(folderId);
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(e => showAlert('danger', 'Error uploading files: ' + e.message));
+}
+
+function showRenameFolderDialog() {
+    fetch('/api/inventory-folders')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const folder = data.folders.find(f => f.id === currentFolder);
+                if (folder) {
+                    const newName = prompt(`Rename folder to (current: ${folder.name}):`, folder.name);
+                    if (newName && newName !== folder.name) {
+                        renameFolder(currentFolder, newName);
+                    }
+                }
+            }
+        });
+}
+
+function renameFolder(folderId, newName) {
+    fetch(`/api/inventory-folders/${folderId}/rename`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({newName: newName})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            currentFolder = data.new_id;
+            bootstrap.Modal.getInstance(document.getElementById('folderDetailsModal')).hide();
+            manageFolders();
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(e => showAlert('danger', 'Error renaming folder: ' + e.message));
+}
+
+function deleteFolderWithConfirm() {
+    fetch('/api/inventory-folders')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const folder = data.folders.find(f => f.id === currentFolder);
+                if (folder && confirm(`Delete folder "${folder.name}" and all its files?`)) {
+                    deleteFolder(currentFolder);
+                }
+            }
+        });
+}
+
+function deleteFolder(folderId) {
+    fetch(`/api/inventory-folders/${folderId}/delete`, {
+        method: 'POST'
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('folderDetailsModal')).hide();
+            manageFolders();
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(e => showAlert('danger', 'Error deleting folder: ' + e.message));
 }
 </script>
 

@@ -23,6 +23,7 @@ import sqlite3
 import random
 import string
 import csv
+import shutil
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -386,6 +387,7 @@ def api_inventory_upload_docs(part_number):
 
     files = request.files.getlist('files') or request.files.getlist('file')
     saved = []
+    rejected = []
 
     # Create target folder for this part
     safe_part = secure_filename(part_number)
@@ -398,6 +400,7 @@ def api_inventory_upload_docs(part_number):
         for f in files:
             if f and f.filename:
                 if not allowed_file(f.filename):
+                    rejected.append(f"'{f.filename}' - file type not allowed")
                     continue
                 orig = f.filename
                 timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -415,7 +418,12 @@ def api_inventory_upload_docs(part_number):
 
         conn.commit()
         log_activity('inventory_upload_doc', f'Uploaded {len(saved)} docs for {part_number}')
-        return jsonify(success=True, saved=saved, message=f'Uploaded {len(saved)} files')
+        
+        message = f'Uploaded {len(saved)} file(s)'
+        if rejected:
+            message += f'. Rejected: {", ".join(rejected)}'
+        
+        return jsonify(success=True, saved=saved, message=message, rejected=rejected)
     except Exception as e:
         conn.rollback()
         app.logger.error(f"Error uploading inventory docs: {e}")
@@ -1642,6 +1650,329 @@ def api_inventory_export():
         return jsonify(success=False, error=str(e))
     finally:
         conn.close()
+
+@app.route('/api/inventory-folders/upload', methods=['POST'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_upload_inventory_folder():
+    """Upload inventory folder with Excel files (can be empty or incomplete)."""
+    try:
+        if 'folderName' not in request.form or 'files' not in request.files:
+            return jsonify(success=False, error='Missing folder name or files')
+        
+        folder_name = request.form.get('folderName', '').strip()
+        if not folder_name:
+            return jsonify(success=False, error='Folder name cannot be empty')
+        
+        # Sanitize folder name
+        safe_folder_name = secure_filename(folder_name)
+        
+        # Create folder path
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        folder_path = os.path.join(upload_base, safe_folder_name)
+        os.makedirs(folder_path, exist_ok=True)
+        
+        files = request.files.getlist('files')
+        saved_files = []
+        
+        for f in files:
+            if f and f.filename:
+                # Allow Excel and CSV files
+                if not (f.filename.lower().endswith(('.xlsx', '.xls', '.csv'))):
+                    continue
+                
+                filename = secure_filename(f.filename)
+                filepath = os.path.join(folder_path, filename)
+                f.save(filepath)
+                saved_files.append(filename)
+        
+        # Create metadata file for the folder
+        metadata = {
+            'folder_name': folder_name,
+            'created_by': current_user.user_id if current_user.is_authenticated else 'unknown',
+            'created_at': datetime.now().isoformat(),
+            'files': saved_files
+        }
+        
+        metadata_path = os.path.join(folder_path, '.metadata.json')
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2)
+        
+        log_activity('inventory_folder_upload', f'Uploaded folder: {folder_name}')
+        return jsonify(success=True, message=f'Uploaded folder "{folder_name}" with {len(saved_files)} file(s)', 
+                      folder_name=safe_folder_name, files=saved_files)
+    
+    except Exception as e:
+        app.logger.error(f"Error uploading inventory folder: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders', methods=['GET'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_list_inventory_folders():
+    """List all inventory folders."""
+    try:
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        folders = []
+        
+        if os.path.isdir(upload_base):
+            for folder_name in os.listdir(upload_base):
+                folder_path = os.path.join(upload_base, folder_name)
+                if os.path.isdir(folder_path):
+                    # Get metadata if available
+                    metadata_path = os.path.join(folder_path, '.metadata.json')
+                    metadata = {}
+                    if os.path.exists(metadata_path):
+                        try:
+                            with open(metadata_path, 'r', encoding='utf-8') as f:
+                                metadata = json.load(f)
+                        except:
+                            pass
+                    
+                    # Get files
+                    files = [f for f in os.listdir(folder_path) if not f.startswith('.')]
+                    
+                    folders.append({
+                        'id': folder_name,
+                        'name': metadata.get('folder_name', folder_name),
+                        'created_by': metadata.get('created_by', 'Unknown'),
+                        'created_at': metadata.get('created_at', ''),
+                        'files': files,
+                        'file_count': len(files)
+                    })
+        
+        return jsonify(success=True, folders=folders)
+    
+    except Exception as e:
+        app.logger.error(f"Error listing inventory folders: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders/<folder_id>/rename', methods=['POST'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_rename_inventory_folder(folder_id):
+    """Rename an inventory folder."""
+    try:
+        data = request.get_json()
+        new_name = data.get('newName', '').strip()
+        
+        if not new_name:
+            return jsonify(success=False, error='New folder name cannot be empty')
+        
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        old_path = os.path.join(upload_base, folder_id)
+        
+        if not os.path.isdir(old_path):
+            return jsonify(success=False, error='Folder not found')
+        
+        safe_new_name = secure_filename(new_name)
+        new_path = os.path.join(upload_base, safe_new_name)
+        
+        if os.path.exists(new_path) and new_path != old_path:
+            return jsonify(success=False, error='Folder with this name already exists')
+        
+        os.rename(old_path, new_path)
+        
+        # Update metadata
+        metadata_path = os.path.join(new_path, '.metadata.json')
+        if os.path.exists(metadata_path):
+            try:
+                with open(metadata_path, 'r', encoding='utf-8') as f:
+                    metadata = json.load(f)
+                metadata['folder_name'] = new_name
+                with open(metadata_path, 'w', encoding='utf-8') as f:
+                    json.dump(metadata, f, indent=2)
+            except:
+                pass
+        
+        log_activity('inventory_folder_rename', f'Renamed folder from {folder_id} to {safe_new_name}')
+        return jsonify(success=True, message=f'Folder renamed to "{new_name}"', new_id=safe_new_name)
+    
+    except Exception as e:
+        app.logger.error(f"Error renaming inventory folder: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders/<folder_id>/delete', methods=['POST'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_delete_inventory_folder(folder_id):
+    """Delete an inventory folder."""
+    try:
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        folder_path = os.path.join(upload_base, folder_id)
+        
+        if not os.path.isdir(folder_path):
+            return jsonify(success=False, error='Folder not found')
+        
+        # Delete folder and its contents
+        shutil.rmtree(folder_path)
+        
+        log_activity('inventory_folder_delete', f'Deleted folder: {folder_id}')
+        return jsonify(success=True, message='Folder deleted successfully')
+    
+    except Exception as e:
+        app.logger.error(f"Error deleting inventory folder: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders/<folder_id>/upload', methods=['POST'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_upload_files_to_folder(folder_id):
+    """Upload additional files to an existing inventory folder."""
+    try:
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        folder_path = os.path.join(upload_base, folder_id)
+        
+        if not os.path.isdir(folder_path):
+            return jsonify(success=False, error='Folder not found')
+        
+        if 'files' not in request.files:
+            return jsonify(success=False, error='No files provided')
+        
+        files = request.files.getlist('files')
+        saved_files = []
+        
+        for f in files:
+            if f and f.filename:
+                if not (f.filename.lower().endswith(('.xlsx', '.xls', '.csv'))):
+                    continue
+                
+                filename = secure_filename(f.filename)
+                filepath = os.path.join(folder_path, filename)
+                f.save(filepath)
+                saved_files.append(filename)
+        
+        # Update metadata
+        metadata_path = os.path.join(folder_path, '.metadata.json')
+        if os.path.exists(metadata_path):
+            try:
+                with open(metadata_path, 'r', encoding='utf-8') as f:
+                    metadata = json.load(f)
+                # Merge files
+                all_files = list(set(metadata.get('files', []) + saved_files))
+                metadata['files'] = all_files
+                with open(metadata_path, 'w', encoding='utf-8') as f:
+                    json.dump(metadata, f, indent=2)
+            except:
+                pass
+        
+        log_activity('inventory_folder_upload_files', f'Uploaded {len(saved_files)} file(s) to {folder_id}')
+        return jsonify(success=True, message=f'Uploaded {len(saved_files)} file(s)', files=saved_files)
+    
+    except Exception as e:
+        app.logger.error(f"Error uploading files to folder: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders/<folder_id>/<file_name>', methods=['GET'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_get_inventory_file(folder_id, file_name):
+    """Get inventory file content."""
+    try:
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        file_path = os.path.join(upload_base, folder_id, secure_filename(file_name))
+        
+        if not os.path.exists(file_path):
+            return jsonify(success=False, error='File not found'), 404
+        
+        if file_name.lower().endswith(('.xlsx', '.xls')):
+            # For Excel files, try to return as attachment
+            return send_file(file_path, as_attachment=True, download_name=file_name)
+        else:
+            # For CSV files, read and return content
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            return jsonify(success=True, content=content, file_type='csv')
+    
+    except Exception as e:
+        app.logger.error(f"Error retrieving inventory file: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders/<folder_id>/<file_name>', methods=['POST'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_edit_inventory_file(folder_id, file_name):
+    """Edit inventory file (for CSV files)."""
+    try:
+        data = request.get_json()
+        new_content = data.get('content', '')
+        
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        file_path = os.path.join(upload_base, folder_id, secure_filename(file_name))
+        
+        if not file_path.lower().endswith('.csv'):
+            return jsonify(success=False, error='Only CSV files can be edited directly')
+        
+        if not os.path.exists(file_path):
+            return jsonify(success=False, error='File not found')
+        
+        # Save backup
+        backup_path = file_path + '.backup'
+        if os.path.exists(file_path):
+            shutil.copy(file_path, backup_path)
+        
+        # Write new content
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        
+        log_activity('inventory_file_edit', f'Edited file: {folder_id}/{file_name}')
+        return jsonify(success=True, message='File updated successfully')
+    
+    except Exception as e:
+        app.logger.error(f"Error editing inventory file: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders/<folder_id>/<file_name>/rename', methods=['POST'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_rename_inventory_file(folder_id, file_name):
+    """Rename a file within an inventory folder."""
+    try:
+        data = request.get_json()
+        new_name = data.get('newName', '').strip()
+        
+        if not new_name:
+            return jsonify(success=False, error='New file name cannot be empty')
+        
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        old_path = os.path.join(upload_base, folder_id, secure_filename(file_name))
+        new_path = os.path.join(upload_base, folder_id, secure_filename(new_name))
+        
+        if not os.path.exists(old_path):
+            return jsonify(success=False, error='File not found')
+        
+        if os.path.exists(new_path) and new_path != old_path:
+            return jsonify(success=False, error='File with this name already exists')
+        
+        os.rename(old_path, new_path)
+        
+        log_activity('inventory_file_rename', f'Renamed file: {folder_id}/{file_name} -> {new_name}')
+        return jsonify(success=True, message=f'File renamed to "{new_name}"', new_name=secure_filename(new_name))
+    
+    except Exception as e:
+        app.logger.error(f"Error renaming inventory file: {e}")
+        return jsonify(success=False, error=str(e))
+
+@app.route('/api/inventory-folders/<folder_id>/<file_name>/delete', methods=['POST'])
+@login_required
+@role_required(['port_engineer', 'harbour_master'])
+def api_delete_inventory_file(folder_id, file_name):
+    """Delete a file from an inventory folder."""
+    try:
+        upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
+        file_path = os.path.join(upload_base, folder_id, secure_filename(file_name))
+        
+        if not os.path.exists(file_path):
+            return jsonify(success=False, error='File not found')
+        
+        os.remove(file_path)
+        
+        log_activity('inventory_file_delete', f'Deleted file: {folder_id}/{file_name}')
+        return jsonify(success=True, message='File deleted successfully')
+    
+    except Exception as e:
+        app.logger.error(f"Error deleting inventory file: {e}")
+        return jsonify(success=False, error=str(e))
 
 @app.route('/api/request-reorder', methods=['POST'])
 @login_required
