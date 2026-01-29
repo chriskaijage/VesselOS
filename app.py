@@ -1689,7 +1689,7 @@ def api_upload_inventory_folder():
         # Create metadata file for the folder
         metadata = {
             'folder_name': folder_name,
-            'created_by': current_user.user_id if current_user.is_authenticated else 'unknown',
+            'created_by': current_user.id if current_user.is_authenticated else 'unknown',
             'created_at': datetime.now().isoformat(),
             'files': saved_files
         }
@@ -2366,7 +2366,7 @@ def api_upload_inventory_csv():
                     INSERT INTO inventory_files 
                     (file_id, file_name, vessel_id, created_by, created_at, updated_at, file_status)
                     VALUES (?, ?, ?, ?, ?, ?, 'active')
-                """, (file_id, folder_name, session.get('vessel_id'), current_user.user_id, current_time, current_time))
+                """, (file_id, folder_name, session.get('vessel_id'), current_user.id, current_time, current_time))
                 
                 created_files += 1
                 parts_count = 0
@@ -2580,7 +2580,7 @@ def api_upload_machinery_folder():
                 INSERT INTO machinery_manual_folders
                 (folder_id, folder_name, ship_name, description, created_by, created_at, updated_at, folder_status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
-            """, (folder_id, folder_name, ship_name, description, current_user.user_id, current_time, current_time))
+            """, (folder_id, folder_name, ship_name, description, current_user.id, current_time, current_time))
             
             # Create upload directory (uses persistent volume on Render)
             upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'machinery_manuals', folder_id)
@@ -2614,7 +2614,7 @@ def api_upload_machinery_folder():
                          machinery_type, uploaded_by, uploaded_at, file_status)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
                     """, (file_id, folder_id, filename, file_path, file_size, file_ext, 
-                         machinery_type, current_user.user_id, current_time))
+                         machinery_type, current_user.id, current_time))
                     
                     uploaded_count += 1
                 except Exception as e:
