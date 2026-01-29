@@ -2147,22 +2147,72 @@ function displayFolders(folders) {
 
 function openFolderDetails(folderId) {
     currentFolder = folderId;
-    const modal = new bootstrap.Modal(document.getElementById('folderDetailsModal'));
     
-    // Get folder name from the API
+    // Get folder name from the API and display in main inventory tab
     fetch('/api/inventory-folders')
         .then(r => r.json())
         .then(data => {
             if (data.success) {
                 const folder = data.folders.find(f => f.id === folderId);
                 if (folder) {
-                    document.getElementById('folderDetailsTitle').textContent = `Folder: ${folder.name}`;
+                    // Display folder contents in main inventory view
+                    displayFolderContentsInMain(folder);
                 }
             }
-            loadFolderFiles(folderId);
-            document.getElementById('folderActionsBar').style.display = 'block';
-            modal.show();
+        })
+        .catch(e => showAlert('danger', 'Error loading folder: ' + e.message));
+}
+
+function displayFolderContentsInMain(folder) {
+    let html = `
+        <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-secondary btn-sm me-2" onclick="loadInventoryFiles()">
+                <i class="fas fa-arrow-left me-1"></i> Back to All Folders
+            </button>
+            <h5 class="mb-0">
+                <i class="fas fa-folder text-primary me-2"></i> ${escapeHtml(folder.name)}
+            </h5>
+        </div>
+        <div class="card">
+            <div class="card-body">
+    `;
+    
+    if (!folder.files || folder.files.length === 0) {
+        html += '<p class="text-muted text-center">No files in this folder.</p>';
+    } else {
+        html += '<div class="table-responsive"><table class="table table-sm table-hover"><thead class="table-light"><tr><th>File Name</th><th style="width: 250px;">Actions</th></tr></thead><tbody>';
+        
+        folder.files.forEach(file => {
+            html += `
+                <tr>
+                    <td>
+                        <i class="fas fa-file me-2"></i>
+                        <strong>${escapeHtml(file)}</strong>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="openFileEditor('${folder.id}', '${escapeHtml(file)}')">
+                            <i class="fas fa-edit me-1"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="openFileEditor('${folder.id}', '${escapeHtml(file)}')">
+                            <i class="fas fa-eye me-1"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteFile('${folder.id}', '${escapeHtml(file)}')">
+                            <i class="fas fa-trash me-1"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
         });
+        
+        html += '</tbody></table></div>';
+    }
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('inventoryFilesContainer').innerHTML = html;
 }
 
 function loadFolderFiles(folderId) {
