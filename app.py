@@ -1486,13 +1486,7 @@ def api_inventory_import():
         stream = io.StringIO(file.stream.read().decode('utf-8'))
         reader = csv.DictReader(stream)
         
-        # Check required columns
-        required_columns = {'part_number', 'part_name', 'category', 'current_stock', 
-                           'minimum_stock', 'reorder_level', 'unit_price', 'supplier'}
-        
-        if not required_columns.issubset(reader.fieldnames):
-            return jsonify(success=False, error=f'CSV must contain columns: {", ".join(required_columns)}')
-        
+        # No required columns - accept any CSV structure
         conn = get_db_connection()
         try:
             c = conn.cursor()
@@ -1501,21 +1495,32 @@ def api_inventory_import():
             
             for i, row in enumerate(reader, start=2):  # Start at 2 for line numbers (1 is header)
                 try:
-                    # Validate required fields
-                    for field in required_columns:
-                        if not row.get(field) or not str(row[field]).strip():
-                            errors.append(f'Line {i}: Missing {field}')
-                            continue
+                    # Get values from row if they exist, otherwise use defaults
+                    part_number = row.get('part_number', '').strip() or f'PART-{i}'
+                    part_name = row.get('part_name', '').strip() or row.get('name', '').strip() or f'Part {i}'
+                    category = row.get('category', '').strip() or 'Uncategorized'
+                    supplier = row.get('supplier', '').strip() or 'Unknown'
                     
-                    # Parse numeric values
+                    # Parse numeric values with defaults
                     try:
-                        current_stock = int(row['current_stock'])
-                        minimum_stock = int(row['minimum_stock'])
-                        reorder_level = int(row['reorder_level'])
-                        unit_price = float(row['unit_price'])
-                    except ValueError:
-                        errors.append(f'Line {i}: Invalid numeric values')
-                        continue
+                        current_stock = int(row.get('current_stock', 0)) if row.get('current_stock') else 0
+                    except (ValueError, TypeError):
+                        current_stock = 0
+                    
+                    try:
+                        minimum_stock = int(row.get('minimum_stock', 0)) if row.get('minimum_stock') else 0
+                    except (ValueError, TypeError):
+                        minimum_stock = 0
+                    
+                    try:
+                        reorder_level = int(row.get('reorder_level', 0)) if row.get('reorder_level') else 0
+                    except (ValueError, TypeError):
+                        reorder_level = 0
+                    
+                    try:
+                        unit_price = float(row.get('unit_price', 0)) if row.get('unit_price') else 0.0
+                    except (ValueError, TypeError):
+                        unit_price = 0.0
                     
                     # Validate values
                     if any(val < 0 for val in [current_stock, minimum_stock, reorder_level, unit_price]):
