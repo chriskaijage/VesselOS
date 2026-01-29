@@ -42,10 +42,7 @@
                 <button class="btn btn-danger w-100" onclick="viewLowStock()">
                     <i class="fas fa-exclamation-triangle me-2"></i> View Low Stock
                 </button>
-                <button class="btn btn-secondary w-100 mt-3" onclick="uploadInventoryFolders()">
-                    <i class="fas fa-folder-open me-2"></i> Upload Folders (CSV)
-                </button>
-                <button class="btn btn-info w-100 mt-2" onclick="manageFolders()">
+                <button class="btn btn-info w-100 mt-3" onclick="manageFolders()">
                     <i class="fas fa-folder-plus me-2"></i> Manage Folders
                 </button>
                 
@@ -2019,6 +2016,13 @@ let currentFolder = null;
 let currentFile = null;
 
 function manageFolders() {
+    // Clear previous upload state
+    document.getElementById('folderInput').value = '';
+    document.getElementById('folderUploadProgress').style.display = 'none';
+    document.getElementById('folderUploadResult').innerHTML = '';
+    document.getElementById('processFolderBtn').disabled = false;
+    
+    // Show management modal with upload option
     const modal = new bootstrap.Modal(document.getElementById('folderManagementModal'));
     loadFolders();
     modal.show();
