@@ -1956,7 +1956,7 @@ def api_rename_folder_file(folder_id, file_name):
 @app.route('/api/inventory-folders/<folder_id>/<file_name>/delete', methods=['POST'])
 @login_required
 @role_required(['port_engineer', 'harbour_master'])
-def api_delete_inventory_file(folder_id, file_name):
+def api_delete_folder_file(folder_id, file_name):
     """Delete a file from an inventory folder."""
     try:
         upload_base = os.path.join(app.config['UPLOAD_FOLDER'], 'inventory_folders')
