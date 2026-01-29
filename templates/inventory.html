@@ -2135,6 +2135,12 @@ function openFileEditor(folderId, fileName) {
     currentFolder = folderId;
     currentFile = fileName;
     
+    // Check if it's an Excel file - don't try to edit
+    if (fileName.toLowerCase().endsWith('.xlsx') || fileName.toLowerCase().endsWith('.xls')) {
+        showAlert('info', 'Excel files must be edited in their native format. Download and edit locally.');
+        return;
+    }
+    
     fetch(`/api/inventory-folders/${folderId}/${encodeURIComponent(fileName)}`)
         .then(r => r.json())
         .then(data => {
@@ -2144,7 +2150,7 @@ function openFileEditor(folderId, fileName) {
                 const modal = new bootstrap.Modal(document.getElementById('fileEditorModal'));
                 modal.show();
             } else {
-                showAlert('info', 'Excel files must be edited in their native format. Download and edit locally.');
+                showAlert('danger', data.error || 'Could not load file');
             }
         })
         .catch(e => showAlert('danger', 'Error loading file: ' + e.message));

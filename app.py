@@ -1876,8 +1876,8 @@ def api_get_inventory_file(folder_id, file_name):
             return jsonify(success=False, error='File not found'), 404
         
         if file_name.lower().endswith(('.xlsx', '.xls')):
-            # For Excel files, try to return as attachment
-            return send_file(file_path, as_attachment=True, download_name=file_name)
+            # For Excel files, return JSON response indicating file type (don't try to read binary)
+            return jsonify(success=False, error='Excel files must be downloaded and edited locally', file_type='excel')
         else:
             # For CSV files, read and return content
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
