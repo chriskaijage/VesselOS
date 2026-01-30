@@ -1114,13 +1114,16 @@ function previewCSV() {
             }
             
             const headers = rows[0].split(',').map(h => h.trim());
-            const requiredHeaders = ['part_number', 'part_name', 'category', 'current_stock', 
-                                   'minimum_stock', 'reorder_level'];
+            const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/[\s_-]/g, ''));
+            const requiredHeaders = ['partnumber', 'partname', 'category', 'currentstock', 
+                                   'minimumstock', 'reorderlevel'];
             
-            // Check for required headers
-            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+            // Check for required headers (normalized for flexibility)
+            const missingHeaders = requiredHeaders.filter(req => 
+                !normalizedHeaders.includes(req)
+            );
             if (missingHeaders.length > 0) {
-                showImportError(`Missing required columns: ${missingHeaders.join(', ')}`);
+                showImportError(`Missing required columns. Need at least: part_number, part_name, category, current_stock, minimum_stock, reorder_level`);
                 return;
             }
             
