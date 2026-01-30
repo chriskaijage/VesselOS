@@ -1542,14 +1542,14 @@ def api_inventory_import():
                          reorder_level, unit_price, supplier, status, last_updated)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
-                        row['part_number'].strip(),
-                        row['part_name'].strip(),
-                        row['category'].strip(),
+                        row.get('part_number', f'PART-{i}').strip(),
+                        row.get('part_name', '').strip() or row.get('name', f'Part {i}').strip(),
+                        row.get('category', 'Uncategorized').strip(),
                         current_stock,
                         minimum_stock,
                         reorder_level,
                         unit_price,
-                        row['supplier'].strip(),
+                        row.get('supplier', 'Unknown').strip(),
                         status,
                         datetime.now()
                     ))
