@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Drill Reports Archive - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-archive fa-2x me-3"></i>
+                            <div>
+                                <h2 class="mb-0">Drill Reports Archive</h2>
+                                <p class="mb-0">View and manage completed emergency drills</p>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('drill_report') }}" class="btn btn-light">
+                            <i class="fas fa-plus me-2"></i> New Drill Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Total Drills</h5>
+                    <h2 class="text-primary">{{ total_drills|default(0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">This Month</h5>
+                    <h2 class="text-info">{{ this_month|default(0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Pending Actions</h5>
+                    <h2 class="text-warning">{{ pending_actions|default(0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Avg. Performance</h5>
+                    <h2 class="text-success">{{ avg_performance|default('N/A') }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="filterVessel" placeholder="Filter by vessel...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filterDrillType">
+                                <option value="">All Drill Types</option>
+                                <option value="Fire">Fire</option>
+                                <option value="Abandon Ship">Abandon Ship</option>
+                                <option value="Man Overboard">Man Overboard</option>
+                                <option value="Oil Spill">Oil Spill</option>
+                                <option value="Emergency Steering">Emergency Steering</option>
+                                <option value="Engine Room">Engine Room</option>
+                                <option value="Security">Security</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="month" class="form-control" id="filterMonth">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="applyFilters()">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Drill Reports</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Vessel</th>
+                                <th>Drill Type</th>
+                                <th>Officer in Charge</th>
+                                <th>Performance</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drillsTableBody">
+                            {% if drill_reports %}
+                                {% for report in drill_reports %}
+                                <tr>
+                                    <td>{{ report.report_date }}</td>
+                                    <td>{{ report.vessel_name }}</td>
+                                    <td><span class="badge bg-info">{{ report.drill_type }}</span></td>
+                                    <td>{{ report.officer_name }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if report.performance_rating == 'Excellent' %}success{% elif report.performance_rating == 'Satisfactory' %}info{% else %}warning{% endif %}">
+                                            {{ report.performance_rating }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if report.deficiencies_observed %}
+                                            <span class="badge bg-warning">Has Findings</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Complete</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewReport({{ report.id }})">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                        <a href="{{ url_for('edit_drill_report', report_id=report.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <p class="text-muted mb-0">No drill reports found. <a href="{{ url_for('drill_report') }}">Create one now</a></p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report View Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportTitle">Drill Report Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="reportContent">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printReport()">
+                    <i class="fas fa-print me-2"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function applyFilters() {
+        const vessel = document.getElementById('filterVessel').value;
+        const drillType = document.getElementById('filterDrillType').value;
+        const month = document.getElementById('filterMonth').value;
+        
+        // In a real implementation, this would send filters to the backend
+        console.log('Filters applied:', { vessel, drillType, month });
+    }
+
+    function viewReport(reportId) {
+        // Fetch and display report details
+        fetch(`/api/drill-report/${reportId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('reportTitle').textContent = `Drill Report - ${data.vessel_name}`;
+                document.getElementById('reportContent').innerHTML = formatReportContent(data);
+                new bootstrap.Modal(document.getElementById('reportModal')).show();
+            })
+            .catch(error => console.error('Error loading report:', error));
+    }
+
+    function formatReportContent(report) {
+        return `
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Vessel:</strong> ${report.vessel_name}<br>
+                    <strong>IMO:</strong> ${report.imo_number}<br>
+                    <strong>Date:</strong> ${report.report_date}
+                </div>
+                <div class="col-md-6">
+                    <strong>Drill Type:</strong> ${report.drill_type}<br>
+                    <strong>Officer:</strong> ${report.officer_name}<br>
+                    <strong>Performance:</strong> <span class="badge bg-info">${report.performance_rating}</span>
+                </div>
+            </div>
+            <hr>
+            <div class="row mb-3">
+                <div class="col-12">
+                    <strong>Scenario:</strong><br>
+                    ${report.drill_scenario}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-12">
+                    <strong>Actions Taken:</strong><br>
+                    ${report.actions_taken}
+                </div>
+            </div>
+            ${report.deficiencies_observed ? `
+            <div class="row">
+                <div class="col-12">
+                    <strong>Deficiencies:</strong><br>
+                    ${report.deficiencies_observed}
+                </div>
+            </div>
+            ` : ''}
+        `;
+    }
+
+    function printReport() {
+        window.print();
+    }
+</script>
+{% endblock %}
