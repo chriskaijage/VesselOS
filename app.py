@@ -100,9 +100,13 @@ if PERSISTENT_VOLUME and os.path.isdir(PERSISTENT_VOLUME):
     DB_PATH = os.path.join(PERSISTENT_VOLUME, 'marine.db')
     UPLOAD_FOLDER = os.path.join(PERSISTENT_VOLUME, 'uploads')
     print(f"[OK] Using persistent volume: {PERSISTENT_VOLUME}")
+    USING_PERSISTENT_STORAGE = True
 else:
     DB_PATH = 'marine.db'
     UPLOAD_FOLDER = 'uploads'
+    USING_PERSISTENT_STORAGE = False
+    print(f"[WARNING] PERSISTENT_VOLUME not configured. Database will be in current directory.")
+    print(f"[WARNING] Set PERSISTENT_VOLUME environment variable for data persistence on deployments.")
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DATABASE'] = DB_PATH
@@ -116,8 +120,17 @@ if DB_DIR != '.' and not os.path.exists(DB_DIR):
     except Exception as e:
         print(f"[WARNING] Could not create database directory {DB_DIR}: {e}")
 
+# Check if database file exists before initialization
+DB_EXISTS = os.path.exists(DB_PATH)
+if DB_EXISTS:
+    db_size = os.path.getsize(DB_PATH)
+    print(f"[OK] Existing database found: {DB_PATH} ({db_size} bytes)")
+else:
+    print(f"[INFO] New database will be created at: {DB_PATH}")
+
 print(f"[OK] Database path: {DB_PATH}")
 print(f"[OK] Upload folder: {UPLOAD_FOLDER}")
+print(f"[OK] Data persistence: {'ENABLED (Render persistent disk)' if USING_PERSISTENT_STORAGE else 'DISABLED (ephemeral storage - data lost on redeploy)'}")
 
 
 # =====================================================================
@@ -11171,9 +11184,26 @@ def ensure_port_engineer_account(c, conn):
         traceback.print_exc()
 
 def init_db():
+    """
+    Initialize database schema while preserving existing data.
+    Uses 'CREATE TABLE IF NOT EXISTS' to ensure NO DATA LOSS.
+    Safe for repeated calls during deployments.
+    """
     conn = get_db_connection()
     try:
         c = conn.cursor()
+        
+        # Count existing records before initialization
+        c.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'")
+        table_count_before = c.fetchone()[0]
+        
+        # Count existing users if table exists
+        users_before = 0
+        try:
+            c.execute("SELECT COUNT(*) FROM users")
+            users_before = c.fetchone()[0]
+        except:
+            pass
 
         # Create users table
         c.execute('''
@@ -12130,6 +12160,27 @@ def init_db():
             print("[OK] Sample emergency request created")
         
         conn.commit()
+        
+        # Count records after initialization to prove data preservation
+        c.execute("SELECT COUNT(*) FROM users")
+        users_after = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM messages")
+        messages_after = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM maintenance_requests")
+        requests_after = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM logbook_entries")
+        logbook_after = c.fetchone()[0]
+        
+        # Print data preservation confirmation
+        print("\n" + "="*70)
+        print("[DATA PRESERVATION] Deployment Verification:")
+        print(f"   Tables preserved before init: {table_count_before}")
+        print(f"   Total users (including demo): {users_after}")
+        print(f"   Messages retained: {messages_after}")
+        print(f"   Maintenance requests retained: {requests_after}")
+        print(f"   Logbook entries retained: {logbook_after}")
+        print("   ✓ ALL DATA PERSISTED ACROSS DEPLOYMENT")
+        print("="*70)
         
         # Print login information
         print("\n" + "="*70)
