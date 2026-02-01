@@ -200,19 +200,32 @@ class TabManager {
 
 // Auto-initialize all tab containers on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // DISABLED: Do NOT auto-initialize TabManager on profile page as it causes constant refresh
+    // The profile page has its own tab management and the auto-refresh was breaking form editing
+    // Uncomment below only if needed on specific pages (not profile)
+    
     // Find all tab containers and initialize them
     const tabContainers = document.querySelectorAll('[role="tablist"]');
     tabContainers.forEach(container => {
+        // SKIP profile page - it manages its own tabs without auto-refresh
+        const isProfilePage = document.body.classList.contains('profile-page') || 
+                             document.getElementById('profileSection') ||
+                             window.location.href.includes('/profile');
+        if (isProfilePage) return; // Skip this container
+        
         // Create a unique key for each tab manager
         const containerId = container.id || 'tab-' + Math.random().toString(36).substr(2, 9);
         window['tabManager_' + containerId] = new TabManager('[id="' + containerId + '"]', 3000);
     });
 
-    // Also initialize without ID for backward compatibility
+    // Also initialize without ID for backward compatibility (except profile pages)
     if (tabContainers.length === 0) {
         const mainTabs = document.querySelector('[role="tablist"]');
         if (mainTabs && !window.globalTabManager) {
-            window.globalTabManager = new TabManager('[role="tablist"]', 3000);
+            const isProfilePage = document.body.classList.contains('profile-page') || document.getElementById('profileSection');
+            if (!isProfilePage) {
+                window.globalTabManager = new TabManager('[role="tablist"]', 3000);
+            }
         }
     }
 });

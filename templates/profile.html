@@ -2128,11 +2128,15 @@ if (updateProfileForm) {
                 if (profilePicInput && profilePicInput.files.length > 0) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        // Update the profile picture in the header
+                        // Update the profile picture in the header with server URL for persistence
                         const profilePicContainer = document.getElementById('profileAvatarContainer');
                         if (profilePicContainer) {
+                            // Use server URL if provided, add timestamp to bypass cache
+                            const imageUrl = data.profile_pic_url 
+                                ? (data.profile_pic_url + '?t=' + Date.now())
+                                : e.target.result;
                             profilePicContainer.innerHTML = `
-                                <img src="${e.target.result}" class="profile-avatar rounded-circle" alt="Profile Picture" id="currentProfilePic">
+                                <img src="${imageUrl}" class="profile-avatar rounded-circle" alt="Profile Picture" id="currentProfilePic" onerror="this.src='${e.target.result}'">
                             `;
                         }
                         
@@ -2144,16 +2148,17 @@ if (updateProfileForm) {
                         // Also update the navbar profile picture
                         const navProfilePic = document.querySelector('#userDropdown img');
                         if (navProfilePic) {
-                            navProfilePic.src = e.target.result;
+                            const navImageUrl = data.profile_pic_url
+                                ? (data.profile_pic_url + '?t=' + Date.now())
+                                : e.target.result;
+                            navProfilePic.src = navImageUrl;
                         }
                     };
                     reader.readAsDataURL(profilePicInput.files[0]);
                 }
                 
-                // Refresh after a short delay
-                setTimeout(() => {
-                    loadProfileStats();
-                }, 1000);
+                // Refresh profile stats immediately after upload
+                loadProfileStats();
             } else {
                 showAlert('danger', 'Error: ' + (data.error || 'Update failed'));
             }
@@ -2165,6 +2170,7 @@ if (updateProfileForm) {
         .finally(() => {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
+            // IMPORTANT: Do NOT reload page - the profile form needs to stay interactive
         });
     });
 }
@@ -2261,8 +2267,14 @@ if (uploadDocumentForm) {
         })
         .then(data => {
             if (data.success) {
-                showAlert('success', `${data.count || 'Document(s)'} uploaded successfully!`);
-                setTimeout(() => location.reload(), 1500);
+                showAlert('success', 'Document(s) uploaded successfully!');
+                // Reload documents list instead of full page
+                if (typeof loadDocuments === 'function') {
+                    loadDocuments();
+                }
+                // Clear form
+                uploadDocumentForm.reset();
+                if (fileInput) fileInput.value = '';
             } else {
                 showAlert('danger', 'Error: ' + data.error);
             }

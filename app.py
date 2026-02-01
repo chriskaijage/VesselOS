@@ -4511,7 +4511,12 @@ def api_update_profile():
             conn.commit()
             log_activity('profile_update', 'User updated profile information')
 
-            return jsonify({'success': True})
+            # Return profile pic filename if uploaded so frontend can display it
+            response_data = {'success': True}
+            if profile_pic_filename:
+                response_data['profile_pic_filename'] = profile_pic_filename
+                response_data['profile_pic_url'] = url_for('serve_profile_pic', filename=profile_pic_filename, _external=False)
+            return jsonify(response_data)
         except Exception as e:
             conn.rollback()
             app.logger.error(f"Error updating profile: {e}")
