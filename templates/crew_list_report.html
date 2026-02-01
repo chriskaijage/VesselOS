@@ -1,0 +1,688 @@
+{% extends "base.html" %}
+
+{% block title %}Crew List Report - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users fa-2x me-3"></i>
+                            <div>
+                                <h2 class="mb-0">Crew List Report</h2>
+                                <p class="mb-0">View and manage vessel crew members and their documentation</p>
+                            </div>
+                        </div>
+                        {% if current_user.role == 'Harbour Master' %}
+                        <a href="{{ url_for('add_crew_member') }}" class="btn btn-light">
+                            <i class="fas fa-plus me-2"></i> Add Crew Member
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vessel & Report Information -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Vessel Information</h5>
+                    <p class="mb-1"><strong>Vessel Name:</strong> {{ vessel.name }}</p>
+                    <p class="mb-1"><strong>IMO Number:</strong> {{ vessel.imo }}</p>
+                    <p class="mb-1"><strong>Flag State:</strong> {{ vessel.flag_state }}</p>
+                    <p class="mb-0"><strong>Report Date:</strong> {{ report_date }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Statistics</h5>
+                    <p class="mb-1"><strong>Total Crew Members:</strong> {{ crew_members|length }}</p>
+                    <p class="mb-1"><strong>Deck Department:</strong> {{ deck_count|default(0) }}</p>
+                    <p class="mb-1"><strong>Engine Department:</strong> {{ engine_count|default(0) }}</p>
+                    <p class="mb-0"><strong>Catering Department:</strong> {{ catering_count|default(0) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Notice -->
+    {% if current_user.role not in ['Harbour Master', 'Captain', 'Chief Engineer'] %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Access Restricted:</strong> You do not have permission to view this crew list.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <!-- Crew Members by Department -->
+    <div class="row">
+        <!-- Deck Department -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-anchor me-2"></i> Deck Department</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="deckDepartment">
+                        {% for member in crew_members %}
+                            {% if member.department == 'Deck' %}
+                            <div class="col-md-3 col-lg-2 mb-4">
+                                <div class="crew-card text-center cursor-pointer view-crew-btn" data-crew-id="{{ member.id }}">
+                                    <div class="crew-profile-frame mb-3">
+                                        <img src="{{ member.profile_picture or url_for('static', filename='images/default-avatar.png') }}" 
+                                             alt="{{ member.name }}" class="crew-profile-img">
+                                    </div>
+                                    <h6 class="mb-1 crew-role">{{ member.rank }}</h6>
+                                    <p class="mb-0 text-muted crew-nationality">
+                                        <small>{{ member.nationality }}</small>
+                                    </p>
+                                    <p class="mt-2 text-sm text-secondary">
+                                        <small>{{ member.name }}</small>
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if not crew_members|selectattr('department', 'equalto', 'Deck')|list %}
+                    <p class="text-muted mb-0">No deck department crew members</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Engine Department -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> Engine Department</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="engineDepartment">
+                        {% for member in crew_members %}
+                            {% if member.department == 'Engine' %}
+                            <div class="col-md-3 col-lg-2 mb-4">
+                                <div class="crew-card text-center cursor-pointer view-crew-btn" data-crew-id="{{ member.id }}">
+                                    <div class="crew-profile-frame mb-3">
+                                        <img src="{{ member.profile_picture or url_for('static', filename='images/default-avatar.png') }}" 
+                                             alt="{{ member.name }}" class="crew-profile-img">
+                                    </div>
+                                    <h6 class="mb-1 crew-role">{{ member.rank }}</h6>
+                                    <p class="mb-0 text-muted crew-nationality">
+                                        <small>{{ member.nationality }}</small>
+                                    </p>
+                                    <p class="mt-2 text-sm text-secondary">
+                                        <small>{{ member.name }}</small>
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if not crew_members|selectattr('department', 'equalto', 'Engine')|list %}
+                    <p class="text-muted mb-0">No engine department crew members</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Catering Department -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-utensils me-2"></i> Catering Department</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="cateringDepartment">
+                        {% for member in crew_members %}
+                            {% if member.department == 'Catering' %}
+                            <div class="col-md-3 col-lg-2 mb-4">
+                                <div class="crew-card text-center cursor-pointer view-crew-btn" data-crew-id="{{ member.id }}">
+                                    <div class="crew-profile-frame mb-3">
+                                        <img src="{{ member.profile_picture or url_for('static', filename='images/default-avatar.png') }}" 
+                                             alt="{{ member.name }}" class="crew-profile-img">
+                                    </div>
+                                    <h6 class="mb-1 crew-role">{{ member.rank }}</h6>
+                                    <p class="mb-0 text-muted crew-nationality">
+                                        <small>{{ member.nationality }}</small>
+                                    </p>
+                                    <p class="mt-2 text-sm text-secondary">
+                                        <small>{{ member.name }}</small>
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if not crew_members|selectattr('department', 'equalto', 'Catering')|list %}
+                    <p class="text-muted mb-0">No catering department crew members</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Crew Details Modal -->
+<div class="modal fade" id="crewDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crewName">Crew Member Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Profile Section -->
+                    <div class="col-md-3 text-center mb-4">
+                        <img id="crewProfileImg" src="" alt="Profile" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        <h6 id="crewRank" class="mb-1"></h6>
+                        <p id="crewNationality" class="text-muted mb-0"></p>
+                    </div>
+
+                    <!-- Details Section -->
+                    <div class="col-md-9">
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="personalTab" data-bs-toggle="tab" data-bs-target="#personalInfo" type="button">
+                                    Personal Info
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="certificatesTab" data-bs-toggle="tab" data-bs-target="#certificates" type="button">
+                                    Certificates
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="documentsTab" data-bs-toggle="tab" data-bs-target="#documents" type="button">
+                                    Documents
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="responsibilitiesTab" data-bs-toggle="tab" data-bs-target="#responsibilities" type="button">
+                                    Responsibilities
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <!-- Personal Information Tab -->
+                            <div class="tab-pane fade show active" id="personalInfo" role="tabpanel">
+                                <div class="pt-3">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Full Name:</strong>
+                                            <p id="personalName"></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Rank/Position:</strong>
+                                            <p id="personalRank"></p>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Nationality:</strong>
+                                            <p id="personalNationality"></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Department:</strong>
+                                            <p id="personalDepartment"></p>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Date of Birth:</strong>
+                                            <p id="personalDOB"></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Passport Number:</strong>
+                                            <p id="personalPassport"></p>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Seafarer ID (SID):</strong>
+                                            <p id="personalSID"></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>CDC / Discharge Book:</strong>
+                                            <p id="personalCDC"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Certificates Tab -->
+                            <div class="tab-pane fade" id="certificates" role="tabpanel">
+                                <div class="pt-3">
+                                    <h6 class="mb-3">Mandatory STCW Certificates</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Certificate of Competency (CoC):</strong>
+                                            <p id="certCOC" class="mb-1"></p>
+                                            <small id="certCOCDate" class="text-muted"></small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Basic Safety Training (A-VI/1):</strong>
+                                            <p id="certBasicSafety" class="mb-1"></p>
+                                            <small id="certBasicSafetyDate" class="text-muted"></small>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Survival Craft (A-VI/2):</strong>
+                                            <p id="certSurvival" class="mb-1"></p>
+                                            <small id="certSurvivalDate" class="text-muted"></small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Advanced Fire Fighting (A-VI/3):</strong>
+                                            <p id="certFireFighting" class="mb-1"></p>
+                                            <small id="certFireFightingDate" class="text-muted"></small>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Medical First Aid (A-VI/4):</strong>
+                                            <p id="certFirstAid" class="mb-1"></p>
+                                            <small id="certFirstAidDate" class="text-muted"></small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Security Awareness (A-VI/6):</strong>
+                                            <p id="certSecurity" class="mb-1"></p>
+                                            <small id="certSecurityDate" class="text-muted"></small>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>GMDSS Certificate:</strong>
+                                            <p id="certGMDSS" class="mb-1"></p>
+                                            <small id="certGMDSSDate" class="text-muted"></small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Tanker Certificate:</strong>
+                                            <p id="certTanker" class="mb-1"></p>
+                                            <small id="certTankerDate" class="text-muted"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Documents Tab -->
+                            <div class="tab-pane fade" id="documents" role="tabpanel">
+                                <div class="pt-3">
+                                    <h6 class="mb-3">Document Categories</h6>
+
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <strong>1. Personal Identification & Travel Documents</strong>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="small mb-0">
+                                                <li>Valid Passport (with at least 6-12 months validity)</li>
+                                                <li>Seafarer's Identity Document (SID) or Continuous Discharge Certificate (CDC)</li>
+                                                <li>National Identity Card</li>
+                                                <li>Birth Certificate</li>
+                                                <li>Marriage Certificate (if applicable)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <strong>2. Medical & Health Documents</strong>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="small mb-0">
+                                                <li id="docMedicalFit">Medical Fitness Certificate (STCW Medical)</li>
+                                                <li id="docVaccination">Vaccination Certificate / International Certificate</li>
+                                                <li id="docDental">Dental Fitness Certificate</li>
+                                                <li id="docEyeglass">Eyeglass prescription (if applicable)</li>
+                                                <li id="docCOVID">COVID-19 vaccination/test records (if required)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <strong>3. Employment & Contract Documents</strong>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="small mb-0">
+                                                <li>Seafarer's Employment Agreement (SEA)</li>
+                                                <li>Letter of Appointment</li>
+                                                <li>Collective Bargaining Agreement (CBA) copy</li>
+                                                <li>Guarantee Letter from manning agency</li>
+                                                <li>Pay Slips</li>
+                                                <li>Income Tax documents</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <strong>4. Travel & Port Entry Documents</strong>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="small mb-0">
+                                                <li id="docCrewVisa">Crew Visa for relevant countries</li>
+                                                <li id="docTransitVisa">Transit Visa (if required)</li>
+                                                <li id="docSeamansBook">Seaman's Book for visa stamps</li>
+                                                <li id="docTravelDetails">On-signing/Off-signing travel details</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info small">
+                                        <strong>Digital Copies:</strong> All documents should be maintained in secure cloud storage, personal email, USB drive, and mobile phone.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Responsibilities Tab -->
+                            <div class="tab-pane fade" id="responsibilities" role="tabpanel">
+                                <div class="pt-3">
+                                    <div id="responsibilitiesContent">
+                                        <!-- Will be populated dynamically based on rank -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                {% if current_user.role == 'Harbour Master' %}
+                <a href="#" class="btn btn-warning" id="editCrewBtn">
+                    <i class="fas fa-edit me-2"></i> Edit
+                </a>
+                <button type="button" class="btn btn-danger" onclick="deleteCrewMember()">
+                    <i class="fas fa-trash me-2"></i> Delete
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .crew-profile-frame {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        border-radius: 50%;
+        border: 3px solid #007bff;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .crew-card:hover .crew-profile-frame {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .crew-profile-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .crew-card {
+        transition: all 0.3s ease;
+    }
+
+    .crew-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .crew-role {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .crew-nationality {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .text-sm {
+        font-size: 0.875rem;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Event delegation for crew card clicks
+        document.querySelectorAll('.view-crew-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const crewId = this.getAttribute('data-crew-id');
+                viewCrewDetails(crewId);
+            });
+        });
+    });
+
+    const roleResponsibilities = {
+        'Master': `
+            <h5>Master / Captain</h5>
+            <ul>
+                <li>Overall command of the vessel, crew, cargo, and passengers (if any)</li>
+                <li>Ultimate responsibility for safety, security, navigation, and legal compliance</li>
+                <li>Represents the shipowner and ensures the voyage is conducted efficiently</li>
+                <li>Maintains official logs and documentation</li>
+            </ul>
+        `,
+        'Chief Officer': `
+            <h5>Chief Officer (Chief Mate)</h5>
+            <ul>
+                <li>Head of the deck department and the Master's second-in-command</li>
+                <li>Primarily responsible for cargo operations (loading, stowage, securing, discharging), stability, and planning</li>
+                <li>In charge of deck maintenance, upkeep, and safety equipment</li>
+                <li>Often assumes the role of the Ship Security Officer (SSO)</li>
+            </ul>
+        `,
+        '2nd Officer': `
+            <h5>2nd Officer (Second Mate)</h5>
+            <ul>
+                <li>The ship's navigational officer, responsible for voyage planning, chart correction, and bridge electronics</li>
+                <li>Maintains navigational charts, publications, and bridge equipment</li>
+                <li>Typically stands the 12-4 navigational watch</li>
+                <li>Often acts as the Medical Officer</li>
+            </ul>
+        `,
+        '3rd Officer': `
+            <h5>3rd Officer (Third Mate)</h5>
+            <ul>
+                <li>Responsible for lifesaving appliances (LSA) and firefighting equipment (FFE)</li>
+                <li>Handles much of the ship's safety paperwork and records</li>
+                <li>Stands a navigational watch (often 8-12 or 4-8)</li>
+                <li>Assists with cargo watches and deck operations</li>
+            </ul>
+        `,
+        'Bosun': `
+            <h5>Bosun (Boatswain)</h5>
+            <ul>
+                <li>The senior deck rating and foreman of the deck crew</li>
+                <li>Leads and supervises the Able Seamen and Ordinary Seamen in deck maintenance</li>
+                <li>Reports directly to the Chief Officer</li>
+                <li>Performs all deck-related tasks and supervises their execution</li>
+            </ul>
+        `,
+        'Able Seaman': `
+            <h5>Able Seaman / Able Body (AB)</h5>
+            <ul>
+                <li>A skilled seaman qualified to stand a navigational lookout watch and perform steering duties</li>
+                <li>Performs general deck work: maintenance, mooring operations, cargo handling, and cleaning</li>
+                <li>Operates deck equipment and assists in all deck operations</li>
+            </ul>
+        `,
+        'Ordinary Seaman': `
+            <h5>Ordinary Seaman (OS)</h5>
+            <ul>
+                <li>An entry-level deck rating who assists the Able Seamen and Bosun</li>
+                <li>Performs cleaning, chipping, painting, basic maintenance, and line handling</li>
+                <li>Does not stand a solo navigational watch but may assist</li>
+            </ul>
+        `,
+        'Chief Engineer': `
+            <h5>Chief Engineer</h5>
+            <ul>
+                <li>Head of the engine department, responsible for the entire technical operation of the ship</li>
+                <li>In charge of the main engine, auxiliary machinery, electrical systems, and all engineering staff</li>
+                <li>Manages the engine department budget, spare parts, and maintenance plans</li>
+                <li>Ensures machinery meets all safety and environmental regulations</li>
+            </ul>
+        `,
+        '2nd Engineer': `
+            <h5>2nd Engineer (First Assistant Engineer)</h5>
+            <ul>
+                <li>Second-in-command of the engine room</li>
+                <li>Directly responsible for the day-to-day maintenance and operation of the main engine</li>
+                <li>Plans and schedules maintenance, oversees the work of junior engineers</li>
+                <li>Often stands the 4-8 watch</li>
+            </ul>
+        `,
+        '3rd Engineer': `
+            <h5>3rd Engineer (Second Assistant Engineer)</h5>
+            <ul>
+                <li>Typically responsible for auxiliary machinery such as generators, boilers, compressors</li>
+                <li>In charge of the engine room workshop and tools</li>
+                <li>Often stands the 12-4 watch</li>
+                <li>May be responsible for bunkering operations</li>
+            </ul>
+        `,
+        '4th Engineer': `
+            <h5>4th Engineer (Third Assistant Engineer)</h5>
+            <ul>
+                <li>Junior engineer officer, often responsible for auxiliary systems like pumps, heat exchangers</li>
+                <li>Assists senior engineers with maintenance and watchkeeping</li>
+                <li>Often stands the 8-12 watch</li>
+                <li>Handles routine checks and paperwork</li>
+            </ul>
+        `,
+        'Electrician': `
+            <h5>Electrician</h5>
+            <ul>
+                <li>Responsible for the entire ship's electrical and electronic systems</li>
+                <li>Maintains and repairs navigation and communication equipment</li>
+                <li>Reports to the Chief Engineer</li>
+                <li>Manages power generation, distribution, automation, and control systems</li>
+            </ul>
+        `,
+        'Motorman': `
+            <h5>Motorman / Oiler / Fitter</h5>
+            <ul>
+                <li>A skilled engine room rating who assists the engineering officers</li>
+                <li>Performs routine maintenance, lubrication, cleaning, and watchkeeping duties</li>
+                <li>Operates and monitors machinery during a watch</li>
+                <li>Reports to the engineering officers on duty</li>
+            </ul>
+        `,
+        'Chief Cook': `
+            <h5>Chief Cook</h5>
+            <ul>
+                <li>Heads the galley and is responsible for preparing all meals for the crew</li>
+                <li>Manages food inventory, storage, galley budget, and hygiene standards (HACCP/ISM)</li>
+                <li>Plans menus and caters to dietary requirements</li>
+                <li>Ensures compliance with food safety regulations</li>
+            </ul>
+        `,
+        '2nd Cook': `
+            <h5>2nd Cook (Messman/Catering Assistant)</h5>
+            <ul>
+                <li>Assists the Chief Cook in food preparation and galley operations</li>
+                <li>Responsible for cleaning the galley and pantry</li>
+                <li>Serves meals and maintains food service standards</li>
+                <li>Cleans officer accommodation and common areas</li>
+            </ul>
+        `,
+        'Messman': `
+            <h5>Messman / Steward</h5>
+            <ul>
+                <li>An entry-level catering position</li>
+                <li>Primarily responsible for cleaning crew accommodation and mess rooms</li>
+                <li>Assists in the galley with washing up and basic food preparation</li>
+                <li>Maintains cleanliness of recreational areas</li>
+            </ul>
+        `
+    };
+
+    function viewCrewDetails(crewId) {
+        fetch(`/api/crew-member/${crewId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Populate personal info
+                document.getElementById('crewName').textContent = data.name;
+                document.getElementById('crewProfileImg').src = data.profile_picture || '{{ url_for("static", filename="images/default-avatar.png") }}';
+                document.getElementById('crewRank').textContent = data.rank;
+                document.getElementById('crewNationality').textContent = data.nationality;
+
+                // Personal Information Tab
+                document.getElementById('personalName').textContent = data.name;
+                document.getElementById('personalRank').textContent = data.rank;
+                document.getElementById('personalNationality').textContent = data.nationality;
+                document.getElementById('personalDepartment').textContent = data.department;
+                document.getElementById('personalDOB').textContent = data.dob || 'Not provided';
+                document.getElementById('personalPassport').textContent = data.passport_number || 'Not provided';
+                document.getElementById('personalSID').textContent = data.sid || 'Not provided';
+                document.getElementById('personalCDC').textContent = data.cdc || 'Not provided';
+
+                // Certificates Tab
+                document.getElementById('certCOC').textContent = data.coc_number || 'Not provided';
+                document.getElementById('certCOCDate').textContent = data.coc_expiry ? `Expiry: ${data.coc_expiry}` : '';
+                document.getElementById('certBasicSafety').textContent = data.basic_safety ? 'Completed' : 'Not completed';
+                document.getElementById('certBasicSafetyDate').textContent = data.basic_safety_expiry ? `Expiry: ${data.basic_safety_expiry}` : '';
+                document.getElementById('certSurvival').textContent = data.survival_craft ? 'Completed' : 'Not completed';
+                document.getElementById('certSurvivalDate').textContent = data.survival_craft_expiry ? `Expiry: ${data.survival_craft_expiry}` : '';
+                document.getElementById('certFireFighting').textContent = data.fire_fighting ? 'Completed' : 'Not completed';
+                document.getElementById('certFireFightingDate').textContent = data.fire_fighting_expiry ? `Expiry: ${data.fire_fighting_expiry}` : '';
+                document.getElementById('certFirstAid').textContent = data.first_aid ? 'Completed' : 'Not completed';
+                document.getElementById('certFirstAidDate').textContent = data.first_aid_expiry ? `Expiry: ${data.first_aid_expiry}` : '';
+                document.getElementById('certSecurity').textContent = data.security_awareness ? 'Completed' : 'Not completed';
+                document.getElementById('certSecurityDate').textContent = data.security_awareness_expiry ? `Expiry: ${data.security_awareness_expiry}` : '';
+                document.getElementById('certGMDSS').textContent = data.gmdss ? 'Completed' : 'Not applicable';
+                document.getElementById('certGMDSSDate').textContent = data.gmdss_expiry ? `Expiry: ${data.gmdss_expiry}` : '';
+                document.getElementById('certTanker').textContent = data.tanker_cert ? 'Completed' : 'Not applicable';
+                document.getElementById('certTankerDate').textContent = data.tanker_cert_expiry ? `Expiry: ${data.tanker_cert_expiry}` : '';
+
+                // Responsibilities Tab
+                document.getElementById('responsibilitiesContent').innerHTML = roleResponsibilities[data.rank] || '<p>No specific responsibilities defined for this role.</p>';
+
+                // Edit button
+                const editBtn = document.getElementById('editCrewBtn');
+                if (editBtn) {
+                    editBtn.href = `/edit-crew-member/${crewId}`;
+                }
+
+                // Show modal
+                new bootstrap.Modal(document.getElementById('crewDetailsModal')).show();
+            })
+            .catch(error => console.error('Error loading crew details:', error));
+    }
+
+    function deleteCrewMember() {
+        if (confirm('Are you sure you want to delete this crew member?')) {
+            const crewId = new URLSearchParams(window.location.search).get('crew_id');
+            // Implement delete API call
+            console.log('Delete crew member:', crewId);
+        }
+    }
+</script>
+{% endblock %}
