@@ -94,52 +94,10 @@
 
                         <!-- Maritime Certificates Tracking -->
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i><strong>Certificate Tracking:</strong> Update expiry dates for automatic reminders
+                            <i class="fas fa-info-circle me-2"></i><strong>Certificate Selection:</strong> Update certificates based on rank and department
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="stcw_certificate" class="form-label">STCW Certificate</label>
-                                <input type="text" class="form-control" id="stcw_certificate" name="stcw_certificate" value="{{ crew_member.get('stcw_certificate', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="stcw_expiry" class="form-label">STCW Expiry Date</label>
-                                <input type="date" class="form-control" id="stcw_expiry" name="stcw_expiry" value="{{ crew_member.get('stcw_expiry', '') }}">
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="gmdss_certificate" class="form-label">GMDSS Certificate</label>
-                                <input type="text" class="form-control" id="gmdss_certificate" name="gmdss_certificate" value="{{ crew_member.get('gmdss_certificate', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="gmdss_expiry" class="form-label">GMDSS Expiry Date</label>
-                                <input type="date" class="form-control" id="gmdss_expiry" name="gmdss_expiry" value="{{ crew_member.get('gmdss_expiry', '') }}">
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="mlc_certificate" class="form-label">MLC Certificate</label>
-                                <input type="text" class="form-control" id="mlc_certificate" name="mlc_certificate" value="{{ crew_member.get('mlc_certificate', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="mlc_expiry" class="form-label">MLC Expiry Date</label>
-                                <input type="date" class="form-control" id="mlc_expiry" name="mlc_expiry" value="{{ crew_member.get('mlc_expiry', '') }}">
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="medical_certificate" class="form-label">Medical Certificate</label>
-                                <input type="text" class="form-control" id="medical_certificate" name="medical_certificate" value="{{ crew_member.get('medical_certificate', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="medical_expiry" class="form-label">Medical Expiry Date</label>
-                                <input type="date" class="form-control" id="medical_expiry" name="medical_expiry" value="{{ crew_member.get('medical_expiry', '') }}">
-                            </div>
-                        </div>
+                        <div id="certificatesContainer"></div>
 
                         <!-- Contact Information -->
                         <h5 class="mb-3 mt-4">
@@ -247,6 +205,163 @@
 </div>
 
 <script>
+// STCW Certificate Mapping by Rank and Department (same as add_crew_member)
+const certificateMapping = {
+    'Deck': {
+        'Captain': [
+            { name: 'Master (II/2)', mandatory: true, regulation: 'II/2', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'GMDSS GOC/ROC', mandatory: true, regulation: 'IV/2', validity: '5 years' },
+            { name: 'Bridge Resource Management (BRM)', mandatory: false, regulation: 'II/1', validity: '5 years' },
+            { name: 'Ship Security Officer (SSO)', mandatory: false, regulation: 'VI/5', validity: '5 years' },
+            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+        ],
+        'Chief Officer': [
+            { name: 'Officer of the Watch (OOW / II/1)', mandatory: true, regulation: 'II/1', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'GMDSS GOC/ROC', mandatory: true, regulation: 'IV/2', validity: '5 years' },
+            { name: 'Bridge Resource Management (BRM)', mandatory: false, regulation: 'II/1', validity: '5 years' },
+            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+        ],
+        'Second Officer': [
+            { name: 'Officer of the Watch (OOW / II/1)', mandatory: true, regulation: 'II/1', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'GMDSS GOC/ROC', mandatory: false, regulation: 'IV/2', validity: '5 years' },
+            { name: 'Bridge Resource Management (BRM)', mandatory: false, regulation: 'II/1', validity: '5 years' }
+        ],
+        'Able Seaman': [
+            { name: 'Able Seafarer Deck (ASD)', mandatory: true, regulation: 'II/5', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'PSC & Rescue Boats', mandatory: true, regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Fast Rescue Boat', mandatory: false, regulation: 'VI/2-2', validity: '5 years' }
+        ],
+        'Bosun': [
+            { name: 'Rating Forming Part of Navigational Watch (RFPNW)', mandatory: true, regulation: 'II/4', validity: 'N/A' },
+            { name: 'Able Seafarer Deck (ASD)', mandatory: true, regulation: 'II/5', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'PSC & Rescue Boats', mandatory: true, regulation: 'VI/2-1', validity: '5 years' }
+        ]
+    },
+    'Engine': {
+        'Chief Engineer': [
+            { name: 'Chief Engineer (III/2)', mandatory: true, regulation: 'III/2', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'Engine Resource Management (ERM)', mandatory: false, regulation: 'III/1', validity: '5 years' },
+            { name: 'High Voltage Operations', mandatory: false, regulation: 'III/2', validity: '5 years' },
+            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+        ],
+        'First Engineer': [
+            { name: 'Second Engineer (III/2)', mandatory: true, regulation: 'III/2', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+        ],
+        'Second Engineer': [
+            { name: 'Second Engineer (III/2)', mandatory: true, regulation: 'III/2', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+        ],
+        'EOOW': [
+            { name: 'EOOW (Fourth/Third Engineer III/1)', mandatory: true, regulation: 'III/1', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'Engine Resource Management (ERM)', mandatory: false, regulation: 'III/1', validity: '5 years' }
+        ],
+        'Electrician': [
+            { name: 'Rating Forming Part of Engineering Watch (RFPEW)', mandatory: true, regulation: 'III/4', validity: 'N/A' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'High Voltage Safety & Operations', mandatory: false, regulation: 'III/6', validity: '5 years' }
+        ],
+        'Oiler': [
+            { name: 'Able Seafarer Engine (ASE)', mandatory: true, regulation: 'III/5', validity: '5 years' },
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'PSC & Rescue Boats', mandatory: true, regulation: 'VI/2-1', validity: '5 years' }
+        ]
+    },
+    'Catering': {
+        'Chief Steward': [
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'Food Safety & Hygiene', mandatory: false, regulation: 'IMCA', validity: '3 years' },
+            { name: 'PSC & Rescue Boats', mandatory: false, regulation: 'VI/2-1', validity: '5 years' }
+        ],
+        'Cook': [
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'Food Safety & Hygiene', mandatory: false, regulation: 'IMCA', validity: '3 years' }
+        ],
+        'Steward': [
+            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
+            { name: 'Medical Fitness', mandatory: true, regulation: 'I/9', validity: '5 years' },
+            { name: 'PSC & Rescue Boats', mandatory: false, regulation: 'VI/2-1', validity: '5 years' }
+        ]
+    }
+};
+
+// Function to render certificates based on department and rank
+function renderCertificates() {
+    const department = document.getElementById('department').value;
+    const rank = document.getElementById('rank').value;
+    const container = document.getElementById('certificatesContainer');
+    
+    if (!department || !rank) {
+        container.innerHTML = '<p class="text-muted">Select a department and rank to view required certificates</p>';
+        return;
+    }
+    
+    const deptCerts = certificateMapping[department];
+    if (!deptCerts || !deptCerts[rank]) {
+        container.innerHTML = '<p class="text-muted">No certificate mapping found for this rank</p>';
+        return;
+    }
+    
+    const certs = deptCerts[rank];
+    let html = '<div class="row">';
+    
+    certs.forEach((cert, index) => {
+        const certId = `cert_${index}`;
+        const badge = cert.mandatory ? '<span class="badge bg-danger ms-2">MANDATORY</span>' : '<span class="badge bg-info ms-2">Optional</span>';
+        
+        html += `
+            <div class="col-md-12 mb-3">
+                <div class="card border-${cert.mandatory ? 'danger' : 'info'}">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <label for="${certId}_name" class="form-label mb-2">
+                                    <strong>${cert.name}</strong> ${badge}
+                                </label>
+                                <small class="text-muted d-block">STCW ${cert.regulation} | Valid: ${cert.validity}</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="${certId}_number" class="form-label">Certificate Number</label>
+                                <input type="text" class="form-control form-control-sm" id="${certId}_number" name="cert_number_${index}" placeholder="e.g., ABC123456" data-cert-name="${cert.name}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="${certId}_expiry" class="form-label">Expiry Date</label>
+                                <input type="date" class="form-control form-control-sm" id="${certId}_expiry" name="cert_expiry_${index}" data-cert-name="${cert.name}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
 // Form validation
 document.getElementById('editCrewForm').addEventListener('submit', function(e) {
     const requiredFields = ['vessel_id', 'first_name', 'last_name', 'department', 'rank'];
@@ -262,20 +377,34 @@ document.getElementById('editCrewForm').addEventListener('submit', function(e) {
     }
 });
 
-// Department-specific suggestions
+// Event listeners for certificate rendering
 document.getElementById('department').addEventListener('change', function() {
     const rankSuggestions = {
-        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Bosun', 'Able Seaman'],
-        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'Electrician', 'Engine Cadet'],
-        'Catering': ['Chief Steward', 'Cook', 'Steward', 'Cleaner']
+        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Able Seaman', 'Bosun'],
+        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'EOOW', 'Electrician', 'Oiler'],
+        'Catering': ['Chief Steward', 'Cook', 'Steward']
     };
     
     const dept = this.value;
     const rankInput = document.getElementById('rank');
     
+    // Clear rank value when department changes
+    rankInput.value = '';
+    
     if (dept && rankSuggestions[dept]) {
         rankInput.placeholder = 'e.g., ' + rankSuggestions[dept].join(', ');
     }
+    
+    renderCertificates();
+});
+
+document.getElementById('rank').addEventListener('change', function() {
+    renderCertificates();
+});
+
+// Initial render
+document.addEventListener('DOMContentLoaded', function() {
+    renderCertificates();
 });
 </script>
 {% endblock %}
