@@ -1,0 +1,272 @@
+<!-- Notification System Include -->
+<!-- Add this to your base.html <head> section -->
+
+<!-- Notification CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+
+<!-- Notification Handler Script -->
+<script src="{{ url_for('static', filename='js/notification-handler.js') }}"></script>
+
+<!-- Notification Settings Panel (Optional) -->
+<div id="notification-settings-panel" class="notification-settings-panel" style="display: none;">
+    <div class="settings-header">
+        <h3>Notification Settings</h3>
+        <button class="close-btn" onclick="document.getElementById('notification-settings-panel').style.display='none';">&times;</button>
+    </div>
+    <div class="settings-body">
+        <div class="setting-item">
+            <label class="setting-label">
+                <input type="checkbox" id="sound-toggle" checked onchange="handleSoundToggle(this)">
+                <span>Sound Notifications</span>
+            </label>
+            <p class="setting-description">Play sound when new notifications arrive</p>
+        </div>
+        
+        <div class="setting-item">
+            <label class="setting-label">
+                <input type="checkbox" id="desktop-toggle" checked onchange="handleDesktopToggle(this)">
+                <span>Desktop Notifications</span>
+            </label>
+            <p class="setting-description">Show browser desktop notifications</p>
+        </div>
+        
+        <div class="setting-item">
+            <label class="setting-label">
+                <input type="checkbox" id="vibration-toggle" checked onchange="handleVibrationToggle(this)">
+                <span>Vibration</span>
+            </label>
+            <p class="setting-description">Vibrate on mobile devices</p>
+        </div>
+        
+        <div class="setting-item">
+            <label class="setting-label">Quiet Hours</label>
+            <div class="time-inputs">
+                <input type="time" id="quiet-start" onchange="handleQuietHoursChange()">
+                <span>to</span>
+                <input type="time" id="quiet-end" onchange="handleQuietHoursChange()">
+            </div>
+            <p class="setting-description">Disable sound notifications during these hours</p>
+        </div>
+        
+        <div class="settings-footer">
+            <button class="btn btn-primary" onclick="saveNotificationSettings()">Save Settings</button>
+            <button class="btn btn-secondary" onclick="resetNotificationSettings()">Reset to Default</button>
+        </div>
+    </div>
+</div>
+
+<!-- Inline Scripts for Notification Settings -->
+<script>
+// Notification settings management
+function handleSoundToggle(checkbox) {
+    if (window.notificationHandler) {
+        window.notificationHandler.toggleSound(checkbox.checked);
+    }
+}
+
+function handleDesktopToggle(checkbox) {
+    if (window.notificationHandler) {
+        window.notificationHandler.toggleNotifications(checkbox.checked);
+    }
+}
+
+function handleVibrationToggle(checkbox) {
+    // Vibration API support
+    if (navigator.vibrate && checkbox.checked) {
+        navigator.vibrate(100); // Test vibration
+    }
+}
+
+function handleQuietHoursChange() {
+    const startTime = document.getElementById('quiet-start').value;
+    const endTime = document.getElementById('quiet-end').value;
+    
+    if (window.notificationHandler) {
+        window.notificationHandler.saveUserPreference('quiet_hours_start', startTime);
+        window.notificationHandler.saveUserPreference('quiet_hours_end', endTime);
+    }
+}
+
+function saveNotificationSettings() {
+    const settings = {
+        'sound_enabled': document.getElementById('sound-toggle').checked,
+        'notifications_enabled': document.getElementById('desktop-toggle').checked,
+        'vibration_enabled': document.getElementById('vibration-toggle').checked,
+        'quiet_hours_start': document.getElementById('quiet-start').value,
+        'quiet_hours_end': document.getElementById('quiet-end').value
+    };
+    
+    fetch('/api/user/notification-preferences', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    }).then(() => {
+        showInAppNotification({
+            title: 'Settings Saved',
+            message: 'Your notification preferences have been updated',
+            type: 'success'
+        });
+    }).catch(error => {
+        console.error('Error saving notification settings:', error);
+        showInAppNotification({
+            title: 'Error',
+            message: 'Could not save settings. Please try again.',
+            type: 'error'
+        });
+    });
+}
+
+function resetNotificationSettings() {
+    document.getElementById('sound-toggle').checked = true;
+    document.getElementById('desktop-toggle').checked = true;
+    document.getElementById('vibration-toggle').checked = true;
+    document.getElementById('quiet-start').value = '';
+    document.getElementById('quiet-end').value = '';
+    saveNotificationSettings();
+}
+
+function showNotificationSettings() {
+    document.getElementById('notification-settings-panel').style.display = 'block';
+    
+    // Load current settings
+    if (window.notificationHandler) {
+        window.notificationHandler.loadUserPreferences().then(() => {
+            document.getElementById('sound-toggle').checked = window.notificationHandler.soundEnabled;
+            document.getElementById('desktop-toggle').checked = window.notificationHandler.notificationPermission === 'granted';
+        });
+    }
+}
+
+// Expose function for opening notification settings from anywhere
+window.showNotificationSettings = showNotificationSettings;
+</script>
+
+<style>
+.notification-settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    max-width: 400px;
+    height: 100%;
+    background: white;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .notification-settings-panel {
+        max-width: 100%;
+        right: 0;
+        left: 0;
+    }
+}
+
+.settings-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1a1a1a;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+}
+
+.settings-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.setting-item {
+    margin-bottom: 24px;
+}
+
+.setting-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.setting-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.setting-description {
+    margin: 8px 0 0 32px;
+    font-size: 13px;
+    color: #666;
+}
+
+.time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.time-inputs input[type="time"] {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.settings-footer {
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 12px;
+}
+
+.settings-footer .btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.settings-footer .btn-primary {
+    background: #2196F3;
+    color: white;
+}
+
+.settings-footer .btn-primary:hover {
+    background: #1976D2;
+}
+
+.settings-footer .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.settings-footer .btn-secondary:hover {
+    background: #e0e0e0;
+}
+</style>

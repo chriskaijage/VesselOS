@@ -9887,6 +9887,108 @@ def api_notification_read_all():
     finally:
         conn.close()
 
+@app.route('/api/user/notification-preferences', methods=['GET'])
+@login_required
+def api_get_notification_preferences():
+    """Get user notification preferences."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("""
+            SELECT sound_enabled, notifications_enabled, vibration_enabled, 
+                   notification_type, quiet_hours_start, quiet_hours_end
+            FROM user_settings
+            WHERE user_id = ?
+        """, (current_user.id,))
+        
+        row = c.fetchone()
+        if row:
+            prefs = dict(row)
+        else:
+            # Return default preferences
+            prefs = {
+                'sound_enabled': True,
+                'notifications_enabled': True,
+                'vibration_enabled': True,
+                'notification_type': 'all',
+                'quiet_hours_start': None,
+                'quiet_hours_end': None
+            }
+        
+        return jsonify({'success': True, **prefs})
+    except Exception as e:
+        app.logger.error(f"Error getting notification preferences: {e}")
+        return jsonify({'success': True, 'sound_enabled': True, 'notifications_enabled': True})
+    finally:
+        conn.close()
+
+@app.route('/api/user/notification-preferences', methods=['POST'])
+@login_required
+def api_update_notification_preferences():
+    """Update user notification preferences."""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Check if settings exist for this user
+        c.execute("SELECT user_id FROM user_settings WHERE user_id = ?", (current_user.id,))
+        exists = c.fetchone()
+        
+        if exists:
+            # Update existing settings
+            updates = []
+            params = []
+            
+            if 'sound_enabled' in data:
+                updates.append("sound_enabled = ?")
+                params.append(data['sound_enabled'])
+            if 'notifications_enabled' in data:
+                updates.append("notifications_enabled = ?")
+                params.append(data['notifications_enabled'])
+            if 'vibration_enabled' in data:
+                updates.append("vibration_enabled = ?")
+                params.append(data['vibration_enabled'])
+            if 'notification_type' in data:
+                updates.append("notification_type = ?")
+                params.append(data['notification_type'])
+            if 'quiet_hours_start' in data:
+                updates.append("quiet_hours_start = ?")
+                params.append(data['quiet_hours_start'])
+            if 'quiet_hours_end' in data:
+                updates.append("quiet_hours_end = ?")
+                params.append(data['quiet_hours_end'])
+            
+            if updates:
+                params.append(current_user.id)
+                query = f"UPDATE user_settings SET {', '.join(updates)} WHERE user_id = ?"
+                c.execute(query, params)
+        else:
+            # Insert new settings
+            c.execute("""
+                INSERT INTO user_settings 
+                (user_id, sound_enabled, notifications_enabled, vibration_enabled, 
+                 notification_type, quiet_hours_start, quiet_hours_end)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                current_user.id,
+                data.get('sound_enabled', True),
+                data.get('notifications_enabled', True),
+                data.get('vibration_enabled', True),
+                data.get('notification_type', 'all'),
+                data.get('quiet_hours_start'),
+                data.get('quiet_hours_end')
+            ))
+        
+        conn.commit()
+        conn.close()
+        
+        app.logger.info(f"User {current_user.id} updated notification preferences")
+        return jsonify({'success': True, 'message': 'Preferences updated'})
+    except Exception as e:
+        app.logger.error(f"Error updating notification preferences: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/notification/<int:notification_id>')
 @login_required
 def api_notification_detail(notification_id):
