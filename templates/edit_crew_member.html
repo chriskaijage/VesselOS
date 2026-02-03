@@ -429,8 +429,75 @@ function renderCertificates() {
     const certs = deptCerts[rank];
     let html = '<div class="row">';
     
+    // Render mandatory certificates for all crew
+    if (certificateMapping._mandatory_all) {
+        html += `
+            <div class="col-md-12 mb-4">
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading mb-0">
+                        <i class="fas fa-star me-2"></i>Mandatory Certificates for All Crew (STCW Convention)
+                    </h6>
+                </div>
+            </div>
+        `;
+        
+        certificateMapping._mandatory_all.forEach((cert, index) => {
+            const certId = `cert_mandatory_${index}`;
+            const badge = '<span class="badge bg-danger ms-2">MANDATORY</span>';
+            
+            html += `
+                <div class="col-md-12 mb-3">
+                    <div class="card border-danger">
+                        <div class="card-body p-3">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label for="${certId}_name" class="form-label mb-2">
+                                        <strong>${cert.name}</strong> ${badge}
+                                    </label>
+                                    <small class="text-muted d-block">STCW ${cert.regulation} | Valid: ${cert.validity}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="${certId}_number" class="form-label">Certificate Number</label>
+                                    <input type="text" class="form-control form-control-sm" id="${certId}_number" name="cert_number_m${index}" placeholder="e.g., ABC123456" data-cert-name="${cert.name}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="${certId}_expiry" class="form-label">Expiry Date</label>
+                                    <input type="date" class="form-control form-control-sm" id="${certId}_expiry" name="cert_expiry_m${index}" data-cert-name="${cert.name}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label d-block">Upload Document</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="file" class="form-control form-control-sm" id="${certId}_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="max-width: 0.1px; opacity: 0;">
+                                        <button class="btn btn-outline-danger btn-sm" type="button" onclick="document.getElementById('${certId}_file').click();" title="Upload certificate document">
+                                            <i class="fas fa-upload"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted d-block mt-1">
+                                        <span id="${certId}_file_name" style="display: none;"><i class="fas fa-check text-success"></i> <span></span></span>
+                                        <span id="${certId}_file_label" style="font-size: 0.75rem;">PDF, JPG, DOC</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    // Render role-specific certificates section
+    html += `
+        <div class="col-md-12 mb-4">
+            <div class="alert alert-primary">
+                <h6 class="alert-heading mb-0">
+                    <i class="fas fa-briefcase me-2"></i>${rank} - ${department} Department Certificates
+                </h6>
+            </div>
+        </div>
+    `;
+    
     certs.forEach((cert, index) => {
-        const certId = `cert_${index}`;
+        const certId = `cert_role_${index}`;
         const badge = cert.mandatory ? '<span class="badge bg-danger ms-2">MANDATORY</span>' : '<span class="badge bg-info ms-2">Optional</span>';
         
         html += `
@@ -442,21 +509,22 @@ function renderCertificates() {
                                 <label for="${certId}_name" class="form-label mb-2">
                                     <strong>${cert.name}</strong> ${badge}
                                 </label>
-                                <small class="text-muted d-block">STCW ${cert.regulation} | Valid: ${cert.validity}</small>
+                                <small class="text-muted d-block">STCW ${cert.regulation} | Category: ${cert.category}</small>
+                                <small class="text-muted d-block">Valid: ${cert.validity}</small>
                             </div>
                             <div class="col-md-3">
                                 <label for="${certId}_number" class="form-label">Certificate Number</label>
-                                <input type="text" class="form-control form-control-sm" id="${certId}_number" name="cert_number_${index}" placeholder="e.g., ABC123456" data-cert-name="${cert.name}">
+                                <input type="text" class="form-control form-control-sm" id="${certId}_number" name="cert_number_r${index}" placeholder="e.g., ABC123456" data-cert-name="${cert.name}">
                             </div>
                             <div class="col-md-3">
                                 <label for="${certId}_expiry" class="form-label">Expiry Date</label>
-                                <input type="date" class="form-control form-control-sm" id="${certId}_expiry" name="cert_expiry_${index}" data-cert-name="${cert.name}">
+                                <input type="date" class="form-control form-control-sm" id="${certId}_expiry" name="cert_expiry_r${index}" data-cert-name="${cert.name}">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label d-block">Upload Document</label>
                                 <div class="input-group input-group-sm">
                                     <input type="file" class="form-control form-control-sm" id="${certId}_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="max-width: 0.1px; opacity: 0;">
-                                    <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('${certId}_file').click();" title="Upload certificate document">
+                                    <button class="btn btn-outline-${cert.mandatory ? 'danger' : 'info'} btn-sm" type="button" onclick="document.getElementById('${certId}_file').click();" title="Upload certificate document">
                                         <i class="fas fa-upload"></i>
                                     </button>
                                 </div>
@@ -472,18 +540,160 @@ function renderCertificates() {
         `;
     });
     
+    // Add specialized certificates with full details
+    html += `
+        <div class="col-md-12 mb-4 mt-3">
+            <div class="alert alert-warning">
+                <h6 class="alert-heading mb-0">
+                    <i class="fas fa-cube me-2"></i>Additional Specialized Certificates
+                </h6>
+                <p class="mb-3 small mt-2">Select any additional specialized certificates for vessel-specific requirements. Complete certificate details when needed:</p>
+    `;
+    
+    if (certificateMapping._specialized) {
+        let specIndex = 0;
+        for (const [category, certs] of Object.entries(certificateMapping._specialized)) {
+            html += `
+                <div class="mb-3">
+                    <strong class="text-warning"><i class="fas fa-folder me-2"></i>${category}</strong>
+                    <div class="ps-3 mt-2">
+            `;
+            
+            certs.forEach((cert) => {
+                const checkboxId = `spec_cert_${specIndex}`;
+                const certDetailsId = `spec_details_${specIndex}`;
+                
+                html += `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input spec-cert-checkbox" type="checkbox" id="${checkboxId}" name="spec_certs" value="${cert.name}" data-regulation="${cert.regulation}" data-details-id="${certDetailsId}">
+                        <label class="form-check-label" for="${checkboxId}">
+                            ${cert.name} <small class="text-muted">(${cert.regulation})</small>
+                        </label>
+                    </div>
+                    
+                    <!-- Hidden details form for this specialized certificate -->
+                    <div id="${certDetailsId}" class="ms-4 mb-3" style="display: none;">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Certificate Number</label>
+                                <input type="text" class="form-control form-control-sm" name="spec_cert_number_${specIndex}" placeholder="e.g., ABC123456">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Expiry Date</label>
+                                <input type="date" class="form-control form-control-sm" name="spec_cert_expiry_${specIndex}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Upload Document</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="file" class="form-control form-control-sm" id="spec_cert_file_${specIndex}" name="spec_cert_file_${specIndex}" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="max-width: 0.1px; opacity: 0;">
+                                    <button class="btn btn-outline-warning btn-sm" type="button" onclick="document.getElementById('spec_cert_file_${specIndex}').click();" title="Upload certificate document">
+                                        <i class="fas fa-upload"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted d-block mt-1">
+                                    <span id="spec_cert_file_name_${specIndex}" style="display: none;"><i class="fas fa-check text-success"></i> <span></span></span>
+                                    <span id="spec_cert_file_label_${specIndex}" style="font-size: 0.75rem;">PDF, JPG, DOC</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                specIndex++;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
     html += '</div>';
     container.innerHTML = html;
     
-    // Add file input change handlers
-    certs.forEach((cert, index) => {
-        const certId = `cert_${index}`;
-        const fileInput = document.getElementById(certId + '_file');
+    // Attach file change event listeners
+    attachFileListeners();
+}
+
+// Function to attach file change event listeners for all certificate file inputs
+function attachFileListeners() {
+    // Attach listeners for mandatory certificates
+    if (certificateMapping._mandatory_all) {
+        certificateMapping._mandatory_all.forEach((cert, index) => {
+            const certId = `cert_mandatory_${index}`;
+            const fileInput = document.getElementById(certId + '_file');
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const fileName = this.files[0]?.name || '';
+                    const fileNameSpan = document.getElementById(certId + '_file_name');
+                    const fileLabel = document.getElementById(certId + '_file_label');
+                    
+                    if (fileName) {
+                        fileNameSpan.style.display = 'block';
+                        fileNameSpan.querySelector('span').textContent = fileName;
+                        fileLabel.style.display = 'none';
+                    } else {
+                        fileNameSpan.style.display = 'none';
+                        fileLabel.style.display = 'block';
+                    }
+                });
+            }
+        });
+    }
+    
+    // Get role-specific certificates
+    const department = document.getElementById('department').value;
+    const rank = document.getElementById('rank').value;
+    const deptCerts = certificateMapping[department];
+    if (deptCerts && deptCerts[rank]) {
+        deptCerts[rank].forEach((cert, index) => {
+            const certId = `cert_role_${index}`;
+            const fileInput = document.getElementById(certId + '_file');
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const fileName = this.files[0]?.name || '';
+                    const fileNameSpan = document.getElementById(certId + '_file_name');
+                    const fileLabel = document.getElementById(certId + '_file_label');
+                    
+                    if (fileName) {
+                        fileNameSpan.style.display = 'block';
+                        fileNameSpan.querySelector('span').textContent = fileName;
+                        fileLabel.style.display = 'none';
+                    } else {
+                        fileNameSpan.style.display = 'none';
+                        fileLabel.style.display = 'block';
+                    }
+                });
+            }
+        });
+    }
+    
+    // Attach listeners for specialized certificates
+    const specCheckboxes = document.querySelectorAll('.spec-cert-checkbox');
+    specCheckboxes.forEach((checkbox, index) => {
+        // Handle checkbox toggle for showing/hiding details form
+        checkbox.addEventListener('change', function() {
+            const detailsId = this.dataset.detailsId;
+            const detailsDiv = document.getElementById(detailsId);
+            if (this.checked) {
+                detailsDiv.style.display = 'block';
+            } else {
+                detailsDiv.style.display = 'none';
+            }
+        });
+        
+        // Attach file upload listener for this specialized certificate
+        const fileInput = document.getElementById(`spec_cert_file_${index}`);
         if (fileInput) {
             fileInput.addEventListener('change', function(e) {
                 const fileName = this.files[0]?.name || '';
-                const fileNameSpan = document.getElementById(certId + '_file_name');
-                const fileLabel = document.getElementById(certId + '_file_label');
+                const fileNameSpan = document.getElementById(`spec_cert_file_name_${index}`);
+                const fileLabel = document.getElementById(`spec_cert_file_label_${index}`);
                 
                 if (fileName) {
                     fileNameSpan.style.display = 'block';

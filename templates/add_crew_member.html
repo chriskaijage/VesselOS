@@ -538,34 +538,62 @@ function renderCertificates() {
         `;
     });
     
-    // Optional: Add specialized certificates selection
+    // Optional: Add specialized certificates selection with full details
     html += `
         <div class="col-md-12 mb-4 mt-3">
             <div class="alert alert-warning">
-                <h6 class="alert-heading mb-2">
+                <h6 class="alert-heading mb-0">
                     <i class="fas fa-cube me-2"></i>Additional Specialized Certificates
                 </h6>
-                <p class="mb-2 small">Select any additional specialized certificates for vessel-specific requirements:</p>
-                <div class="row">
+                <p class="mb-3 small mt-2">Select any additional specialized certificates for vessel-specific requirements. Complete certificate details when needed:</p>
     `;
     
     if (certificateMapping._specialized) {
         let specIndex = 0;
         for (const [category, certs] of Object.entries(certificateMapping._specialized)) {
             html += `
-                <div class="col-md-6 mb-2">
-                    <strong>${category}:</strong>
-                    <div class="ps-3">
+                <div class="mb-3">
+                    <strong class="text-warning"><i class="fas fa-folder me-2"></i>${category}</strong>
+                    <div class="ps-3 mt-2">
             `;
             
             certs.forEach((cert) => {
                 const checkboxId = `spec_cert_${specIndex}`;
+                const certDetailsId = `spec_details_${specIndex}`;
+                
                 html += `
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="${checkboxId}" name="spec_certs" value="${cert.name}" data-regulation="${cert.regulation}">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input spec-cert-checkbox" type="checkbox" id="${checkboxId}" name="spec_certs" value="${cert.name}" data-regulation="${cert.regulation}" data-details-id="${certDetailsId}">
                         <label class="form-check-label" for="${checkboxId}">
-                            ${cert.name}
+                            ${cert.name} <small class="text-muted">(${cert.regulation})</small>
                         </label>
+                    </div>
+                    
+                    <!-- Hidden details form for this specialized certificate -->
+                    <div id="${certDetailsId}" class="ms-4 mb-3" style="display: none;">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Certificate Number</label>
+                                <input type="text" class="form-control form-control-sm" name="spec_cert_number_${specIndex}" placeholder="e.g., ABC123456">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Expiry Date</label>
+                                <input type="date" class="form-control form-control-sm" name="spec_cert_expiry_${specIndex}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Upload Document</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="file" class="form-control form-control-sm" id="spec_cert_file_${specIndex}" name="spec_cert_file_${specIndex}" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="max-width: 0.1px; opacity: 0;">
+                                    <button class="btn btn-outline-warning btn-sm" type="button" onclick="document.getElementById('spec_cert_file_${specIndex}').click();" title="Upload certificate document">
+                                        <i class="fas fa-upload"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted d-block mt-1">
+                                    <span id="spec_cert_file_name_${specIndex}" style="display: none;"><i class="fas fa-check text-success"></i> <span></span></span>
+                                    <span id="spec_cert_file_label_${specIndex}" style="font-size: 0.75rem;">PDF, JPG, DOC</span>
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 `;
                 specIndex++;
@@ -579,7 +607,6 @@ function renderCertificates() {
     }
     
     html += `
-                </div>
             </div>
         </div>
     `;
@@ -643,6 +670,43 @@ function attachFileListeners() {
             }
         });
     }
+    
+    // Attach listeners for specialized certificates
+    const specCheckboxes = document.querySelectorAll('.spec-cert-checkbox');
+    specCheckboxes.forEach((checkbox, index) => {
+        // Handle checkbox toggle for showing/hiding details form
+        checkbox.addEventListener('change', function() {
+            const detailsId = this.dataset.detailsId;
+            const detailsDiv = document.getElementById(detailsId);
+            if (this.checked) {
+                detailsDiv.style.display = 'block';
+            } else {
+                detailsDiv.style.display = 'none';
+            }
+        });
+        
+        // Attach file upload listener for this specialized certificate
+        const specIndex = checkbox.value.match(/spec_cert_(\d+)/);
+        if (specIndex) {
+            const fileInput = document.getElementById(`spec_cert_file_${index}`);
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const fileName = this.files[0]?.name || '';
+                    const fileNameSpan = document.getElementById(`spec_cert_file_name_${index}`);
+                    const fileLabel = document.getElementById(`spec_cert_file_label_${index}`);
+                    
+                    if (fileName) {
+                        fileNameSpan.style.display = 'block';
+                        fileNameSpan.querySelector('span').textContent = fileName;
+                        fileLabel.style.display = 'none';
+                    } else {
+                        fileNameSpan.style.display = 'none';
+                        fileLabel.style.display = 'block';
+                    }
+                });
+            }
+        }
+    });
 }
 
 // Function to populate rank dropdown based on department
