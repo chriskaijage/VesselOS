@@ -10,11 +10,14 @@ class NotificationHandler {
         this.isSystemMuted = false;
         this.notificationQueue = [];
         this.activeNotifications = new Map();
+        
+        // Embedded audio data URIs - simple sine wave beeps
+        // Each generates a short beep sound using Web Audio API
         this.soundUrls = {
-            message: '/static/sounds/notification.mp3',
-            alert: '/static/sounds/alert.mp3',
-            success: '/static/sounds/success.mp3',
-            error: '/static/sounds/error.mp3'
+            message: null,   // Will use Web Audio API
+            alert: null,     // Will use Web Audio API
+            success: null,   // Will use Web Audio API
+            error: null      // Will use Web Audio API
         };
         
         this.initialize();
@@ -173,28 +176,51 @@ class NotificationHandler {
     }
 
     /**
-     * Play notification sound
+     * Play notification sound using Web Audio API
+     * No external files needed - generates sounds programmatically
      */
     async playSound(type = 'message') {
-        if (!this.soundEnabled || !('Audio' in window)) {
+        if (!this.soundEnabled || this.isSystemMuted) {
             return;
         }
 
         try {
-            const soundUrl = this.soundUrls[type] || this.soundUrls.message;
-            const audio = new Audio(soundUrl);
+            // Try to use Web Audio API for sound generation
+            const audioContext = window.audioContext || 
+                                 new (window.AudioContext || window.webkitAudioContext)();
+            window.audioContext = audioContext;
 
-            // Respect device volume settings
-            audio.volume = 0.7; // 70% volume
-            
-            // Only play if not already muted by device
-            if (!this.isSystemMuted) {
-                audio.play().catch(error => {
-                    console.warn(`Could not play notification sound (${type}):`, error);
-                });
-            }
+            // Different frequencies for different notification types
+            const frequencies = {
+                message: 800,   // 800 Hz - neutral
+                alert: 1000,    // 1000 Hz - higher, more alarming
+                success: 600,   // 600 Hz - lower, pleasant
+                error: 1200     // 1200 Hz - very high, urgent
+            };
+
+            const frequency = frequencies[type] || frequencies.message;
+            const duration = type === 'alert' ? 0.6 : 0.4; // Longer alert sound
+
+            // Create oscillator and gain node
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+
+            // Set volume to 70% and apply envelope
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            // Connect and play
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+
         } catch (error) {
-            console.error('Error playing notification sound:', error);
+            console.warn(`Could not play notification sound (${type}):`, error);
         }
     }
 

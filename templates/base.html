@@ -5976,6 +5976,11 @@ function showFilePreview(fileUrl, fileName) {
     <!-- Tab Manager Script - Auto-refresh tabs every 3 seconds -->
     <script src="{{ url_for('static', filename='js/tab-manager.js') }}"></script>
     
+    <!-- Notification System CSS & Scripts -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+    <script defer src="{{ url_for('static', filename='js/notification-handler.js') }}"></script>
+    {% include 'notification-setup.html' %}
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>
