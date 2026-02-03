@@ -1202,19 +1202,26 @@
                                 <h5 class="mb-0"><i class="fas fa-bolt me-2" style="color: var(--primary-purple);"></i> Quick Actions</h5>
                             </div>
                             <div class="card-body">
-                                <a href="{{ url_for('evaluate') }}" class="btn btn-primary w-100 mb-3 d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-plus-circle me-2"></i>
-                                    <span>New Service Evaluation</span>
-                                </a>
-                                <a href="{{ url_for('monitor') }}" class="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-chart-line me-2"></i>
-                                    <span>View Performance</span>
-                                </a>
-                                <button class="btn btn-warning w-100 d-flex align-items-center justify-content-center" onclick="showQOAccessRequestModal()">
-                                    <i class="fas fa-clock me-2"></i>
-                                    <span>Request Access Extension</span>
-                                </button>
-                                
+                                <div class="row g-2 mb-3">
+                                    <div class="col-12 col-sm-6">
+                                        <a href="{{ url_for('evaluate') }}" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-plus-circle me-2"></i>
+                                            <span>New Service Evaluation</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <a href="{{ url_for('monitor') }}" class="btn btn-info w-100 py-2 d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-chart-line me-2"></i>
+                                            <span>View Performance</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <button type="button" class="btn btn-warning w-100 py-2 d-flex align-items-center justify-content-center" onclick="showQOAccessRequestModal()">
+                                            <i class="fas fa-clock me-2"></i>
+                                            <span>Request Access Extension</span>
+                                        </button>
+                                    </div>
+                                </div>
                                 <hr class="my-3">
                                 
                                 <!-- Daily Target -->

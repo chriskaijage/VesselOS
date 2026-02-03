@@ -64,6 +64,9 @@ function showFilePreview(fileUrl, fileName) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
+    <!-- Custom Tab Styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}">
+    
     <style>
         /* Cursor AI Colors with White Background */
         :root {
@@ -1366,6 +1369,25 @@ function showFilePreview(fileUrl, fileName) {
             right: 0;
             height: 2px;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+        
+        /* Global layout: keep tabs and buttons arranged in cards (all pages) */
+        .card .card-body .btn,
+        .card .card-body a.btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            white-space: normal;
+        }
+        .card .card-body .row.g-2,
+        .card .card-body .row.g-3 {
+            align-items: stretch;
+        }
+        .card .card-body .row .col .btn,
+        .card .card-body .row .col-6 .btn,
+        .card .card-body .row .col-12 .btn {
+            width: 100%;
         }
         
         /* Buttons */

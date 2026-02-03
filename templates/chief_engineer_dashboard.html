@@ -144,22 +144,32 @@
                 <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
             </div>
             <div class="card-body">
-                <a href="/maintenance-request" class="btn btn-success w-100 mb-3 d-flex align-items-center justify-content-center">
-                    <i class="fas fa-plus-circle me-2"></i>
-                    <span>New Maintenance Request</span>
-                </a>
-                <a href="/profile" class="btn btn-primary w-100 mb-3 d-flex align-items-center justify-content-center">
-                    <i class="fas fa-user-circle me-2"></i>
-                    <span>My Profile</span>
-                </a>
-                <a href="/reports" class="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center">
-                    <i class="fas fa-chart-bar me-2"></i>
-                    <span>Reports</span>
-                </a>
-                <button class="btn btn-secondary w-100 mb-3" onclick="viewVesselRequests()">
-                    <i class="fas fa-ship me-2"></i>
-                    View All Vessel Requests
-                </button>
+                <div class="row g-2">
+                    <div class="col-12 col-sm-6">
+                        <a href="/maintenance-request" class="btn btn-success w-100 py-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            <span>New Maintenance Request</span>
+                        </a>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <a href="/profile" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-user-circle me-2"></i>
+                            <span>My Profile</span>
+                        </a>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <a href="/reports" class="btn btn-info w-100 py-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            <span>Reports</span>
+                        </a>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <button type="button" class="btn btn-secondary w-100 py-2 d-flex align-items-center justify-content-center" onclick="viewVesselRequests()">
+                            <i class="fas fa-ship me-2"></i>
+                            <span>View All Vessel Requests</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         
