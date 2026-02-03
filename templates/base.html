@@ -3067,14 +3067,23 @@ function showFilePreview(fileUrl, fileName) {
                     </a>
                 </li>
                 
+                <!-- Crew List for Captain/Chief Engineer -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'crew_list_report' %}active{% endif %}" 
+                       href="{{ url_for('crew_list_report') }}" title="Crew List">
+                        <i class="fas fa-users"></i>
+                        <span>Crew List</span>
+                    </a>
+                </li>
+                
                 <!-- International Reports Section -->
                 <li class="nav-item">
-                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'drill_report', 'crew_list_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list', 'drill_reports_list'] %}active{% endif %}" 
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'drill_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list', 'drill_reports_list'] %}active{% endif %}" 
                        href="#internationalReports" data-bs-toggle="collapse" aria-expanded="false" title="International Reports">
                         <i class="fas fa-globe"></i>
                         <span>Int'l Reports</span>
                     </a>
-                    <div class="collapse {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'drill_report', 'crew_list_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list', 'drill_reports_list'] %}show{% endif %}" id="internationalReports">
+                    <div class="collapse {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'drill_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list', 'drill_reports_list'] %}show{% endif %}" id="internationalReports">
                         <ul class="nav flex-column ms-3">
                             <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'bilge_report' %}active{% endif %}" href="{{ url_for('bilge_report') }}" title="Bilge Report">
@@ -3148,12 +3157,6 @@ function showFilePreview(fileUrl, fileName) {
                                     <span>View Drills</span>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.endpoint == 'crew_list_report' %}active{% endif %}" href="{{ url_for('crew_list_report') }}" title="Crew List">
-                                    <i class="fas fa-users fa-sm"></i>
-                                    <span>Crew List</span>
-                                </a>
-                            </li>
                         </ul>
                     </div>
                 </li>
@@ -3196,6 +3199,82 @@ function showFilePreview(fileUrl, fileName) {
                         <i class="fas fa-clipboard-check"></i>
                         <span>Evaluate</span>
                     </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role == 'harbour_master' %}
+                <!-- Crew Management Section for Harbour Master -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['crew_management', 'add_crew_member', 'edit_crew_member'] %}active{% endif %}" 
+                       href="#crewManagement" data-bs-toggle="collapse" aria-expanded="false" title="Crew Management">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Crew Management</span>
+                    </a>
+                    <div class="collapse {% if request.endpoint in ['crew_management', 'add_crew_member', 'edit_crew_member'] %}show{% endif %}" id="crewManagement">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'crew_management' %}active{% endif %}" href="{{ url_for('crew_management') }}" title="View Crew">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Crew</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'add_crew_member' %}active{% endif %}" href="{{ url_for('add_crew_member') }}" title="Add Crew Member">
+                                    <i class="fas fa-user-plus fa-sm"></i>
+                                    <span>Add Crew Member</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                
+                <!-- International Reports Section for Harbour Master (View/Download Only) -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['view_international_reports', 'bilge_reports_archive', 'fuel_reports_archive', 'sewage_reports_archive', 'logbook_archive', 'emission_reports_archive', 'drill_reports_archive'] %}active{% endif %}" 
+                       href="#intlReportsHM" data-bs-toggle="collapse" aria-expanded="false" title="International Reports">
+                        <i class="fas fa-globe"></i>
+                        <span>Int'l Reports</span>
+                    </a>
+                    <div class="collapse {% if request.endpoint in ['view_international_reports', 'bilge_reports_archive', 'fuel_reports_archive', 'sewage_reports_archive', 'logbook_archive', 'emission_reports_archive', 'drill_reports_archive'] %}show{% endif %}" id="intlReportsHM">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'bilge_reports_archive' %}active{% endif %}" href="{{ url_for('bilge_reports_list') }}" title="View Bilge Reports">
+                                    <i class="fas fa-file-pdf fa-sm"></i>
+                                    <span>Bilge Reports</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'fuel_reports_archive' %}active{% endif %}" href="{{ url_for('fuel_reports_list') }}" title="View Fuel Reports">
+                                    <i class="fas fa-file-pdf fa-sm"></i>
+                                    <span>Fuel Reports</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'sewage_reports_archive' %}active{% endif %}" href="{{ url_for('sewage_reports_list') }}" title="View Sewage Reports">
+                                    <i class="fas fa-file-pdf fa-sm"></i>
+                                    <span>Sewage Reports</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'logbook_archive' %}active{% endif %}" href="{{ url_for('logbook_entries_list') }}" title="View Logbook Entries">
+                                    <i class="fas fa-file-pdf fa-sm"></i>
+                                    <span>Logbook Entries</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'emission_reports_archive' %}active{% endif %}" href="{{ url_for('emission_reports_list') }}" title="View Emission Reports">
+                                    <i class="fas fa-file-pdf fa-sm"></i>
+                                    <span>Emission Reports</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'drill_reports_archive' %}active{% endif %}" href="{{ url_for('drill_reports_list') }}" title="View Drill Reports">
+                                    <i class="fas fa-file-pdf fa-sm"></i>
+                                    <span>Drill Reports</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
                 {% endif %}
                 

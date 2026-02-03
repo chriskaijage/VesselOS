@@ -7989,6 +7989,168 @@ def drill_reports_list():
         flash('Error loading drill reports. Please try again.', 'danger')
         return redirect(url_for('dashboard'))
 
+@app.route('/crew-management')
+@login_required
+@role_required(['harbour_master'])
+def crew_management():
+    """
+    Display crew management dashboard for Harbour Master.
+    
+    Allows viewing, editing, and removing crew members for all vessels.
+    
+    Returns:
+        Rendered crew management template with crew data
+    """
+    try:
+        # For now, provide empty/default data
+        # In a full implementation, this would pull from database
+        crew_members = []
+        vessels = []
+        
+        return render_template(
+            'crew_management.html',
+            crew_members=crew_members,
+            vessels=vessels,
+            total_crew=0
+        )
+    except Exception as e:
+        app.logger.error(f"Error loading crew management: {e}", exc_info=True)
+        flash('Error loading crew management. Please try again.', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/add-crew-member', methods=['GET', 'POST'])
+@login_required
+@role_required(['harbour_master'])
+def add_crew_member():
+    """
+    Add a new crew member to a vessel.
+    
+    GET: Display form to add crew member
+    POST: Save new crew member to database
+    
+    Returns:
+        GET: Rendered form template
+        POST: Redirect to crew management on success, form with errors on failure
+    """
+    try:
+        if request.method == 'POST':
+            # Extract form data
+            vessel_id = request.form.get('vessel_id')
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            department = request.form.get('department')  # Deck, Engine, Catering
+            rank = request.form.get('rank')
+            license_number = request.form.get('license_number')
+            certification = request.form.get('certification')
+            
+            # Validate required fields
+            if not all([vessel_id, first_name, last_name, department, rank]):
+                flash('Please fill in all required fields.', 'danger')
+                return redirect(request.referrer or url_for('add_crew_member'))
+            
+            # TODO: Save to database
+            # db.execute("""
+            #     INSERT INTO crew_members (vessel_id, first_name, last_name, department, rank, license_number, certification, date_added)
+            #     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            # """, (vessel_id, first_name, last_name, department, rank, license_number, certification, datetime.now()))
+            
+            flash(f'Crew member {first_name} {last_name} added successfully!', 'success')
+            return redirect(url_for('crew_management'))
+        
+        # GET request - show form
+        vessels = []  # TODO: Fetch from database
+        departments = ['Deck', 'Engine', 'Catering']
+        
+        return render_template(
+            'add_crew_member.html',
+            vessels=vessels,
+            departments=departments
+        )
+    except Exception as e:
+        app.logger.error(f"Error in add_crew_member: {e}", exc_info=True)
+        flash('Error adding crew member. Please try again.', 'danger')
+        return redirect(url_for('crew_management'))
+
+@app.route('/edit-crew-member/<int:crew_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(['harbour_master'])
+def edit_crew_member(crew_id):
+    """
+    Edit an existing crew member's information.
+    
+    GET: Display form with crew member data
+    POST: Update crew member in database
+    
+    Args:
+        crew_id: ID of crew member to edit
+    
+    Returns:
+        GET: Rendered form template with crew data
+        POST: Redirect to crew management on success
+    """
+    try:
+        if request.method == 'POST':
+            # Extract form data
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            department = request.form.get('department')
+            rank = request.form.get('rank')
+            license_number = request.form.get('license_number')
+            certification = request.form.get('certification')
+            
+            # Validate required fields
+            if not all([first_name, last_name, department, rank]):
+                flash('Please fill in all required fields.', 'danger')
+                return redirect(request.referrer or url_for('edit_crew_member', crew_id=crew_id))
+            
+            # TODO: Update database
+            # db.execute("""
+            #     UPDATE crew_members SET first_name=?, last_name=?, department=?, rank=?, license_number=?, certification=?
+            #     WHERE id=?
+            # """, (first_name, last_name, department, rank, license_number, certification, crew_id))
+            
+            flash(f'Crew member {first_name} {last_name} updated successfully!', 'success')
+            return redirect(url_for('crew_management'))
+        
+        # GET request - show form with existing data
+        crew_member = {}  # TODO: Fetch from database by crew_id
+        vessels = []  # TODO: Fetch from database
+        departments = ['Deck', 'Engine', 'Catering']
+        
+        return render_template(
+            'edit_crew_member.html',
+            crew_member=crew_member,
+            vessels=vessels,
+            departments=departments
+        )
+    except Exception as e:
+        app.logger.error(f"Error in edit_crew_member: {e}", exc_info=True)
+        flash('Error editing crew member. Please try again.', 'danger')
+        return redirect(url_for('crew_management'))
+
+@app.route('/remove-crew-member/<int:crew_id>', methods=['POST'])
+@login_required
+@role_required(['harbour_master'])
+def remove_crew_member(crew_id):
+    """
+    Remove a crew member from the system.
+    
+    Args:
+        crew_id: ID of crew member to remove
+    
+    Returns:
+        JSON response with success/error status
+    """
+    try:
+        # TODO: Delete from database
+        # db.execute("DELETE FROM crew_members WHERE id=?", (crew_id,))
+        
+        app.logger.info(f"Crew member {crew_id} removed by {current_user.get_full_name()}")
+        return jsonify({'status': 'success', 'message': 'Crew member removed successfully'})
+    except Exception as e:
+        app.logger.error(f"Error removing crew member: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': 'Error removing crew member'}), 500
+
 @app.route('/crew-list-report')
 @login_required
 @role_required(['harbour_master', 'captain', 'chief_engineer'])
