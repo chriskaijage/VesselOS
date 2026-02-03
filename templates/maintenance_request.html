@@ -231,7 +231,7 @@
                     <div class="alert alert-warning" id="criticalityAlert" style="display: none;">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Emergency Request:</strong> For critical emergencies, please also contact our emergency hotline: 
-                        <strong>+1-800-MARINE-EMERGENCY</strong>
+                        <strong>+255694022281</strong>
                     </div>
                     
                     <!-- Submit Section -->
@@ -346,7 +346,7 @@ function updateCriticalityUI() {
         alert.innerHTML = `
             <i class="fas fa-exclamation-triangle me-2"></i>
             <strong>EMERGENCY ALERT:</strong> Your vessel is immobilized. Please IMMEDIATELY call our emergency hotline: 
-            <strong class="text-danger">+1-800-MARINE-EMERGENCY</strong> and stay on the line.
+            <strong class="text-danger">+255694022281</strong> and stay on the line.
             <div class="mt-2">
                 <button class="btn btn-sm btn-danger" onclick="window.callEmergency && window.callEmergency()">
                     <i class="fas fa-phone me-1"></i> Call Emergency Hotline Now
@@ -359,7 +359,7 @@ function updateCriticalityUI() {
         alert.innerHTML = `
             <i class="fas fa-exclamation-circle me-2"></i>
             <strong>Urgent Request:</strong> For urgent matters affecting vessel operation, 
-            you may also contact: <strong>+1-800-MARINE-URGENT</strong>
+            you may also contact: <strong>+255694022281</strong>
         `;
     } else {
         alert.style.display = 'none';
@@ -367,7 +367,7 @@ function updateCriticalityUI() {
 }
 
 function callEmergency() {
-    alert('This would initiate an emergency phone call to +1-800-MARINE-EMERGENCY');
+    alert('This would initiate an emergency phone call to +255694022281');
     // In a real system: window.location.href = 'tel:+18006274633';
 }
 
