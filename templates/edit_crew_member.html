@@ -205,105 +205,206 @@
 </div>
 
 <script>
-// STCW Certificate Mapping by Rank and Department (same as add_crew_member)
+// Comprehensive STCW Certificate Mapping by Rank and Department
+// Based on IMO STCW Convention with mandatory and optional certificates
 const certificateMapping = {
+    // ========== MANDATORY CERTIFICATES FOR ALL CREW ==========
+    '_mandatory_all': [
+        { name: 'Personal Survival Techniques (STCW A-VI/1-1)', mandatory: true, category: 'Mandatory', regulation: 'VI/1-1', validity: '5 years' },
+        { name: 'Fire Prevention & Fire Fighting (STCW A-VI/1-2)', mandatory: true, category: 'Mandatory', regulation: 'VI/1-2', validity: '5 years' },
+        { name: 'Elementary First Aid (STCW A-VI/1-3)', mandatory: true, category: 'Mandatory', regulation: 'VI/1-3', validity: '5 years' },
+        { name: 'Personal Safety & Social Responsibilities (STCW A-VI/1-4)', mandatory: true, category: 'Mandatory', regulation: 'VI/1-4', validity: '5 years' },
+        { name: 'Security Awareness Training (STCW A-VI/6-1)', mandatory: true, category: 'Mandatory', regulation: 'VI/6-1', validity: '5 years' },
+        { name: 'Seafarer\'s Medical Certificate', mandatory: true, category: 'Mandatory', regulation: 'I/9', validity: '2 years' },
+        { name: 'Passport & Seaman\'s Book (CDC)', mandatory: true, category: 'Mandatory', regulation: 'Identity Doc', validity: 'Varies' }
+    ],
+
+    // ========== DECK DEPARTMENT ==========
     'Deck': {
         'Captain': [
-            { name: 'Master (II/2)', mandatory: true, regulation: 'II/2', validity: '5 years' },
-            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'GMDSS GOC/ROC', mandatory: true, regulation: 'IV/2', validity: '5 years' },
-            { name: 'Bridge Resource Management (BRM)', mandatory: false, regulation: 'II/1', validity: '5 years' },
-            { name: 'Ship Security Officer (SSO)', mandatory: false, regulation: 'VI/5', validity: '5 years' },
-            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+            { name: 'Master Certificate of Competency (STCW II/2)', mandatory: true, category: 'Officer Level', regulation: 'II/2', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (STCW A-VI/3)', mandatory: true, category: 'Officer Level', regulation: 'VI/3', validity: '5 years' },
+            { name: 'Medical First Aid (STCW A-VI/4-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/4-1', validity: '3 years' },
+            { name: 'Radar Observer Certification (ARPA) (STCW A-II/1)', mandatory: true, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'ECDIS Certificate (STCW A-II/1 & B-I/12)', mandatory: true, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'GMDSS General Operator\'s Certificate (GOC) (STCW A-IV/2)', mandatory: true, category: 'Officer Level', regulation: 'IV/2', validity: '5 years' },
+            { name: 'Bridge Resource Management (BRM)', mandatory: false, category: 'Advanced', regulation: 'II/1', validity: '5 years' },
+            { name: 'Leadership & Managerial Skills (STCW A-II/2)', mandatory: false, category: 'Advanced', regulation: 'II/2', validity: '5 years' },
+            { name: 'Medical Care on Board Ship (STCW A-VI/4-2)', mandatory: false, category: 'Advanced', regulation: 'VI/4-2', validity: '3 years' },
+            { name: 'Ship Security Officer (SSO) (STCW A-VI/5)', mandatory: false, category: 'Advanced', regulation: 'VI/5', validity: '5 years' },
+            { name: 'Crisis Management & Human Behavior Training', mandatory: false, category: 'Advanced', regulation: 'II/2', validity: '5 years' }
         ],
         'Chief Officer': [
-            { name: 'Officer of the Watch (OOW / II/1)', mandatory: true, regulation: 'II/1', validity: '5 years' },
-            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'GMDSS GOC/ROC', mandatory: true, regulation: 'IV/2', validity: '5 years' },
-            { name: 'Bridge Resource Management (BRM)', mandatory: false, regulation: 'II/1', validity: '5 years' },
-            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+            { name: 'Officer in Charge of Navigational Watch (OICNW) (STCW II/1)', mandatory: true, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (STCW A-VI/3)', mandatory: true, category: 'Officer Level', regulation: 'VI/3', validity: '5 years' },
+            { name: 'Medical First Aid (STCW A-VI/4-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/4-1', validity: '3 years' },
+            { name: 'Radar Observer Certification (ARPA) (STCW A-II/1)', mandatory: true, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'ECDIS Certificate (STCW A-II/1 & B-I/12)', mandatory: true, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'GMDSS General Operator\'s Certificate (GOC) (STCW A-IV/2)', mandatory: true, category: 'Officer Level', regulation: 'IV/2', validity: '5 years' },
+            { name: 'Bridge Resource Management (BRM)', mandatory: false, category: 'Advanced', regulation: 'II/1', validity: '5 years' },
+            { name: 'Leadership & Teamworking (STCW A-II/1, A-III/1)', mandatory: false, category: 'Advanced', regulation: 'II/1', validity: '5 years' },
+            { name: 'Medical Care on Board Ship (STCW A-VI/4-2)', mandatory: false, category: 'Advanced', regulation: 'VI/4-2', validity: '3 years' },
+            { name: 'Ship Security Officer (SSO) (STCW A-VI/5)', mandatory: false, category: 'Advanced', regulation: 'VI/5', validity: '5 years' }
         ],
         'Second Officer': [
-            { name: 'Officer of the Watch (OOW / II/1)', mandatory: true, regulation: 'II/1', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'GMDSS GOC/ROC', mandatory: false, regulation: 'IV/2', validity: '5 years' },
-            { name: 'Bridge Resource Management (BRM)', mandatory: false, regulation: 'II/1', validity: '5 years' }
+            { name: 'Officer in Charge of Navigational Watch (OICNW) (STCW II/1)', mandatory: true, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Fire Prevention & Fire Fighting', mandatory: true, category: 'Officer Level', regulation: 'VI/1-2', validity: '5 years' },
+            { name: 'Radar Observer Certification (ARPA) (STCW A-II/1)', mandatory: false, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'ECDIS Certificate (STCW A-II/1)', mandatory: false, category: 'Officer Level', regulation: 'II/1', validity: '5 years' },
+            { name: 'Bridge Resource Management (BRM)', mandatory: false, category: 'Advanced', regulation: 'II/1', validity: '5 years' },
+            { name: 'Medical First Aid (STCW A-VI/4-1)', mandatory: false, category: 'Officer Level', regulation: 'VI/4-1', validity: '3 years' }
+        ],
+        'Third Officer': [
+            { name: 'Able Seafarer Deck (ASD) (STCW II/5)', mandatory: true, category: 'Ratings', regulation: 'II/5', validity: '5 years' },
+            { name: 'Rating Forming Part of Navigational Watch (RFPNW) (STCW II/4)', mandatory: true, category: 'Ratings', regulation: 'II/4', validity: 'Varies' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Fire Prevention & Fire Fighting', mandatory: true, category: 'Officer Level', regulation: 'VI/1-2', validity: '5 years' },
+            { name: 'Radar Observer Certification (ARPA)', mandatory: false, category: 'Officer Level', regulation: 'II/1', validity: '5 years' }
         ],
         'Able Seaman': [
-            { name: 'Able Seafarer Deck (ASD)', mandatory: true, regulation: 'II/5', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'PSC & Rescue Boats', mandatory: true, regulation: 'VI/2-1', validity: '5 years' },
-            { name: 'Fast Rescue Boat', mandatory: false, regulation: 'VI/2-2', validity: '5 years' }
+            { name: 'Able Seafarer Deck (ASD) (STCW II/5)', mandatory: true, category: 'Ratings', regulation: 'II/5', validity: '5 years' },
+            { name: 'Rating Forming Part of Navigational Watch (RFPNW) (STCW II/4)', mandatory: true, category: 'Ratings', regulation: 'II/4', validity: 'Varies' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Proficiency in Fast Rescue Boats (STCW A-VI/2-2)', mandatory: false, category: 'Ratings', regulation: 'VI/2-2', validity: '5 years' },
+            { name: 'Efficient Deck Hand (EDH)', mandatory: false, category: 'Ratings', regulation: 'II/5', validity: '5 years' }
         ],
         'Bosun': [
-            { name: 'Rating Forming Part of Navigational Watch (RFPNW)', mandatory: true, regulation: 'II/4', validity: 'N/A' },
-            { name: 'Able Seafarer Deck (ASD)', mandatory: true, regulation: 'II/5', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'PSC & Rescue Boats', mandatory: true, regulation: 'VI/2-1', validity: '5 years' }
+            { name: 'Rating Forming Part of Navigational Watch (RFPNW) (STCW II/4)', mandatory: true, category: 'Ratings', regulation: 'II/4', validity: 'Varies' },
+            { name: 'Able Seafarer Deck (ASD) (STCW II/5)', mandatory: true, category: 'Ratings', regulation: 'II/5', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Leadership & Teamworking (For Senior Ratings)', mandatory: false, category: 'Advanced', regulation: 'II/1', validity: '5 years' }
+        ],
+        'Deck Hand': [
+            { name: 'Rating Forming Part of Navigational Watch (RFPNW) (STCW II/4)', mandatory: true, category: 'Ratings', regulation: 'II/4', validity: 'Varies' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' }
         ]
     },
+
+    // ========== ENGINE DEPARTMENT ==========
     'Engine': {
         'Chief Engineer': [
-            { name: 'Chief Engineer (III/2)', mandatory: true, regulation: 'III/2', validity: '5 years' },
-            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'Engine Resource Management (ERM)', mandatory: false, regulation: 'III/1', validity: '5 years' },
-            { name: 'High Voltage Operations', mandatory: false, regulation: 'III/2', validity: '5 years' },
-            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+            { name: 'Chief Engineer Certificate of Competency (STCW III/2)', mandatory: true, category: 'Officer Level', regulation: 'III/2', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Proficiency in Fast Rescue Boats (STCW A-VI/2-2)', mandatory: false, category: 'Officer Level', regulation: 'VI/2-2', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (STCW A-VI/3)', mandatory: true, category: 'Officer Level', regulation: 'VI/3', validity: '5 years' },
+            { name: 'Medical First Aid (STCW A-VI/4-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/4-1', validity: '3 years' },
+            { name: 'Engine Resource Management (ERM) (STCW A-III/1)', mandatory: true, category: 'Officer Level', regulation: 'III/1', validity: '5 years' },
+            { name: 'High Voltage Operations & Safety (for HV installations)', mandatory: false, category: 'Specialized', regulation: 'III/2', validity: '5 years' },
+            { name: 'Leadership & Managerial Skills (STCW A-III/2)', mandatory: false, category: 'Advanced', regulation: 'III/2', validity: '5 years' },
+            { name: 'Medical Care on Board Ship (STCW A-VI/4-2)', mandatory: false, category: 'Advanced', regulation: 'VI/4-2', validity: '3 years' },
+            { name: 'Ship Security Officer (SSO) (STCW A-VI/5)', mandatory: false, category: 'Advanced', regulation: 'VI/5', validity: '5 years' },
+            { name: 'Crisis Management & Human Behavior Training', mandatory: false, category: 'Advanced', regulation: 'III/2', validity: '5 years' }
         ],
         'First Engineer': [
-            { name: 'Second Engineer (III/2)', mandatory: true, regulation: 'III/2', validity: '5 years' },
-            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+            { name: 'Second Engineer Certificate of Competency (STCW III/2)', mandatory: true, category: 'Officer Level', regulation: 'III/2', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (STCW A-VI/3)', mandatory: true, category: 'Officer Level', regulation: 'VI/3', validity: '5 years' },
+            { name: 'Medical First Aid (STCW A-VI/4-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/4-1', validity: '3 years' },
+            { name: 'Engine Resource Management (ERM) (STCW A-III/1)', mandatory: true, category: 'Officer Level', regulation: 'III/1', validity: '5 years' },
+            { name: 'High Voltage Operations & Safety', mandatory: false, category: 'Specialized', regulation: 'III/2', validity: '5 years' },
+            { name: 'Medical Care on Board Ship (STCW A-VI/4-2)', mandatory: false, category: 'Advanced', regulation: 'VI/4-2', validity: '3 years' },
+            { name: 'Leadership & Teamworking (STCW A-III/1)', mandatory: false, category: 'Advanced', regulation: 'III/1', validity: '5 years' }
         ],
         'Second Engineer': [
-            { name: 'Second Engineer (III/2)', mandatory: true, regulation: 'III/2', validity: '5 years' },
-            { name: 'Advanced Fire Fighting (AFF)', mandatory: true, regulation: 'VI/3', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'Medical Care on Board', mandatory: false, regulation: 'VI/4-2', validity: '5 years' }
+            { name: 'Second Engineer Certificate of Competency (STCW III/2)', mandatory: true, category: 'Officer Level', regulation: 'III/2', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Advanced Fire Fighting (STCW A-VI/3)', mandatory: true, category: 'Officer Level', regulation: 'VI/3', validity: '5 years' },
+            { name: 'Medical First Aid (STCW A-VI/4-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/4-1', validity: '3 years' },
+            { name: 'Engine Resource Management (ERM) (STCW A-III/1)', mandatory: true, category: 'Officer Level', regulation: 'III/1', validity: '5 years' },
+            { name: 'High Voltage Operations & Safety', mandatory: false, category: 'Specialized', regulation: 'III/2', validity: '5 years' },
+            { name: 'Medical Care on Board Ship (STCW A-VI/4-2)', mandatory: false, category: 'Advanced', regulation: 'VI/4-2', validity: '3 years' }
+        ],
+        'Third Engineer': [
+            { name: 'Officer in Charge of Engineering Watch (OICEW) (STCW III/1)', mandatory: true, category: 'Officer Level', regulation: 'III/1', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Fire Prevention & Fire Fighting', mandatory: true, category: 'Officer Level', regulation: 'VI/1-2', validity: '5 years' },
+            { name: 'Engine Resource Management (ERM) (STCW A-III/1)', mandatory: false, category: 'Officer Level', regulation: 'III/1', validity: '5 years' },
+            { name: 'High Voltage Operations & Safety', mandatory: false, category: 'Specialized', regulation: 'III/1', validity: '5 years' }
         ],
         'EOOW': [
-            { name: 'EOOW (Fourth/Third Engineer III/1)', mandatory: true, regulation: 'III/1', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness (ENG 1)', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'Engine Resource Management (ERM)', mandatory: false, regulation: 'III/1', validity: '5 years' }
+            { name: 'Officer in Charge of Engineering Watch (OICEW) (STCW III/1)', mandatory: true, category: 'Officer Level', regulation: 'III/1', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Officer Level', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Fire Prevention & Fire Fighting', mandatory: true, category: 'Officer Level', regulation: 'VI/1-2', validity: '5 years' },
+            { name: 'Engine Resource Management (ERM) (STCW A-III/1)', mandatory: false, category: 'Officer Level', regulation: 'III/1', validity: '5 years' },
+            { name: 'High Voltage Operations & Safety', mandatory: false, category: 'Specialized', regulation: 'III/1', validity: '5 years' }
         ],
         'Electrician': [
-            { name: 'Rating Forming Part of Engineering Watch (RFPEW)', mandatory: true, regulation: 'III/4', validity: 'N/A' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'High Voltage Safety & Operations', mandatory: false, regulation: 'III/6', validity: '5 years' }
+            { name: 'Rating Forming Part of Engineering Watch (RFPEW) (STCW III/4)', mandatory: true, category: 'Ratings', regulation: 'III/4', validity: 'Varies' },
+            { name: 'Able Seafarer Engine (ASE) (STCW III/5)', mandatory: false, category: 'Ratings', regulation: 'III/5', validity: '5 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'High Voltage Safety & Operations (STCW III/6)', mandatory: true, category: 'Specialized', regulation: 'III/6', validity: '5 years' }
         ],
-        'Oiler': [
-            { name: 'Able Seafarer Engine (ASE)', mandatory: true, regulation: 'III/5', validity: '5 years' },
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'PSC & Rescue Boats', mandatory: true, regulation: 'VI/2-1', validity: '5 years' }
+        'Engine Oiler': [
+            { name: 'Able Seafarer Engine (ASE) (STCW III/5)', mandatory: true, category: 'Ratings', regulation: 'III/5', validity: '5 years' },
+            { name: 'Rating Forming Part of Engineering Watch (RFPEW) (STCW III/4)', mandatory: true, category: 'Ratings', regulation: 'III/4', validity: 'Varies' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'High Voltage Safety Awareness', mandatory: false, category: 'Specialized', regulation: 'III/5', validity: '5 years' }
+        ],
+        'Engine Motorman': [
+            { name: 'Rating Forming Part of Engineering Watch (RFPEW) (STCW III/4)', mandatory: true, category: 'Ratings', regulation: 'III/4', validity: 'Varies' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: true, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' }
         ]
     },
+
+    // ========== CATERING / STEWARD DEPARTMENT (General Purpose) ==========
     'Catering': {
+        'Chief Cook': [
+            { name: 'Ship\'s Cook Certificate', mandatory: true, category: 'Catering', regulation: 'MLC', validity: '3 years' },
+            { name: 'Food Safety & Hygiene (HACCP)', mandatory: true, category: 'Catering', regulation: 'IMCA', validity: '3 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: false, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Advanced Culinary Certificate', mandatory: false, category: 'Catering', regulation: 'Culinary', validity: '5 years' },
+            { name: 'Provisions Stock Control', mandatory: false, category: 'Catering', regulation: 'Provisions', validity: '3 years' },
+            { name: 'Nutrition & Menu Planning for Crew', mandatory: false, category: 'Catering', regulation: 'Provisions', validity: '3 years' }
+        ],
         'Chief Steward': [
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'Food Safety & Hygiene', mandatory: false, regulation: 'IMCA', validity: '3 years' },
-            { name: 'PSC & Rescue Boats', mandatory: false, regulation: 'VI/2-1', validity: '5 years' }
+            { name: 'Food Safety & Hygiene (HACCP)', mandatory: true, category: 'Catering', regulation: 'IMCA', validity: '3 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: false, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Crew Management & Leadership', mandatory: false, category: 'Catering', regulation: 'Leadership', validity: '5 years' },
+            { name: 'Crowd Management Training (for Passenger Ships)', mandatory: false, category: 'Passenger Ship', regulation: 'A-V/2', validity: '5 years' },
+            { name: 'Passenger Safety Training (for Passenger Ships)', mandatory: false, category: 'Passenger Ship', regulation: 'A-V/3', validity: '5 years' }
         ],
         'Cook': [
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'Food Safety & Hygiene', mandatory: false, regulation: 'IMCA', validity: '3 years' }
+            { name: 'Food Safety & Hygiene (HACCP)', mandatory: true, category: 'Catering', regulation: 'IMCA', validity: '3 years' },
+            { name: 'Culinary Certificate', mandatory: false, category: 'Catering', regulation: 'Culinary', validity: '5 years' },
+            { name: 'Kitchen Safety & Hygiene Management', mandatory: false, category: 'Catering', regulation: 'Safety', validity: '3 years' }
         ],
         'Steward': [
-            { name: 'Basic Safety', mandatory: true, regulation: 'VI/1', validity: '5 years' },
-            { name: 'Medical Fitness', mandatory: true, regulation: 'I/9', validity: '5 years' },
-            { name: 'PSC & Rescue Boats', mandatory: false, regulation: 'VI/2-1', validity: '5 years' }
+            { name: 'Food Safety & Hygiene (HACCP)', mandatory: true, category: 'Catering', regulation: 'IMCA', validity: '3 years' },
+            { name: 'Proficiency in Survival Craft & Rescue Boats (STCW A-VI/2-1)', mandatory: false, category: 'Ratings', regulation: 'VI/2-1', validity: '5 years' },
+            { name: 'Crowd Management Training (for Passenger Ships)', mandatory: false, category: 'Passenger Ship', regulation: 'A-V/2', validity: '5 years' },
+            { name: 'Passenger Safety Training (for Passenger Ships)', mandatory: false, category: 'Passenger Ship', regulation: 'A-V/3', validity: '5 years' }
+        ],
+        'Bar Steward': [
+            { name: 'Food Safety & Hygiene (HACCP)', mandatory: true, category: 'Catering', regulation: 'IMCA', validity: '3 years' },
+            { name: 'Beverage Safety & Service Standards', mandatory: false, category: 'Catering', regulation: 'Service', validity: '3 years' }
+        ]
+    },
+
+    // ========== SPECIALIZED & VESSEL-SPECIFIC CERTIFICATES (Available for all relevant roles) ==========
+    '_specialized': {
+        'Tanker Certifications': [
+            { name: 'Basic Training for Oil/Chemical Tankers (STCW A-V/1-1)', mandatory: false, category: 'Specialized', regulation: 'V/1-1', validity: '5 years' },
+            { name: 'Advanced Training for Oil/Chemical Tankers (STCW A-V/1-2)', mandatory: false, category: 'Specialized', regulation: 'V/1-2', validity: '5 years' },
+            { name: 'Basic Training for Liquefied Gas Tankers (STCW A-V/1-1)', mandatory: false, category: 'Specialized', regulation: 'V/1-1', validity: '5 years' },
+            { name: 'Advanced Training for Liquefied Gas Tankers (STCW A-V/1-2)', mandatory: false, category: 'Specialized', regulation: 'V/1-2', validity: '5 years' }
+        ],
+        'Passenger Ship Certifications': [
+            { name: 'Crowd Management Training (STCW A-V/2 & A-V/3)', mandatory: false, category: 'Passenger Ship', regulation: 'A-V/2', validity: '5 years' },
+            { name: 'Passenger Safety & Crisis Management', mandatory: false, category: 'Passenger Ship', regulation: 'A-V/3', validity: '5 years' }
+        ],
+        'Dynamic Positioning': [
+            { name: 'DP Induction (DPO)', mandatory: false, category: 'Specialized', regulation: 'DP/I', validity: '5 years' },
+            { name: 'DP Advanced', mandatory: false, category: 'Specialized', regulation: 'DP/A', validity: '5 years' }
+        ],
+        'High-Speed Craft (HSC)': [
+            { name: 'High-Speed Craft Certification', mandatory: false, category: 'Specialized', regulation: 'HSC', validity: '5 years' }
+        ],
+        'Polar Code': [
+            { name: 'Polar Code Basic Training', mandatory: false, category: 'Specialized', regulation: 'Polar/Basic', validity: '5 years' },
+            { name: 'Polar Code Advanced Training (Arctic/Antarctic)', mandatory: false, category: 'Specialized', regulation: 'Polar/Adv', validity: '5 years' }
         ]
     }
 };
@@ -404,9 +505,9 @@ function updateRankDropdown() {
     const currentRank = rankSelect.dataset.currentRank || '{{ crew_member.get("rank", "") }}';
     
     const rankSuggestions = {
-        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Able Seaman', 'Bosun'],
-        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'EOOW', 'Electrician', 'Oiler'],
-        'Catering': ['Chief Steward', 'Cook', 'Steward']
+        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Third Officer', 'Able Seaman', 'Bosun', 'Deck Hand'],
+        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'Third Engineer', 'EOOW', 'Electrician', 'Engine Oiler', 'Engine Motorman'],
+        'Catering': ['Chief Cook', 'Chief Steward', 'Cook', 'Steward', 'Bar Steward']
     };
     
     // Clear and rebuild rank dropdown
