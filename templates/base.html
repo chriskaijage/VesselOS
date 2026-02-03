@@ -5970,6 +5970,10 @@ function showFilePreview(fileUrl, fileName) {
     setInterval(updateUserActivity, 30000);
     </script>
     
+    <!-- Notification Sound Handler - Manages notifications with sound support -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+    <script defer src="{{ url_for('static', filename='js/notification-handler.js') }}"></script>
+    
     <!-- Theme System Script -->
     <script src="{{ url_for('static', filename='js/theme-system.js') }}"></script>
     

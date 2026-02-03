@@ -12,10 +12,10 @@ class NotificationHandler {
         this.activeNotifications = new Map();
         this.playedSounds = new Set(); // Track notifications that have had sound played
         this.soundUrls = {
-            message: '/static/sounds/notification.mp3',
-            alert: '/static/sounds/alert.mp3',
-            success: '/static/sounds/success.mp3',
-            error: '/static/sounds/error.mp3'
+            message: '/static/sounds/notification.wav',
+            alert: '/static/sounds/notification.wav',
+            success: '/static/sounds/notification.wav',
+            error: '/static/sounds/notification.wav'
         };
         
         this.initialize();
