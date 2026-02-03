@@ -377,6 +377,38 @@
             </div>
         </div>
 
+        <!-- 6. INITIAL PERFORMANCE BASELINE DATA (OPTIONAL) -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>6. Initial Performance Baseline Data (Optional)</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Enter baseline performance data for monitoring. These values will be used as reference for performance tracking.</p>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="baseline_speed" class="form-label">Baseline Speed (Knots)</label>
+                        <input type="number" class="form-control" id="baseline_speed" name="baseline_speed" step="0.1" placeholder="e.g., 14.5">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="baseline_fuel_consumption" class="form-label">Baseline Fuel Consumption (MT/Day)</label>
+                        <input type="number" class="form-control" id="baseline_fuel_consumption" name="baseline_fuel_consumption" step="0.01" placeholder="e.g., 45.0">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="baseline_co2_emissions" class="form-label">Baseline CO2 Emissions (g/kWh)</label>
+                        <input type="number" class="form-control" id="baseline_co2_emissions" name="baseline_co2_emissions" step="0.01" placeholder="e.g., 680">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="baseline_load_factor" class="form-label">Baseline Load Factor (%)</label>
+                        <input type="number" class="form-control" id="baseline_load_factor" name="baseline_load_factor" min="0" max="100" step="1" placeholder="e.g., 85">
+                    </div>
+                </div>
+                <div class="alert alert-info small mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Performance data can be updated monthly in the vessel's performance monitoring section.
+                </div>
+            </div>
+        </div>
+
         <!-- 7. REMARKS -->
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">

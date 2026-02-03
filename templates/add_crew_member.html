@@ -87,9 +87,84 @@
                                 <small class="form-text text-muted">Maritime license number</small>
                             </div>
                             <div class="col-md-6">
-                                <label for="certification" class="form-label">Certification Type</label>
-                                <input type="text" class="form-control" id="certification" name="certification" placeholder="e.g., STCW, GMDSS, etc.">
-                                <small class="form-text text-muted">e.g., STCW, GMDSS, ADVANCED FIREFIGHTING</small>
+                                <label for="nationality" class="form-label">Nationality</label>
+                                <input type="text" class="form-control" id="nationality" name="nationality" placeholder="e.g., Philippine, Norwegian, etc.">
+                            </div>
+                        </div>
+
+                        <!-- Maritime Certificates -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i><strong>Certificate Tracking:</strong> Add expiry dates for automatic reminders
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="stcw_certificate" class="form-label">STCW Certificate</label>
+                                <input type="text" class="form-control" id="stcw_certificate" name="stcw_certificate" placeholder="Certificate number or 'Yes/No'">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="stcw_expiry" class="form-label">STCW Expiry Date</label>
+                                <input type="date" class="form-control" id="stcw_expiry" name="stcw_expiry">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="gmdss_certificate" class="form-label">GMDSS Certificate</label>
+                                <input type="text" class="form-control" id="gmdss_certificate" name="gmdss_certificate" placeholder="Certificate number or 'Yes/No'">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="gmdss_expiry" class="form-label">GMDSS Expiry Date</label>
+                                <input type="date" class="form-control" id="gmdss_expiry" name="gmdss_expiry">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="mlc_certificate" class="form-label">MLC Certificate</label>
+                                <input type="text" class="form-control" id="mlc_certificate" name="mlc_certificate" placeholder="Certificate number or 'Yes/No'">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="mlc_expiry" class="form-label">MLC Expiry Date</label>
+                                <input type="date" class="form-control" id="mlc_expiry" name="mlc_expiry">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="medical_certificate" class="form-label">Medical Certificate</label>
+                                <input type="text" class="form-control" id="medical_certificate" name="medical_certificate" placeholder="Certificate number or 'Yes/No'">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="medical_expiry" class="form-label">Medical Expiry Date</label>
+                                <input type="date" class="form-control" id="medical_expiry" name="medical_expiry">
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <h5 class="mb-3 mt-4">
+                            <i class="fas fa-phone me-2"></i>Contact Information
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="crew@email.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="+1234567890">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="emergency_contact" class="form-label">Emergency Contact Name</label>
+                                <input type="text" class="form-control" id="emergency_contact" name="emergency_contact" placeholder="Name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="emergency_phone" class="form-label">Emergency Contact Phone</label>
+                                <input type="tel" class="form-control" id="emergency_phone" name="emergency_phone" placeholder="+1234567890">
                             </div>
                         </div>
 

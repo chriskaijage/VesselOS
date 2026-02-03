@@ -7996,16 +7996,40 @@ def crew_management():
         Rendered crew management template with crew data
     """
     try:
-        # For now, provide empty/default data
-        # In a full implementation, this would pull from database
-        crew_members = []
-        vessels = []
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Fetch all crew members
+        c.execute("""
+            SELECT crew_id, vessel_id, first_name, last_name, department, rank, 
+                   license_number, status, date_joined 
+            FROM crew_members 
+            ORDER BY date_joined DESC
+        """)
+        crew_members = [dict(zip([col[0] for col in c.description], row)) 
+                       for row in c.fetchall()]
+        
+        # Fetch all vessels
+        c.execute("SELECT vessel_id, vessel_name FROM vessels WHERE status='active' ORDER BY vessel_name")
+        vessels = [dict(zip([col[0] for col in c.description], row)) 
+                  for row in c.fetchall()]
+        
+        # Calculate crew statistics
+        total_crew = len(crew_members)
+        deck_crew = len([crew for crew in crew_members if crew.get('department') == 'Deck'])
+        engine_crew = len([crew for crew in crew_members if crew.get('department') == 'Engine'])
+        catering_crew = len([crew for crew in crew_members if crew.get('department') == 'Catering'])
+        
+        conn.close()
         
         return render_template(
             'crew_management.html',
             crew_members=crew_members,
             vessels=vessels,
-            total_crew=0
+            total_crew=total_crew,
+            deck_crew=deck_crew,
+            engine_crew=engine_crew,
+            catering_crew=catering_crew
         )
     except Exception as e:
         app.logger.error(f"Error loading crew management: {e}", exc_info=True)
@@ -8035,24 +8059,63 @@ def add_crew_member():
             department = request.form.get('department')  # Deck, Engine, Catering
             rank = request.form.get('rank')
             license_number = request.form.get('license_number')
-            certification = request.form.get('certification')
+            nationality = request.form.get('nationality')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            emergency_contact = request.form.get('emergency_contact')
+            emergency_phone = request.form.get('emergency_phone')
+            stcw_certificate = request.form.get('stcw_certificate')
+            stcw_expiry = request.form.get('stcw_expiry')
+            gmdss_certificate = request.form.get('gmdss_certificate')
+            gmdss_expiry = request.form.get('gmdss_expiry')
+            mlc_certificate = request.form.get('mlc_certificate')
+            mlc_expiry = request.form.get('mlc_expiry')
+            medical_certificate = request.form.get('medical_certificate')
+            medical_expiry = request.form.get('medical_expiry')
             
             # Validate required fields
-            if not all([vessel_id, first_name, last_name, department, rank]):
+            if not all([first_name, last_name, department, rank]):
                 flash('Please fill in all required fields.', 'danger')
                 return redirect(request.referrer or url_for('add_crew_member'))
             
-            # TODO: Save to database
-            # db.execute("""
-            #     INSERT INTO crew_members (vessel_id, first_name, last_name, department, rank, license_number, certification, date_added)
-            #     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            # """, (vessel_id, first_name, last_name, department, rank, license_number, certification, datetime.now()))
-            
-            flash(f'Crew member {first_name} {last_name} added successfully!', 'success')
-            return redirect(url_for('crew_management'))
+            # Save to database
+            try:
+                conn = get_db_connection()
+                c = conn.cursor()
+                
+                c.execute("""
+                    INSERT INTO crew_members 
+                    (vessel_id, first_name, last_name, department, rank, license_number, 
+                     nationality, email, phone, emergency_contact, emergency_phone,
+                     stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
+                     mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
+                     date_joined, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (vessel_id, first_name, last_name, department, rank, license_number,
+                     nationality, email, phone, emergency_contact, emergency_phone,
+                     stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
+                     mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
+                     datetime.now().strftime('%Y-%m-%d'), 'active'))
+                
+                conn.commit()
+                conn.close()
+                
+                app.logger.info(f"New crew member {first_name} {last_name} added by {current_user.user_id}")
+                flash(f'Crew member {first_name} {last_name} added successfully!', 'success')
+                return redirect(url_for('crew_management'))
+            except sqlite3.IntegrityError as e:
+                app.logger.error(f"Database integrity error when adding crew member: {e}")
+                flash('Error: License number may already exist or database constraint violated.', 'danger')
+                return redirect(request.referrer or url_for('add_crew_member'))
         
         # GET request - show form
-        vessels = []  # TODO: Fetch from database
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("SELECT vessel_id, vessel_name FROM vessels WHERE status='active' ORDER BY vessel_name")
+        vessels = [dict(zip([col[0] for col in c.description], row)) 
+                  for row in c.fetchall()]
+        conn.close()
+        
         departments = ['Deck', 'Engine', 'Catering']
         
         return render_template(
@@ -8083,32 +8146,81 @@ def edit_crew_member(crew_id):
         POST: Redirect to crew management on success
     """
     try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
         if request.method == 'POST':
             # Extract form data
+            vessel_id = request.form.get('vessel_id')
             first_name = request.form.get('first_name')
             last_name = request.form.get('last_name')
             department = request.form.get('department')
             rank = request.form.get('rank')
             license_number = request.form.get('license_number')
-            certification = request.form.get('certification')
+            nationality = request.form.get('nationality')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            emergency_contact = request.form.get('emergency_contact')
+            emergency_phone = request.form.get('emergency_phone')
+            stcw_certificate = request.form.get('stcw_certificate')
+            stcw_expiry = request.form.get('stcw_expiry')
+            gmdss_certificate = request.form.get('gmdss_certificate')
+            gmdss_expiry = request.form.get('gmdss_expiry')
+            mlc_certificate = request.form.get('mlc_certificate')
+            mlc_expiry = request.form.get('mlc_expiry')
+            medical_certificate = request.form.get('medical_certificate')
+            medical_expiry = request.form.get('medical_expiry')
             
             # Validate required fields
             if not all([first_name, last_name, department, rank]):
                 flash('Please fill in all required fields.', 'danger')
+                conn.close()
                 return redirect(request.referrer or url_for('edit_crew_member', crew_id=crew_id))
             
-            # TODO: Update database
-            # db.execute("""
-            #     UPDATE crew_members SET first_name=?, last_name=?, department=?, rank=?, license_number=?, certification=?
-            #     WHERE id=?
-            # """, (first_name, last_name, department, rank, license_number, certification, crew_id))
-            
-            flash(f'Crew member {first_name} {last_name} updated successfully!', 'success')
-            return redirect(url_for('crew_management'))
+            # Update database
+            try:
+                c.execute("""
+                    UPDATE crew_members 
+                    SET vessel_id=?, first_name=?, last_name=?, department=?, rank=?, license_number=?,
+                        nationality=?, email=?, phone=?, emergency_contact=?, emergency_phone=?,
+                        stcw_certificate=?, stcw_expiry=?, gmdss_certificate=?, gmdss_expiry=?,
+                        mlc_certificate=?, mlc_expiry=?, medical_certificate=?, medical_expiry=?,
+                        updated_at=?
+                    WHERE crew_id=?
+                """, (vessel_id, first_name, last_name, department, rank, license_number,
+                     nationality, email, phone, emergency_contact, emergency_phone,
+                     stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
+                     mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
+                     datetime.now(), crew_id))
+                
+                conn.commit()
+                app.logger.info(f"Crew member {crew_id} updated by {current_user.user_id}")
+                flash(f'Crew member {first_name} {last_name} updated successfully!', 'success')
+                conn.close()
+                return redirect(url_for('crew_management'))
+            except sqlite3.IntegrityError as e:
+                app.logger.error(f"Database integrity error when editing crew member: {e}")
+                flash('Error: License number may already exist or database constraint violated.', 'danger')
+                conn.close()
+                return redirect(request.referrer or url_for('edit_crew_member', crew_id=crew_id))
         
         # GET request - show form with existing data
-        crew_member = {}  # TODO: Fetch from database by crew_id
-        vessels = []  # TODO: Fetch from database
+        c.execute("SELECT * FROM crew_members WHERE crew_id=?", (crew_id,))
+        row = c.fetchone()
+        
+        if not row:
+            flash('Crew member not found.', 'danger')
+            conn.close()
+            return redirect(url_for('crew_management'))
+        
+        crew_member = dict(zip([col[0] for col in c.description], row))
+        
+        c.execute("SELECT vessel_id, vessel_name FROM vessels WHERE status='active' ORDER BY vessel_name")
+        vessels = [dict(zip([col[0] for col in c.description], v)) 
+                  for v in c.fetchall()]
+        
+        conn.close()
+        
         departments = ['Deck', 'Engine', 'Catering']
         
         return render_template(
@@ -8136,10 +8248,23 @@ def remove_crew_member(crew_id):
         JSON response with success/error status
     """
     try:
-        # TODO: Delete from database
-        # db.execute("DELETE FROM crew_members WHERE id=?", (crew_id,))
+        conn = get_db_connection()
+        c = conn.cursor()
         
-        app.logger.info(f"Crew member {crew_id} removed by {current_user.get_full_name()}")
+        # Verify crew member exists
+        c.execute("SELECT first_name, last_name FROM crew_members WHERE crew_id=?", (crew_id,))
+        crew = c.fetchone()
+        
+        if not crew:
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'Crew member not found'}), 404
+        
+        # Delete from database
+        c.execute("DELETE FROM crew_members WHERE crew_id=?", (crew_id,))
+        conn.commit()
+        conn.close()
+        
+        app.logger.info(f"Crew member {crew_id} ({crew[0]} {crew[1]}) removed by {current_user.user_id}")
         return jsonify({'status': 'success', 'message': 'Crew member removed successfully'})
     except Exception as e:
         app.logger.error(f"Error removing crew member: {e}", exc_info=True)
@@ -8160,10 +8285,23 @@ def vessel_management():
         Rendered vessel management template
     """
     try:
-        # For now, provide empty/default data
-        # In a full implementation, this would pull from database
-        vessels = []
-        total_vessels = 0
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Fetch all vessels
+        c.execute("""
+            SELECT vessel_id, vessel_name, imo_number, call_sign, vessel_type, 
+                   flag_state, year_built, gross_tonnage, status
+            FROM vessels 
+            WHERE status='active'
+            ORDER BY vessel_name
+        """)
+        vessels = [dict(zip([col[0] for col in c.description], row)) 
+                  for row in c.fetchall()]
+        
+        total_vessels = len(vessels)
+        
+        conn.close()
         
         return render_template(
             'vessel_management.html',
@@ -8191,43 +8329,148 @@ def add_vessel():
     """
     try:
         if request.method == 'POST':
-            # Extract general vessel information
+            # Extract all vessel information from form
             vessel_name = request.form.get('vessel_name')
             imo_number = request.form.get('imo_number')
             mmsi_number = request.form.get('mmsi_number')
             call_sign = request.form.get('call_sign')
             vessel_type = request.form.get('vessel_type')
-            port_of_registry = request.form.get('port_of_registry')
             flag_state = request.form.get('flag_state')
             year_built = request.form.get('year_built')
             builder = request.form.get('builder')
-            place_of_build = request.form.get('place_of_build')
-            hull_material = request.form.get('hull_material')
-            class_society = request.form.get('class_society')
-            class_notation = request.form.get('class_notation')
+            shipyard_location = request.form.get('shipyard_location')
             gross_tonnage = request.form.get('gross_tonnage')
             net_tonnage = request.form.get('net_tonnage')
-            deadweight = request.form.get('deadweight')
+            deadweight_tonnage = request.form.get('deadweight_tonnage')
             length_overall = request.form.get('length_overall')
+            length_between_perpendiculars = request.form.get('length_between_perpendiculars')
             breadth = request.form.get('breadth')
             depth = request.form.get('depth')
-            summer_draft = request.form.get('summer_draft')
+            
+            # Ownership & Management
+            owner_name = request.form.get('owner_name')
+            owner_address = request.form.get('owner_address')
+            owner_phone = request.form.get('owner_phone')
+            owner_email = request.form.get('owner_email')
+            manager_name = request.form.get('manager_name')
+            manager_address = request.form.get('manager_address')
+            manager_phone = request.form.get('manager_phone')
+            manager_email = request.form.get('manager_email')
+            operator_name = request.form.get('operator_name')
+            operator_phone = request.form.get('operator_phone')
+            operator_email = request.form.get('operator_email')
+            insurer_name = request.form.get('insurer_name')
+            insurer_policy_number = request.form.get('insurer_policy_number')
+            
+            # Propulsion & Machinery
+            main_engine_model = request.form.get('main_engine_model')
+            main_engine_power = request.form.get('main_engine_power')
+            main_engine_rpm = request.form.get('main_engine_rpm')
+            fuel_type = request.form.get('fuel_type')
+            auxiliary_engines = request.form.get('auxiliary_engines')
+            generator_power = request.form.get('generator_power')
+            propulsion_type = request.form.get('propulsion_type')
+            
+            # Performance
+            maximum_speed = request.form.get('maximum_speed')
+            service_speed = request.form.get('service_speed')
+            average_fuel_consumption = request.form.get('average_fuel_consumption')
+            fuel_consumption_per_ton_mile = request.form.get('fuel_consumption_per_ton_mile')
+            
+            # Energy & Emissions
+            energy_efficiency_index = request.form.get('energy_efficiency_index')
+            carbon_intensity_indicator = request.form.get('carbon_intensity_indicator')
+            sox_emissions_compliant = request.form.get('sox_emissions_compliant')
+            nox_tier = request.form.get('nox_tier')
+            eedi_baseline_percentage = request.form.get('eedi_baseline_percentage')
+            
+            # Operations
+            ballast_water_treatment = request.form.get('ballast_water_treatment')
+            trading_area_restriction = request.form.get('trading_area_restriction')
+            ice_class = request.form.get('ice_class')
+            dry_dock_interval = request.form.get('dry_dock_interval')
+            next_dry_dock_date = request.form.get('next_dry_dock_date')
+            last_dry_dock_date = request.form.get('last_dry_dock_date')
+            monitoring_system = request.form.get('monitoring_system')
+            performance_reporting_compliant = request.form.get('performance_reporting_compliant')
+            
+            # Remarks
+            remarks = request.form.get('remarks')
+            
+            # Initial Performance Baseline (Optional)
+            baseline_speed = request.form.get('baseline_speed')
+            baseline_fuel_consumption = request.form.get('baseline_fuel_consumption')
+            baseline_co2_emissions = request.form.get('baseline_co2_emissions')
+            baseline_load_factor = request.form.get('baseline_load_factor')
             
             # Validate required fields
             if not all([vessel_name, imo_number, vessel_type, flag_state]):
                 flash('Please fill in all required fields.', 'danger')
                 return redirect(request.referrer or url_for('add_vessel'))
             
-            # TODO: Save to database
-            # vessel_data = {
-            #     'vessel_name': vessel_name,
-            #     'imo_number': imo_number,
-            #     'mmsi_number': mmsi_number,
-            #     ...
-            # }
-            
-            flash(f'Vessel {vessel_name} added successfully!', 'success')
-            return redirect(url_for('vessel_management'))
+            # Save to database
+            try:
+                conn = get_db_connection()
+                c = conn.cursor()
+                
+                c.execute("""
+                    INSERT INTO vessels 
+                    (vessel_name, imo_number, mmsi_number, call_sign, vessel_type, flag_state,
+                     year_built, builder, shipyard_location, gross_tonnage, net_tonnage, 
+                     deadweight_tonnage, length_overall, length_between_perpendiculars, breadth, depth,
+                     owner_name, owner_address, owner_phone, owner_email,
+                     manager_name, manager_address, manager_phone, manager_email,
+                     operator_name, operator_phone, operator_email,
+                     insurer_name, insurer_policy_number,
+                     main_engine_model, main_engine_power, main_engine_rpm, fuel_type, 
+                     auxiliary_engines, generator_power, propulsion_type,
+                     maximum_speed, service_speed, average_fuel_consumption, fuel_consumption_per_ton_mile,
+                     energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant, nox_tier,
+                     eedi_baseline_percentage, ballast_water_treatment, trading_area_restriction, ice_class,
+                     dry_dock_interval, next_dry_dock_date, last_dry_dock_date, monitoring_system,
+                     performance_reporting_compliant, remarks, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?)
+                """, (vessel_name, imo_number, mmsi_number, call_sign, vessel_type, flag_state,
+                     year_built, builder, shipyard_location, gross_tonnage, net_tonnage,
+                     deadweight_tonnage, length_overall, length_between_perpendiculars, breadth, depth,
+                     owner_name, owner_address, owner_phone, owner_email,
+                     manager_name, manager_address, manager_phone, manager_email,
+                     operator_name, operator_phone, operator_email,
+                     insurer_name, insurer_policy_number,
+                     main_engine_model, main_engine_power, main_engine_rpm, fuel_type,
+                     auxiliary_engines, generator_power, propulsion_type,
+                     maximum_speed, service_speed, average_fuel_consumption, fuel_consumption_per_ton_mile,
+                     energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant, nox_tier,
+                     eedi_baseline_percentage, ballast_water_treatment, trading_area_restriction, ice_class,
+                     dry_dock_interval, next_dry_dock_date, last_dry_dock_date, monitoring_system,
+                     performance_reporting_compliant, remarks, 'active'))
+                
+                # Get the vessel ID of the newly inserted vessel
+                vessel_id = c.lastrowid
+                
+                # If baseline performance data provided, add it as initial performance record
+                if baseline_speed or baseline_fuel_consumption or baseline_co2_emissions:
+                    c.execute("""
+                        INSERT INTO vessel_performance_monitoring 
+                        (vessel_id, reporting_month, average_speed, fuel_consumption_metric_tons,
+                         co2_emissions_metric_tons, average_load_factor, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (vessel_id, datetime.now().strftime('%Y-%m'), baseline_speed, 
+                          baseline_fuel_consumption, baseline_co2_emissions, baseline_load_factor,
+                          'Baseline performance data at vessel registration'))
+                
+                conn.commit()
+                conn.close()
+                
+                app.logger.info(f"New vessel {vessel_name} (IMO: {imo_number}) added by {current_user.user_id}")
+                flash(f'Vessel {vessel_name} added successfully!', 'success')
+                return redirect(url_for('vessel_management'))
+            except sqlite3.IntegrityError as e:
+                app.logger.error(f"Database integrity error when adding vessel: {e}")
+                flash('Error: IMO number may already exist or database constraint violated.', 'danger')
+                return redirect(request.referrer or url_for('add_vessel'))
         
         # GET request - show form
         return render_template('add_vessel.html')
@@ -8254,22 +8497,48 @@ def edit_vessel(vessel_id):
         POST: Redirect to vessel management on success
     """
     try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
         if request.method == 'POST':
-            # Extract form data and update
+            # Extract vessel name (key field for quick edit)
             vessel_name = request.form.get('vessel_name')
             
             if not vessel_name:
                 flash('Vessel name is required.', 'danger')
+                conn.close()
                 return redirect(request.referrer or url_for('edit_vessel', vessel_id=vessel_id))
             
-            # TODO: Update database
-            # db.execute("UPDATE vessels SET vessel_name=?, ... WHERE id=?", (..., vessel_id))
-            
-            flash(f'Vessel {vessel_name} updated successfully!', 'success')
-            return redirect(url_for('vessel_management'))
+            # Update vessel in database
+            try:
+                c.execute("""
+                    UPDATE vessels 
+                    SET vessel_name=?, updated_at=?
+                    WHERE vessel_id=?
+                """, (vessel_name, datetime.now(), vessel_id))
+                
+                conn.commit()
+                app.logger.info(f"Vessel {vessel_id} updated by {current_user.user_id}")
+                flash(f'Vessel {vessel_name} updated successfully!', 'success')
+                conn.close()
+                return redirect(url_for('vessel_management'))
+            except Exception as db_error:
+                app.logger.error(f"Database error when editing vessel: {db_error}")
+                flash('Error updating vessel in database.', 'danger')
+                conn.close()
+                return redirect(request.referrer or url_for('edit_vessel', vessel_id=vessel_id))
         
         # GET request - show form with existing data
-        vessel = {}  # TODO: Fetch from database by vessel_id
+        c.execute("SELECT * FROM vessels WHERE vessel_id=?", (vessel_id,))
+        row = c.fetchone()
+        
+        if not row:
+            flash('Vessel not found.', 'danger')
+            conn.close()
+            return redirect(url_for('vessel_management'))
+        
+        vessel = dict(zip([col[0] for col in c.description], row))
+        conn.close()
         
         return render_template('edit_vessel.html', vessel=vessel)
     except Exception as e:
@@ -8285,6 +8554,7 @@ def view_vessel(vessel_id):
     Display detailed vessel information in the standard template format.
     
     Allows for printing and downloading of vessel specifications.
+    Includes performance monitoring data and certificates.
     
     Args:
         vessel_id: ID of vessel to view
@@ -8293,75 +8563,59 @@ def view_vessel(vessel_id):
         Rendered vessel details template
     """
     try:
-        # TODO: Fetch vessel from database
-        vessel = {
-            'vessel_name': 'Sample Vessel',
-            'imo_number': '1234567',
-            'mmsi_number': '123456789',
-            'call_sign': 'CALLSIGN',
-            'vessel_type': 'Bulk Carrier',
-            'port_of_registry': 'Port Said',
-            'flag_state': 'Panama',
-            'year_built': '2015',
-            'builder': 'Hyundai Heavy Industries',
-            'place_of_build': 'South Korea',
-            'hull_material': 'Steel',
-            'class_society': 'DNV-GL',
-            'class_notation': 'A1 Bulk Carrier',
-            'gross_tonnage': '38000',
-            'net_tonnage': '20000',
-            'deadweight': '75000',
-            'length_overall': '235.5',
-            'breadth': '40.0',
-            'depth': '22.5',
-            'summer_draft': '14.5',
-            'registered_owner': 'Shipping Company Name',
-            'owner_address': 'Owner Address',
-            'ship_manager': 'Manager Name',
-            'technical_manager': 'Technical Manager',
-            'ism_manager': 'ISM Manager',
-            'commercial_operator': 'Operator Name',
-            'pi_club': 'P&I Club Name',
-            'hull_machinery_insurer': 'Insurer Name',
-            'certificates': [],
-            'main_engine_make': 'MAN B&W',
-            'engine_type': '2-stroke',
-            'mcr': '10000',
-            'rated_speed': '85',
-            'number_of_engines': '1',
-            'propeller_type': 'Fixed Pitch',
-            'auxiliary_engines': '3 x 1000 kW',
-            'boiler': 'Exhaust Gas Economizer',
-            'fuel_type': 'HFO/MGO',
-            'service_speed': '14.5',
-            'maximum_speed': '15.5',
-            'fuel_consumption_service': '45.0',
-            'fuel_consumption_eco': '35.0',
-            'auxiliary_consumption': '5.0',
-            'sfoc': '185',
-            'shaft_power': '9800',
-            'propulsion_efficiency': '0.88',
-            'eedi_value': '5.2',
-            'required_eedi': '5.5',
-            'eedi_compliance': 'Yes',
-            'cii_rating': 'B',
-            'co2_emissions': '10.5',
-            'nox_tier': 'Tier II',
-            'sox_compliance': '0.5%',
-            'energy_saving_devices': 'Weather Routing, Propeller Optimization',
-            'performance_monitoring': 'Automated IoT-based',
-            'data_sources': 'FOC meters, GPS, Engine Logs',
-            'reporting_frequency': 'Daily',
-            'hull_propeller_monitoring': 'Quarterly',
-            'weather_routing': 'Yes',
-            'dry_dock_interval': '5 years',
-            'trading_area': 'Global',
-            'ice_class': 'Not Ice Classed',
-            'maximum_sea_state': 'Sea State 8',
-            'temperature_limits': '-5 to +45°C',
-            'ballast_treatment': 'UV-based BWTS',
-            'remarks': 'Vessel maintains excellent operational efficiency'
-        }
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Fetch vessel details
+        c.execute("SELECT * FROM vessels WHERE vessel_id=?", (vessel_id,))
+        row = c.fetchone()
+        
+        if not row:
+            flash('Vessel not found.', 'danger')
+            conn.close()
+            return redirect(url_for('vessel_management'))
+        
+        vessel = dict(zip([col[0] for col in c.description], row))
+        
+        # Fetch performance monitoring data (last 12 months)
+        c.execute("""
+            SELECT * FROM vessel_performance_monitoring 
+            WHERE vessel_id=? 
+            ORDER BY reporting_month DESC 
+            LIMIT 12
+        """, (vessel_id,))
+        performance_data = [dict(zip([col[0] for col in c.description], v)) 
+                           for v in c.fetchall()]
+        
+        # Fetch vessel certificates
+        c.execute("""
+            SELECT * FROM vessel_certificates 
+            WHERE vessel_id=? AND status='active'
+            ORDER BY certificate_type
+        """, (vessel_id,))
+        certificates = [dict(zip([col[0] for col in c.description], cert)) 
+                       for cert in c.fetchall()]
+        
+        # Fetch crew members on this vessel
+        c.execute("""
+            SELECT crew_id, first_name, last_name, department, rank 
+            FROM crew_members 
+            WHERE vessel_id=? AND status='active'
+            ORDER BY department, rank
+        """, (vessel_id,))
+        crew_members = [dict(zip([col[0] for col in c.description], crew)) 
+                       for crew in c.fetchall()]
+        
+        conn.close()
+        
+        # Add performance summary and crew statistics
+        vessel['performance_data'] = performance_data
+        vessel['certificates'] = certificates
+        vessel['crew_members'] = crew_members
+        vessel['total_crew'] = len(crew_members)
+        vessel['deck_crew'] = len([c for c in crew_members if c.get('department') == 'Deck'])
+        vessel['engine_crew'] = len([c for c in crew_members if c.get('department') == 'Engine'])
+        vessel['catering_crew'] = len([c for c in crew_members if c.get('department') == 'Catering'])
         
         return render_template('view_vessel.html', vessel=vessel)
     except Exception as e:
@@ -12637,6 +12891,167 @@ def init_db():
             c.execute("ALTER TABLE messaging_system ADD COLUMN edited_at TIMESTAMP")
         except Exception:
             pass
+
+        # ==================== CREW MANAGEMENT TABLES ====================
+        
+        # Create crew_members table for managing vessel crew
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS crew_members (
+                crew_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vessel_id TEXT,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
+                department TEXT NOT NULL,
+                rank TEXT NOT NULL,
+                license_number TEXT UNIQUE,
+                nationality TEXT,
+                date_of_birth TEXT,
+                phone TEXT,
+                email TEXT,
+                emergency_contact TEXT,
+                emergency_phone TEXT,
+                stcw_certificate TEXT,
+                stcw_expiry DATE,
+                gmdss_certificate TEXT,
+                gmdss_expiry DATE,
+                mlc_certificate TEXT,
+                mlc_expiry DATE,
+                medical_certificate TEXT,
+                medical_expiry DATE,
+                other_certifications TEXT,
+                certification_expiry TEXT,
+                date_joined TEXT,
+                status TEXT DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Create indexes for crew_members table
+        c.execute("CREATE INDEX IF NOT EXISTS idx_crew_vessel_id ON crew_members (vessel_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_crew_department ON crew_members (department)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_crew_status ON crew_members (status)")
+        
+        # ==================== VESSEL MANAGEMENT TABLES ====================
+        
+        # Create vessels table for managing ship information
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS vessels (
+                vessel_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vessel_name TEXT NOT NULL,
+                imo_number TEXT UNIQUE NOT NULL,
+                mmsi_number TEXT,
+                call_sign TEXT,
+                vessel_type TEXT NOT NULL,
+                flag_state TEXT NOT NULL,
+                year_built INTEGER,
+                builder TEXT,
+                shipyard_location TEXT,
+                gross_tonnage REAL,
+                net_tonnage REAL,
+                deadweight_tonnage REAL,
+                length_overall REAL,
+                length_between_perpendiculars REAL,
+                breadth REAL,
+                depth REAL,
+                owner_name TEXT,
+                owner_address TEXT,
+                owner_phone TEXT,
+                owner_email TEXT,
+                manager_name TEXT,
+                manager_address TEXT,
+                manager_phone TEXT,
+                manager_email TEXT,
+                operator_name TEXT,
+                operator_phone TEXT,
+                operator_email TEXT,
+                insurer_name TEXT,
+                insurer_policy_number TEXT,
+                main_engine_model TEXT,
+                main_engine_power REAL,
+                main_engine_rpm INTEGER,
+                fuel_type TEXT,
+                auxiliary_engines INTEGER,
+                generator_power REAL,
+                propulsion_type TEXT,
+                bollard_pull REAL,
+                maximum_speed REAL,
+                service_speed REAL,
+                average_fuel_consumption REAL,
+                fuel_consumption_per_ton_mile REAL,
+                energy_efficiency_index REAL,
+                carbon_intensity_indicator REAL,
+                sox_emissions_compliant TEXT,
+                nox_tier TEXT,
+                eedi_baseline_percentage REAL,
+                ballast_water_treatment TEXT,
+                trading_area_restriction TEXT,
+                ice_class TEXT,
+                dry_dock_interval INTEGER,
+                next_dry_dock_date TEXT,
+                last_dry_dock_date TEXT,
+                monitoring_system TEXT,
+                performance_reporting_compliant TEXT,
+                remarks TEXT,
+                status TEXT DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Create indexes for vessels table
+        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_name ON vessels (vessel_name)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_imo ON vessels (imo_number)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_type ON vessels (vessel_type)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_status ON vessels (status)")
+        
+        # Create vessel_performance_monitoring table for performance data
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS vessel_performance_monitoring (
+                performance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vessel_id INTEGER NOT NULL,
+                reporting_month TEXT NOT NULL,
+                average_speed REAL,
+                fuel_consumption_metric_tons REAL,
+                fuel_consumption_per_ton_mile REAL,
+                co2_emissions_metric_tons REAL,
+                sox_emissions_kilograms REAL,
+                nox_emissions_kilograms REAL,
+                average_load_factor REAL,
+                vessel_availability_percentage REAL,
+                number_of_port_calls INTEGER,
+                nautical_miles_traveled REAL,
+                notes TEXT,
+                reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (vessel_id) REFERENCES vessels (vessel_id)
+            )
+        ''')
+        
+        # Create indexes for vessel_performance_monitoring
+        c.execute("CREATE INDEX IF NOT EXISTS idx_performance_vessel_id ON vessel_performance_monitoring (vessel_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_performance_month ON vessel_performance_monitoring (reporting_month)")
+        
+        # Create vessel_certificates table for certificate management
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS vessel_certificates (
+                certificate_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vessel_id INTEGER NOT NULL,
+                certificate_type TEXT NOT NULL,
+                issue_date TEXT,
+                expiry_date TEXT,
+                issuing_authority TEXT,
+                certificate_number TEXT,
+                document_path TEXT,
+                status TEXT DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (vessel_id) REFERENCES vessels (vessel_id)
+            )
+        ''')
+        
+        # Create indexes for vessel_certificates
+        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_cert_vessel_id ON vessel_certificates (vessel_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_cert_type ON vessel_certificates (certificate_type)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_cert_expiry ON vessel_certificates (expiry_date)")
 
         conn.commit()
         print("[OK] Database tables initialized successfully")
