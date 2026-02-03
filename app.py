@@ -4145,24 +4145,34 @@ def login():
             return redirect(url_for('two_factor'))
 
         # Successful authentication - create user session
-        user = User(user_dict)
-        login_user(user, remember=True)
-
-        # Update login timestamp
-        conn = get_db_connection()
         try:
-            cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE users SET last_login = ?, last_activity = ? WHERE user_id = ?",
-                (datetime.now(), datetime.now(), user.id)
-            )
-            conn.commit()
-        finally:
-            conn.close()
+            user = User(user_dict)
+            login_user(user, remember=True)
 
-        log_activity('login', 'User logged in successfully')
-        flash(f'Welcome back, {user.first_name}!', 'success')
-        return redirect(url_for('dashboard'))
+            # Update login timestamp
+            conn = get_db_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE users SET last_login = ?, last_activity = ? WHERE user_id = ?",
+                    (datetime.now(), datetime.now(), user.id)
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+            # Log activity - wrapped in try-catch to prevent login failure on logging error
+            try:
+                log_activity('login', 'User logged in successfully')
+            except Exception as log_err:
+                app.logger.warning(f"Failed to log login activity for {user.id}: {log_err}")
+
+            flash(f'Welcome back, {user.first_name}!', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as auth_err:
+            app.logger.error(f"Authentication error for email {email}: {auth_err}")
+            flash('An error occurred during login. Please try again.', 'danger')
+            return render_template('login.html')
 
     return render_template('login.html')
 
@@ -4352,14 +4362,17 @@ def register():
             )
             conn.commit()
 
-            # Notify manager of new registration
-            create_notification(
-                'MGR001',
-                'New User Registration',
-                f'{first_name} {last_name} ({role.replace("_", " ").title()}) registered and requires approval',
-                'info',
-                '/dashboard'
-            )
+            # Notify manager of new registration - wrapped in try-catch to prevent registration failure
+            try:
+                create_notification(
+                    'MGR001',
+                    'New User Registration',
+                    f'{first_name} {last_name} ({role.replace("_", " ").title()}) registered and requires approval',
+                    'info',
+                    '/dashboard'
+                )
+            except Exception as notif_err:
+                app.logger.warning(f"Failed to create notification for new user {user_id}: {notif_err}")
 
             flash('Registration successful! Your account is pending approval.', 'success')
             return redirect(url_for('login'))
