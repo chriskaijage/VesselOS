@@ -8111,7 +8111,7 @@ def add_crew_member():
                             cert_file = request.files[f'spec_cert_file_{index}']
                             if cert_file and cert_file.filename and allowed_file(cert_file.filename):
                                 try:
-                                    filename = secure_filename(f"cert_{crew_id}_{int(datetime.now().timestamp())}_{cert_file.filename}")
+                                    filename = secure_filename(f"cert_{int(datetime.now().timestamp())}_{index}_{cert_file.filename}")
                                     upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'documents', 'certificates')
                                     os.makedirs(upload_path, exist_ok=True)
                                     cert_file.save(os.path.join(upload_path, filename))
