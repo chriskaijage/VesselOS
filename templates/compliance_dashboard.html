@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+
+{% block title %}Crew Compliance Verification Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .compliance-card {
+        transition: all 0.3s ease;
+        border-left: 5px solid #dee2e6;
+    }
+    .compliance-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .compliance-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+    }
+    .badge-green {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .badge-yellow {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .badge-red {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    .status-item {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+    .status-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #0c63e4;
+    }
+    .status-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+    .certificate-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .cert-valid {
+        color: #28a745;
+    }
+    .cert-expiring {
+        color: #ffc107;
+    }
+    .cert-expired {
+        color: #dc3545;
+    }
+    .cert-missing {
+        color: #999;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-2">Crew Compliance Verification Dashboard</h1>
+            <p class="text-muted">Real-time crew certificate compliance monitoring and PSC readiness</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="generateReport()">
+                <i class="fas fa-download"></i> PSC Report
+            </button>
+            <button class="btn btn-warning" onclick="checkRenewals()">
+                <i class="fas fa-sync"></i> Check Renewals
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="status-item">
+                <div class="status-number">{{ total_crew }}</div>
+                <div class="status-label">Total Crew</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <div class="status-number" style="color: #28a745;">{{ fully_compliant }}</div>
+                <div class="status-label">Fully Compliant</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <div class="status-number" style="color: #ffc107;">{{ partially_compliant }}</div>
+                <div class="status-label">Partially Compliant</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <div class="status-number" style="color: #dc3545;">{{ non_compliant }}</div>
+                <div class="status-label">Non-Compliant</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filters & Options</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Vessel</label>
+                    <select id="vesselFilter" class="form-select" onchange="filterByCrew()">
+                        <option value="">All Vessels</option>
+                        {% for vessel in vessels %}
+                        <option value="{{ vessel.vessel_id }}" {% if selected_vessel == vessel.vessel_id|string %}selected{% endif %}>
+                            {{ vessel.vessel_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Status</label>
+                    <select id="complianceFilter" class="form-select" onchange="filterCompliance()">
+                        <option value="all">All Statuses</option>
+                        <option value="compliant">Fully Compliant</option>
+                        <option value="partial">Partially Compliant</option>
+                        <option value="non-compliant">Non-Compliant</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Actions</label>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-info" onclick="refreshData()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crew Compliance Table -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Crew Compliance Status</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Rank</th>
+                        <th>Department</th>
+                        <th>STCW</th>
+                        <th>GMDSS</th>
+                        <th>Medical</th>
+                        <th>Compliance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for crew in crew_data %}
+                    <tr class="crew-row" data-crew-id="{{ crew.crew_id }}">
+                        <td>
+                            <strong>{{ crew.first_name }} {{ crew.last_name }}</strong>
+                        </td>
+                        <td>{{ crew.rank }}</td>
+                        <td>{{ crew.department }}</td>
+                        <td>
+                            <div class="certificate-status">
+                                {% if crew.stcw_days == None %}
+                                    <i class="fas fa-times-circle cert-missing"></i> Missing
+                                {% elif crew.stcw_days < 0 %}
+                                    <i class="fas fa-exclamation-circle cert-expired"></i> Expired
+                                {% elif crew.stcw_days <= 30 %}
+                                    <i class="fas fa-warning cert-expiring"></i> {{ crew.stcw_days }}d
+                                {% elif crew.stcw_days <= 90 %}
+                                    <i class="fas fa-clock cert-expiring"></i> {{ crew.stcw_days }}d
+                                {% else %}
+                                    <i class="fas fa-check-circle cert-valid"></i> Valid
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="certificate-status">
+                                {% if crew.gmdss_days == None %}
+                                    <i class="fas fa-times-circle cert-missing"></i> Missing
+                                {% elif crew.gmdss_days < 0 %}
+                                    <i class="fas fa-exclamation-circle cert-expired"></i> Expired
+                                {% elif crew.gmdss_days <= 30 %}
+                                    <i class="fas fa-warning cert-expiring"></i> {{ crew.gmdss_days }}d
+                                {% elif crew.gmdss_days <= 90 %}
+                                    <i class="fas fa-clock cert-expiring"></i> {{ crew.gmdss_days }}d
+                                {% else %}
+                                    <i class="fas fa-check-circle cert-valid"></i> Valid
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="certificate-status">
+                                {% if crew.medical_days == None %}
+                                    <i class="fas fa-times-circle cert-missing"></i> Missing
+                                {% elif crew.medical_days < 0 %}
+                                    <i class="fas fa-exclamation-circle cert-expired"></i> Expired
+                                {% elif crew.medical_days <= 30 %}
+                                    <i class="fas fa-warning cert-expiring"></i> {{ crew.medical_days }}d
+                                {% elif crew.medical_days <= 90 %}
+                                    <i class="fas fa-clock cert-expiring"></i> {{ crew.medical_days }}d
+                                {% else %}
+                                    <i class="fas fa-check-circle cert-valid"></i> Valid
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="compliance-badge {% if crew.compliant_certs == crew.total_certs %}badge-green{% elif crew.compliant_certs > 0 %}badge-yellow{% else %}badge-red{% endif %}">
+                                {{ crew.compliance_rate }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewDetails({{ crew.crew_id }})">
+                                <i class="fas fa-eye"></i> Details
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="generateTrainingPlan({{ crew.crew_id }})">
+                                <i class="fas fa-graduation-cap"></i> Training
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if not crew_data %}
+        <div class="p-4 text-center text-muted">
+            <i class="fas fa-inbox fa-3x mb-3" style="opacity: 0.5;"></i>
+            <p>No crew members found matching your criteria</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+function filterByCrew() {
+    const vesselId = document.getElementById('vesselFilter').value;
+    const url = new URL(window.location);
+    if (vesselId) {
+        url.searchParams.set('vessel_id', vesselId);
+    } else {
+        url.searchParams.delete('vessel_id');
+    }
+    window.location = url.toString();
+}
+
+function filterCompliance() {
+    const filter = document.getElementById('complianceFilter').value;
+    const rows = document.querySelectorAll('.crew-row');
+    
+    rows.forEach(row => {
+        const badge = row.querySelector('.compliance-badge');
+        let complianceType = 'all';
+        
+        if (badge.classList.contains('badge-green')) {
+            complianceType = 'compliant';
+        } else if (badge.classList.contains('badge-yellow')) {
+            complianceType = 'partial';
+        } else if (badge.classList.contains('badge-red')) {
+            complianceType = 'non-compliant';
+        }
+        
+        if (filter === 'all' || filter === complianceType) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function refreshData() {
+    location.reload();
+}
+
+function viewDetails(crewId) {
+    // This would open a modal or navigate to crew details page
+    alert(`Viewing details for crew ${crewId}`);
+}
+
+function generateTrainingPlan(crewId) {
+    if (!confirm('Generate training plan for this crew member?')) return;
+    
+    fetch('/api/crew-training-plans/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ crew_id: crewId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(`✓ Generated ${data.plans.length} training plans`);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+function generateReport() {
+    const vesselId = document.getElementById('vesselFilter').value;
+    const url = '/api/psc-compliance-report?format=csv' + (vesselId ? `&vessel_id=${vesselId}` : '');
+    window.location = url;
+}
+
+function checkRenewals() {
+    if (!confirm('Check certificate renewals and send notifications?')) return;
+    
+    fetch('/api/certificates/check-renewals', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(`✓ ${data.notifications_sent} renewal notifications sent`);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(e => alert('Error: ' + e));
+}
+</script>
+{% endblock %}

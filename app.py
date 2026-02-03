@@ -13053,6 +13053,77 @@ def init_db():
         c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_cert_type ON vessel_certificates (certificate_type)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_cert_expiry ON vessel_certificates (expiry_date)")
 
+        # ==================== CERTIFICATE MANAGEMENT TABLES ====================
+        
+        # Create certificate_documents table for storing uploaded certificate files
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS certificate_documents (
+                doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                crew_id INTEGER NOT NULL,
+                certificate_type TEXT NOT NULL,
+                document_path TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                file_size INTEGER,
+                uploaded_by TEXT,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                notes TEXT,
+                FOREIGN KEY (crew_id) REFERENCES crew_members (crew_id)
+            )
+        ''')
+        
+        # Create indexes for certificate_documents
+        c.execute("CREATE INDEX IF NOT EXISTS idx_cert_doc_crew_id ON certificate_documents (crew_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_cert_doc_type ON certificate_documents (certificate_type)")
+        
+        # Create certificate_alerts table for tracking expiry alerts sent
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS certificate_alerts (
+                alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                crew_id INTEGER NOT NULL,
+                certificate_type TEXT NOT NULL,
+                alert_type TEXT NOT NULL,
+                days_until_expiry INTEGER,
+                alert_sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                recipient_email TEXT,
+                recipient_phone TEXT,
+                notification_status TEXT DEFAULT 'sent',
+                expiry_date DATE,
+                FOREIGN KEY (crew_id) REFERENCES crew_members (crew_id)
+            )
+        ''')
+        
+        # Create indexes for certificate_alerts
+        c.execute("CREATE INDEX IF NOT EXISTS idx_cert_alert_crew_id ON certificate_alerts (crew_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_cert_alert_type ON certificate_alerts (alert_type)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_cert_alert_sent_at ON certificate_alerts (alert_sent_at)")
+        
+        # Create crew_training_plans table for generating training recommendations
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS crew_training_plans (
+                plan_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                crew_id INTEGER NOT NULL,
+                vessel_id INTEGER,
+                training_type TEXT NOT NULL,
+                certificate_gap TEXT NOT NULL,
+                priority TEXT DEFAULT 'medium',
+                recommended_provider TEXT,
+                estimated_duration TEXT,
+                estimated_cost REAL,
+                plan_status TEXT DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                approved_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                notes TEXT,
+                FOREIGN KEY (crew_id) REFERENCES crew_members (crew_id),
+                FOREIGN KEY (vessel_id) REFERENCES vessels (vessel_id)
+            )
+        ''')
+        
+        # Create indexes for crew_training_plans
+        c.execute("CREATE INDEX IF NOT EXISTS idx_training_plan_crew_id ON crew_training_plans (crew_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_training_plan_status ON crew_training_plans (plan_status)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_training_plan_priority ON crew_training_plans (priority)")
+
         conn.commit()
         print("[OK] Database tables initialized successfully")
         
@@ -14678,6 +14749,660 @@ def api_clone_maintenance_request(request_id):
         finally:
             conn.close()
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+# ==================== CERTIFICATE MANAGEMENT ROUTES ====================
+
+def send_email_notification(recipient_email, subject, body):
+    """Send email notification."""
+    if not SMTP_ENABLED or not recipient_email:
+        return False
+    
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = recipient_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+        
+        return True
+    except Exception as e:
+        app.logger.error(f"Error sending email: {e}")
+        return False
+
+@app.route('/api/certificates/upload', methods=['POST'])
+@login_required
+@role_required(['harbour_master', 'chief_engineer', 'captain'])
+def api_upload_certificate():
+    """Upload certificate document for crew member."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'})
+        
+        crew_id = request.form.get('crew_id')
+        cert_type = request.form.get('certificate_type')
+        notes = request.form.get('notes', '')
+        
+        if not crew_id or not cert_type:
+            return jsonify({'success': False, 'error': 'Missing crew_id or certificate_type'})
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'})
+        
+        # Validate file extension
+        allowed_extensions = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'}
+        if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+            return jsonify({'success': False, 'error': 'Invalid file type'})
+        
+        # Save file
+        filename = secure_filename(f"cert_{crew_id}_{cert_type}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{file.filename.rsplit('.', 1)[1]}")
+        cert_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'certificates')
+        os.makedirs(cert_folder, exist_ok=True)
+        file_path = os.path.join(cert_folder, filename)
+        file.save(file_path)
+        
+        # Store in database
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            c.execute("""
+                INSERT INTO certificate_documents
+                (crew_id, certificate_type, document_path, file_name, file_size, uploaded_by, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (crew_id, cert_type, file_path, filename, os.path.getsize(file_path), current_user.id, notes))
+            
+            conn.commit()
+            log_activity('certificate_uploaded', f'Uploaded {cert_type} certificate for crew {crew_id}')
+            
+            return jsonify({'success': True, 'message': 'Certificate uploaded successfully', 'file_path': filename})
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error uploading certificate: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/certificates/expiry-alerts', methods=['GET'])
+@login_required
+@role_required(['harbour_master', 'port_engineer'])
+def api_get_expiry_alerts():
+    """Get certificate expiry alerts for monitoring."""
+    try:
+        days_threshold = request.args.get('days', 90, type=int)
+        
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            # Calculate crew members with expiring certificates
+            c.execute("""
+                SELECT 
+                    cm.crew_id,
+                    cm.first_name,
+                    cm.last_name,
+                    cm.rank,
+                    cm.vessel_id,
+                    v.vessel_name,
+                    'STCW' as certificate_type,
+                    cm.stcw_expiry as expiry_date,
+                    CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) as days_remaining
+                FROM crew_members cm
+                LEFT JOIN vessels v ON cm.vessel_id = v.vessel_id
+                WHERE cm.stcw_expiry IS NOT NULL AND cm.status = 'active'
+                    AND CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) <= ?
+                    AND CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) >= 0
+                
+                UNION ALL
+                
+                SELECT 
+                    cm.crew_id,
+                    cm.first_name,
+                    cm.last_name,
+                    cm.rank,
+                    cm.vessel_id,
+                    v.vessel_name,
+                    'GMDSS' as certificate_type,
+                    cm.gmdss_expiry as expiry_date,
+                    CAST((julianday(cm.gmdss_expiry) - julianday('now')) AS INTEGER) as days_remaining
+                FROM crew_members cm
+                LEFT JOIN vessels v ON cm.vessel_id = v.vessel_id
+                WHERE cm.gmdss_expiry IS NOT NULL AND cm.status = 'active'
+                    AND CAST((julianday(cm.gmdss_expiry) - julianday('now')) AS INTEGER) <= ?
+                    AND CAST((julianday(cm.gmdss_expiry) - julianday('now')) AS INTEGER) >= 0
+                
+                UNION ALL
+                
+                SELECT 
+                    cm.crew_id,
+                    cm.first_name,
+                    cm.last_name,
+                    cm.rank,
+                    cm.vessel_id,
+                    v.vessel_name,
+                    'Medical' as certificate_type,
+                    cm.medical_expiry as expiry_date,
+                    CAST((julianday(cm.medical_expiry) - julianday('now')) AS INTEGER) as days_remaining
+                FROM crew_members cm
+                LEFT JOIN vessels v ON cm.vessel_id = v.vessel_id
+                WHERE cm.medical_expiry IS NOT NULL AND cm.status = 'active'
+                    AND CAST((julianday(cm.medical_expiry) - julianday('now')) AS INTEGER) <= ?
+                    AND CAST((julianday(cm.medical_expiry) - julianday('now')) AS INTEGER) >= 0
+                
+                ORDER BY days_remaining ASC
+            """, (days_threshold, days_threshold, days_threshold))
+            
+            alerts = []
+            for row in c.fetchall():
+                alert_dict = dict(row)
+                days = alert_dict['days_remaining']
+                
+                if days <= 0:
+                    severity = 'EXPIRED'
+                elif days <= 30:
+                    severity = 'CRITICAL'
+                elif days <= 60:
+                    severity = 'HIGH'
+                else:
+                    severity = 'MEDIUM'
+                
+                alert_dict['severity'] = severity
+                alerts.append(alert_dict)
+            
+            return jsonify({'success': True, 'alerts': alerts, 'count': len(alerts)})
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error getting expiry alerts: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/certificates/check-renewals', methods=['POST'])
+@login_required
+@role_required(['harbour_master', 'port_engineer'])
+def api_check_certificate_renewals():
+    """Check for certificates needing renewal and send notifications."""
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            notifications_sent = 0
+            current_date = datetime.now().date()
+            
+            # Check STCW certificates (30, 60, 90 day warnings)
+            c.execute("""
+                SELECT DISTINCT
+                    cm.crew_id,
+                    cm.first_name,
+                    cm.last_name,
+                    cm.email,
+                    cm.stcw_expiry,
+                    CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) as days_until_expiry
+                FROM crew_members cm
+                WHERE cm.stcw_expiry IS NOT NULL 
+                    AND cm.status = 'active'
+                    AND (
+                        CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) = 30
+                        OR CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) = 60
+                        OR CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) = 90
+                    )
+            """)
+            
+            for row in c.fetchall():
+                row_dict = dict(row)
+                alert_type = f"{row_dict['days_until_expiry']}d_before_expiry"
+                
+                # Check if alert already sent
+                c.execute("""
+                    SELECT COUNT(*) as count FROM certificate_alerts
+                    WHERE crew_id = ? AND certificate_type = 'STCW' 
+                        AND alert_type = ? AND alert_sent_at > datetime('now', '-1 day')
+                """, (row_dict['crew_id'], alert_type))
+                
+                if c.fetchone()['count'] == 0:
+                    # Send email notification
+                    if row_dict['email']:
+                        subject = f"STCW Certificate Renewal Reminder - {row_dict['days_until_expiry']} Days"
+                        body = f"""
+                        <h3>Certificate Renewal Reminder</h3>
+                        <p>Dear {row_dict['first_name']} {row_dict['last_name']},</p>
+                        <p>Your STCW certificate will expire in <strong>{row_dict['days_until_expiry']} days</strong> ({row_dict['stcw_expiry']}).</p>
+                        <p>Please arrange renewal promptly to avoid service interruptions.</p>
+                        <p>Contact the Harbour Master or your training provider for assistance.</p>
+                        """
+                        
+                        if send_email_notification(row_dict['email'], subject, body):
+                            # Log alert
+                            c.execute("""
+                                INSERT INTO certificate_alerts
+                                (crew_id, certificate_type, alert_type, days_until_expiry, 
+                                 recipient_email, expiry_date)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """, (row_dict['crew_id'], 'STCW', alert_type, row_dict['days_until_expiry'],
+                                  row_dict['email'], row_dict['stcw_expiry']))
+                            
+                            notifications_sent += 1
+            
+            conn.commit()
+            log_activity('renewal_check', f'Checked certificate renewals, sent {notifications_sent} notifications')
+            
+            return jsonify({
+                'success': True,
+                'message': f'Checked certificate renewals and sent {notifications_sent} notifications',
+                'notifications_sent': notifications_sent
+            })
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error checking renewals: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/compliance-dashboard')
+@login_required
+@role_required(['harbour_master', 'port_engineer', 'captain'])
+def compliance_dashboard():
+    """Display crew compliance verification dashboard."""
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            # Get vessel list for filter
+            c.execute("SELECT vessel_id, vessel_name FROM vessels WHERE status = 'active' ORDER BY vessel_name")
+            vessels = [dict(row) for row in c.fetchall()]
+            
+            # Get selected vessel (if any)
+            selected_vessel = request.args.get('vessel_id')
+            
+            # Get crew compliance data
+            if selected_vessel:
+                c.execute("""
+                    SELECT 
+                        cm.crew_id,
+                        cm.first_name,
+                        cm.last_name,
+                        cm.rank,
+                        cm.department,
+                        cm.stcw_expiry,
+                        cm.gmdss_expiry,
+                        cm.medical_expiry,
+                        cm.status,
+                        CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) as stcw_days,
+                        CAST((julianday(cm.gmdss_expiry) - julianday('now')) AS INTEGER) as gmdss_days,
+                        CAST((julianday(cm.medical_expiry) - julianday('now')) AS INTEGER) as medical_days
+                    FROM crew_members cm
+                    WHERE cm.vessel_id = ? AND cm.status = 'active'
+                    ORDER BY cm.last_name, cm.first_name
+                """, (selected_vessel,))
+            else:
+                c.execute("""
+                    SELECT 
+                        cm.crew_id,
+                        cm.first_name,
+                        cm.last_name,
+                        cm.rank,
+                        cm.department,
+                        v.vessel_name,
+                        cm.stcw_expiry,
+                        cm.gmdss_expiry,
+                        cm.medical_expiry,
+                        cm.status,
+                        CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) as stcw_days,
+                        CAST((julianday(cm.gmdss_expiry) - julianday('now')) AS INTEGER) as gmdss_days,
+                        CAST((julianday(cm.medical_expiry) - julianday('now')) AS INTEGER) as medical_days
+                    FROM crew_members cm
+                    LEFT JOIN vessels v ON cm.vessel_id = v.vessel_id
+                    WHERE cm.status = 'active'
+                    ORDER BY v.vessel_name, cm.last_name, cm.first_name
+                    LIMIT 200
+                """)
+            
+            crew_data = []
+            for row in c.fetchall():
+                row_dict = dict(row)
+                
+                # Calculate compliance status
+                compliant_certs = 0
+                total_certs = 3  # STCW, GMDSS, Medical
+                
+                if row_dict['stcw_days'] and row_dict['stcw_days'] >= 0:
+                    compliant_certs += 1
+                if row_dict['gmdss_days'] and row_dict['gmdss_days'] >= 0:
+                    compliant_certs += 1
+                if row_dict['medical_days'] and row_dict['medical_days'] >= 0:
+                    compliant_certs += 1
+                
+                row_dict['compliance_rate'] = f"{(compliant_certs/total_certs)*100:.0f}%"
+                row_dict['compliant_certs'] = compliant_certs
+                row_dict['total_certs'] = total_certs
+                crew_data.append(row_dict)
+            
+            # Calculate dashboard KPIs
+            total_crew = len(crew_data)
+            fully_compliant = sum(1 for c in crew_data if c['compliant_certs'] == c['total_certs'])
+            partially_compliant = sum(1 for c in crew_data if 0 < c['compliant_certs'] < c['total_certs'])
+            non_compliant = total_crew - fully_compliant - partially_compliant
+            
+            return render_template('compliance_dashboard.html',
+                                 crew_data=crew_data,
+                                 vessels=vessels,
+                                 selected_vessel=selected_vessel,
+                                 total_crew=total_crew,
+                                 fully_compliant=fully_compliant,
+                                 partially_compliant=partially_compliant,
+                                 non_compliant=non_compliant)
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error loading compliance dashboard: {e}")
+        flash('Error loading compliance dashboard', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/api/psc-compliance-report', methods=['GET'])
+@login_required
+@role_required(['harbour_master', 'port_engineer', 'captain'])
+def api_psc_compliance_report():
+    """Generate PSC (Port State Control) compliance report for crew."""
+    try:
+        vessel_id = request.args.get('vessel_id')
+        include_recommendations = request.args.get('recommendations', 'true').lower() == 'true'
+        
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            # Get vessel info
+            c.execute("SELECT * FROM vessels WHERE vessel_id = ?", (vessel_id,))
+            vessel = dict(c.fetchone()) if vessel_id else None
+            
+            # Get crew compliance data
+            if vessel_id:
+                c.execute("""
+                    SELECT 
+                        cm.crew_id,
+                        cm.first_name,
+                        cm.last_name,
+                        cm.rank,
+                        cm.department,
+                        cm.nationality,
+                        cm.license_number,
+                        cm.stcw_expiry,
+                        cm.gmdss_expiry,
+                        cm.medical_expiry,
+                        CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) as stcw_days,
+                        CAST((julianday(cm.gmdss_expiry) - julianday('now')) AS INTEGER) as gmdss_days,
+                        CAST((julianday(cm.medical_expiry) - julianday('now')) AS INTEGER) as medical_days
+                    FROM crew_members cm
+                    WHERE cm.vessel_id = ? AND cm.status = 'active'
+                    ORDER BY cm.last_name
+                """, (vessel_id,))
+            else:
+                c.execute("""
+                    SELECT 
+                        cm.crew_id,
+                        cm.first_name,
+                        cm.last_name,
+                        cm.rank,
+                        cm.department,
+                        cm.nationality,
+                        cm.license_number,
+                        cm.stcw_expiry,
+                        cm.gmdss_expiry,
+                        cm.medical_expiry,
+                        CAST((julianday(cm.stcw_expiry) - julianday('now')) AS INTEGER) as stcw_days,
+                        CAST((julianday(cm.gmdss_expiry) - julianday('now')) AS INTEGER) as gmdss_days,
+                        CAST((julianday(cm.medical_expiry) - julianday('now')) AS INTEGER) as medical_days
+                    FROM crew_members cm
+                    WHERE cm.status = 'active'
+                    ORDER BY cm.first_name
+                    LIMIT 500
+                """)
+            
+            crew_list = []
+            deficiencies = []
+            
+            for row in c.fetchall():
+                row_dict = dict(row)
+                crew_entry = {
+                    'name': f"{row_dict['first_name']} {row_dict['last_name']}",
+                    'rank': row_dict['rank'],
+                    'nationality': row_dict['nationality'],
+                    'license': row_dict['license_number'],
+                    'certificates': {
+                        'STCW': {
+                            'expiry': row_dict['stcw_expiry'],
+                            'status': 'VALID' if (row_dict['stcw_days'] and row_dict['stcw_days'] > 0) else 'EXPIRED',
+                            'days_remaining': row_dict['stcw_days']
+                        },
+                        'GMDSS': {
+                            'expiry': row_dict['gmdss_expiry'],
+                            'status': 'VALID' if (row_dict['gmdss_days'] and row_dict['gmdss_days'] > 0) else 'EXPIRED',
+                            'days_remaining': row_dict['gmdss_days']
+                        },
+                        'Medical': {
+                            'expiry': row_dict['medical_expiry'],
+                            'status': 'VALID' if (row_dict['medical_days'] and row_dict['medical_days'] > 0) else 'EXPIRED',
+                            'days_remaining': row_dict['medical_days']
+                        }
+                    }
+                }
+                crew_list.append(crew_entry)
+                
+                # Check for deficiencies
+                for cert_type, cert_data in crew_entry['certificates'].items():
+                    if cert_data['status'] == 'EXPIRED':
+                        deficiencies.append({
+                            'crew': crew_entry['name'],
+                            'rank': crew_entry['rank'],
+                            'certificate': cert_type,
+                            'deficiency_type': 'EXPIRED_CERTIFICATE',
+                            'severity': 'MAJOR',
+                            'expiry_date': cert_data['expiry']
+                        })
+            
+            # Generate recommendations
+            recommendations = []
+            if include_recommendations:
+                if deficiencies:
+                    recommendations.append({
+                        'priority': 'IMMEDIATE',
+                        'action': 'Renew all expired certificates before next port call',
+                        'responsible': 'Master/Harbour Master',
+                        'timeline': 'Within 7 days'
+                    })
+                
+                # Check for certificates expiring within 30 days
+                expiring_soon = sum(1 for c in crew_list for cert_data in c['certificates'].values() 
+                                   if cert_data['days_remaining'] and 0 < cert_data['days_remaining'] <= 30)
+                if expiring_soon > 0:
+                    recommendations.append({
+                        'priority': 'HIGH',
+                        'action': f'Schedule renewal for {expiring_soon} crew members with certificates expiring within 30 days',
+                        'responsible': 'Harbour Master',
+                        'timeline': 'Within 14 days'
+                    })
+            
+            report_data = {
+                'generated_date': datetime.now().isoformat(),
+                'report_type': 'PSC Crew Compliance Report',
+                'vessel': vessel,
+                'total_crew': len(crew_list),
+                'crew_list': crew_list,
+                'deficiencies': deficiencies,
+                'total_deficiencies': len(deficiencies),
+                'recommendations': recommendations,
+                'compliance_status': 'NON-COMPLIANT' if deficiencies else 'COMPLIANT'
+            }
+            
+            # Generate CSV if requested
+            if request.args.get('format') == 'csv':
+                output = io.StringIO()
+                writer = csv.writer(output)
+                writer.writerow(['Crew Name', 'Rank', 'STCW Status', 'STCW Expiry', 'GMDSS Status', 'GMDSS Expiry', 'Medical Status', 'Medical Expiry'])
+                
+                for crew in crew_list:
+                    writer.writerow([
+                        crew['name'],
+                        crew['rank'],
+                        crew['certificates']['STCW']['status'],
+                        crew['certificates']['STCW']['expiry'],
+                        crew['certificates']['GMDSS']['status'],
+                        crew['certificates']['GMDSS']['expiry'],
+                        crew['certificates']['Medical']['status'],
+                        crew['certificates']['Medical']['expiry']
+                    ])
+                
+                output.seek(0)
+                return send_file(
+                    io.BytesIO(output.getvalue().encode('utf-8')),
+                    mimetype='text/csv',
+                    as_attachment=True,
+                    download_name=f'psc-report-{datetime.now().strftime("%Y%m%d%H%M%S")}.csv'
+                )
+            
+            return jsonify({'success': True, 'report': report_data})
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error generating PSC report: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/crew-training-plans', methods=['GET'])
+@login_required
+@role_required(['harbour_master', 'port_engineer', 'captain'])
+def api_get_crew_training_plans():
+    """Get crew training plans and recommendations."""
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            status = request.args.get('status', 'all')
+            crew_id = request.args.get('crew_id')
+            
+            query = "SELECT * FROM crew_training_plans WHERE 1=1"
+            params = []
+            
+            if status != 'all':
+                query += " AND plan_status = ?"
+                params.append(status)
+            
+            if crew_id:
+                query += " AND crew_id = ?"
+                params.append(crew_id)
+            
+            query += " ORDER BY priority DESC, created_at DESC LIMIT 100"
+            
+            c.execute(query, params)
+            plans = [dict(row) for row in c.fetchall()]
+            
+            return jsonify({'success': True, 'plans': plans, 'count': len(plans)})
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error getting training plans: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/crew-training-plans/generate', methods=['POST'])
+@login_required
+@role_required(['harbour_master', 'port_engineer'])
+def api_generate_training_plans():
+    """Generate training plans for crew based on missing certificates."""
+    try:
+        data = request.get_json()
+        crew_id = data.get('crew_id')
+        vessel_id = data.get('vessel_id')
+        
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            # Get crew certificate data
+            c.execute("""
+                SELECT * FROM crew_members WHERE crew_id = ? AND status = 'active'
+            """, (crew_id,))
+            
+            crew = c.fetchone()
+            if not crew:
+                return jsonify({'success': False, 'error': 'Crew member not found'})
+            
+            crew_dict = dict(crew)
+            training_plans = []
+            
+            # Check for expired/missing certificates and create training plans
+            certificates_to_check = [
+                ('STCW', crew_dict.get('stcw_expiry')),
+                ('GMDSS', crew_dict.get('gmdss_expiry')),
+                ('Medical', crew_dict.get('medical_expiry'))
+            ]
+            
+            for cert_type, expiry in certificates_to_check:
+                if not expiry:
+                    # Missing certificate
+                    plan_id = generate_id('TP')
+                    c.execute("""
+                        INSERT INTO crew_training_plans
+                        (crew_id, vessel_id, training_type, certificate_gap, priority, 
+                         estimated_duration, estimated_cost, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        crew_id, vessel_id or None,
+                        f'{cert_type} Certification',
+                        f'Missing {cert_type} certificate',
+                        'HIGH',
+                        '5-10 days',
+                        2000.00,
+                        f'{cert_type} certification required for {crew_dict["rank"]} position'
+                    ))
+                    
+                    training_plans.append({
+                        'certificate': cert_type,
+                        'type': 'Missing',
+                        'priority': 'HIGH'
+                    })
+                else:
+                    # Check if expiring soon
+                    days_until_expiry = (datetime.strptime(expiry, '%Y-%m-%d').date() - datetime.now().date()).days
+                    if 0 <= days_until_expiry <= 90:
+                        priority = 'CRITICAL' if days_until_expiry <= 30 else 'HIGH'
+                        plan_id = generate_id('TP')
+                        c.execute("""
+                            INSERT INTO crew_training_plans
+                            (crew_id, vessel_id, training_type, certificate_gap, priority,
+                             estimated_duration, estimated_cost, notes)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            crew_id, vessel_id or None,
+                            f'{cert_type} Renewal',
+                            f'{cert_type} certificate expires in {days_until_expiry} days',
+                            priority,
+                            '3-5 days',
+                            1500.00,
+                            f'{cert_type} renewal needed before {expiry}'
+                        ))
+                        
+                        training_plans.append({
+                            'certificate': cert_type,
+                            'type': 'Renewal',
+                            'priority': priority,
+                            'days_remaining': days_until_expiry
+                        })
+            
+            conn.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Generated {len(training_plans)} training plans',
+                'plans': training_plans
+            })
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error generating training plans: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 # ==================== ERROR HANDLERS ====================
