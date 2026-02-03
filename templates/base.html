@@ -64,9 +64,6 @@ function showFilePreview(fileUrl, fileName) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-    <!-- Custom Tab Styling -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}">
-    
     <style>
         /* Cursor AI Colors with White Background */
         :root {
@@ -1369,25 +1366,6 @@ function showFilePreview(fileUrl, fileName) {
             right: 0;
             height: 2px;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        }
-        
-        /* Global layout: keep tabs and buttons arranged in cards (all pages) */
-        .card .card-body .btn,
-        .card .card-body a.btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            white-space: normal;
-        }
-        .card .card-body .row.g-2,
-        .card .card-body .row.g-3 {
-            align-items: stretch;
-        }
-        .card .card-body .row .col .btn,
-        .card .card-body .row .col-6 .btn,
-        .card .card-body .row .col-12 .btn {
-            width: 100%;
         }
         
         /* Buttons */
@@ -5252,82 +5230,6 @@ function showFilePreview(fileUrl, fileName) {
 
     // ==================== EXISTING BASE.HTML FUNCTIONS ====================
 
-    // Notification sound: use device/browser settings via Web Notifications API
-    const NOTIFICATION_SEEN_KEY = 'marine_notification_seen_ids';
-    const NOTIFICATION_INITIAL_LOAD_KEY = 'marine_notification_initial_load_done';
-    const MAX_NEW_NOTIFICATIONS_TO_ALERT = 5;
-
-    function getSeenNotificationIds() {
-        try {
-            const raw = sessionStorage.getItem(NOTIFICATION_SEEN_KEY);
-            return new Set(raw ? JSON.parse(raw) : []);
-        } catch (e) {
-            return new Set();
-        }
-    }
-
-    function saveSeenNotificationIds(seenSet) {
-        try {
-            sessionStorage.setItem(NOTIFICATION_SEEN_KEY, JSON.stringify([...seenSet]));
-        } catch (e) {
-            console.warn('Could not save seen notification ids', e);
-        }
-    }
-
-    function addSeenNotificationId(id, seenSet) {
-        const set = seenSet || getSeenNotificationIds();
-        set.add(id);
-        saveSeenNotificationIds(set);
-        return set;
-    }
-
-    function showSystemNotificationForNew(notifications) {
-        if (!('Notification' in window)) return;
-        if (Notification.permission === 'denied') return;
-
-        const seen = getSeenNotificationIds();
-        const newUnread = notifications.filter(function(n) {
-            return !n.is_read && !seen.has(n.id);
-        });
-        if (newUnread.length === 0) return;
-
-        function showOne(n) {
-            try {
-                var notif = new Notification(n.title || 'New notification', {
-                    body: (n.message || '').substring(0, 200),
-                    icon: '/static/images/logo.png',
-                    tag: 'marine-notif-' + n.id
-                });
-                notif.onclick = function() {
-                    window.focus();
-                    notif.close();
-                };
-                addSeenNotificationId(n.id, seen);
-            } catch (err) {
-                console.warn('System notification failed', err);
-            }
-        }
-
-        if (Notification.permission === 'granted') {
-            newUnread.slice(0, MAX_NEW_NOTIFICATIONS_TO_ALERT).forEach(showOne);
-            return;
-        }
-        if (Notification.permission === 'default') {
-            Notification.requestPermission().then(function(permission) {
-                if (permission === 'granted') {
-                    newUnread.slice(0, MAX_NEW_NOTIFICATIONS_TO_ALERT).forEach(showOne);
-                }
-            });
-        }
-    }
-
-    function ensureNotificationPermissionRequested() {
-        if (!('Notification' in window)) return;
-        if (Notification.permission === 'default') {
-            Notification.requestPermission().catch(function() {});
-        }
-    }
-
     // Load notifications
     function loadNotifications() {
         fetch('/api/notifications')
@@ -5336,22 +5238,9 @@ function showFilePreview(fileUrl, fileName) {
                 if (data.success) {
                     const list = document.getElementById('notificationList');
                     const count = document.getElementById('notificationCount');
-                    const notifications = data.notifications || [];
-
-                    // First load: mark all current notifications as seen (no sound)
-                    const initialLoadDone = sessionStorage.getItem(NOTIFICATION_INITIAL_LOAD_KEY) === '1';
-                    if (!initialLoadDone) {
-                        notifications.forEach(function(n) {
-                            addSeenNotificationId(n.id);
-                        });
-                        sessionStorage.setItem(NOTIFICATION_INITIAL_LOAD_KEY, '1');
-                    } else {
-                        // Subsequent loads: show system notification (uses device sound) for new unread
-                        showSystemNotificationForNew(notifications);
-                    }
-
+                    
                     // Count unread notifications
-                    const unreadCount = notifications.filter(n => !n.is_read).length;
+                    const unreadCount = data.notifications.filter(n => !n.is_read).length;
                     if (unreadCount > 0) {
                         count.textContent = unreadCount;
                         count.style.display = 'inline-block';
@@ -5359,10 +5248,10 @@ function showFilePreview(fileUrl, fileName) {
                         count.style.display = 'none';
                     }
                     
-                    if (notifications.length > 0) {
+                    if (data.notifications.length > 0) {
                         
                         let html = '';
-                        notifications.forEach(notif => {
+                        data.notifications.forEach(notif => {
                             const icon = notif.type === 'danger' ? 'exclamation-circle' :
                                        notif.type === 'warning' ? 'exclamation-triangle' :
                                        notif.type === 'success' ? 'check-circle' : 'info-circle';
@@ -5731,8 +5620,6 @@ function showFilePreview(fileUrl, fileName) {
         // Load notifications and update counts
         loadNotifications();
         loadUnreadCount();
-        // Ask for notification permission so new notifications use device sound/settings
-        ensureNotificationPermissionRequested();
         
         // Refresh notifications every 30 seconds
         setInterval(loadNotifications, 30000);
