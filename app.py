@@ -8078,7 +8078,50 @@ def add_crew_member():
                 flash('Please fill in all required fields.', 'danger')
                 return redirect(request.referrer or url_for('add_crew_member'))
             
-            # Save to database
+            # Handle profile picture upload
+            profile_picture_path = None
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file and file.filename and allowed_file(file.filename):
+                    try:
+                        filename = secure_filename(f"crew_{int(datetime.now().timestamp())}_{file.filename}")
+                        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'profile_pics')
+                        os.makedirs(upload_path, exist_ok=True)
+                        file.save(os.path.join(upload_path, filename))
+                        profile_picture_path = os.path.join('profile_pics', filename)
+                    except Exception as e:
+                        app.logger.error(f"Error saving profile picture: {e}")
+                        flash('Warning: Profile picture could not be saved.', 'warning')
+            
+            # Handle specialized certificate files and details
+            specialized_certificates = {}
+            # Collect specialized certificates from form
+            for key in request.form.keys():
+                if key.startswith('spec_cert_number_'):
+                    index = key.split('_')[-1]
+                    cert_name = request.form.get(f'spec_certs_{index}') if f'spec_certs_{index}' in request.form else None
+                    if not cert_name and key in request.form:
+                        # Extract cert name from form - it's sent as checkbox value
+                        cert_number = request.form.get(key)
+                        cert_expiry = request.form.get(f'spec_cert_expiry_{index}')
+                        
+                        # Handle file upload for this certificate
+                        cert_file_path = None
+                        if f'spec_cert_file_{index}' in request.files:
+                            cert_file = request.files[f'spec_cert_file_{index}']
+                            if cert_file and cert_file.filename and allowed_file(cert_file.filename):
+                                try:
+                                    filename = secure_filename(f"cert_{crew_id}_{int(datetime.now().timestamp())}_{cert_file.filename}")
+                                    upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'documents', 'certificates')
+                                    os.makedirs(upload_path, exist_ok=True)
+                                    cert_file.save(os.path.join(upload_path, filename))
+                                    cert_file_path = os.path.join('documents', 'certificates', filename)
+                                except Exception as e:
+                                    app.logger.error(f"Error saving cert file: {e}")
+            
+            # Convert specialized certificates to JSON string for storage
+            specialized_certs_json = json.dumps(specialized_certificates) if specialized_certificates else None
+            
             try:
                 conn = get_db_connection()
                 c = conn.cursor()
@@ -8089,13 +8132,13 @@ def add_crew_member():
                      nationality, email, phone, emergency_contact, emergency_phone,
                      stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
                      mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
-                     date_joined, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     profile_picture, specialized_certificates, date_joined, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (vessel_id, first_name, last_name, department, rank, license_number,
                      nationality, email, phone, emergency_contact, emergency_phone,
                      stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
                      mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
-                     datetime.now().strftime('%Y-%m-%d'), 'active'))
+                     profile_picture_path, specialized_certs_json, datetime.now().strftime('%Y-%m-%d'), 'active'))
                 
                 conn.commit()
                 conn.close()
@@ -8177,21 +8220,85 @@ def edit_crew_member(crew_id):
                 conn.close()
                 return redirect(request.referrer or url_for('edit_crew_member', crew_id=crew_id))
             
+            # Handle profile picture upload
+            profile_picture_path = None
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file and file.filename and allowed_file(file.filename):
+                    try:
+                        # Get existing profile picture to delete if replaced
+                        c.execute("SELECT profile_picture FROM crew_members WHERE crew_id=?", (crew_id,))
+                        existing = c.fetchone()
+                        if existing and existing[0]:
+                            old_path = os.path.join(app.config['UPLOAD_FOLDER'], existing[0])
+                            if os.path.exists(old_path):
+                                os.remove(old_path)
+                        
+                        filename = secure_filename(f"crew_{int(datetime.now().timestamp())}_{file.filename}")
+                        upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'profile_pics')
+                        os.makedirs(upload_path, exist_ok=True)
+                        file.save(os.path.join(upload_path, filename))
+                        profile_picture_path = os.path.join('profile_pics', filename)
+                    except Exception as e:
+                        app.logger.error(f"Error saving profile picture: {e}")
+                        flash('Warning: Profile picture could not be saved.', 'warning')
+            
+            # Handle specialized certificate files and details
+            specialized_certificates = {}
+            # Collect specialized certificates from form
+            for key in request.form.keys():
+                if key.startswith('spec_cert_number_'):
+                    index = key.split('_')[-1]
+                    cert_number = request.form.get(key)
+                    cert_expiry = request.form.get(f'spec_cert_expiry_{index}')
+                    
+                    # Handle file upload for this certificate
+                    cert_file_path = None
+                    if f'spec_cert_file_{index}' in request.files:
+                        cert_file = request.files[f'spec_cert_file_{index}']
+                        if cert_file and cert_file.filename and allowed_file(cert_file.filename):
+                            try:
+                                filename = secure_filename(f"cert_{crew_id}_{int(datetime.now().timestamp())}_{cert_file.filename}")
+                                upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'documents', 'certificates')
+                                os.makedirs(upload_path, exist_ok=True)
+                                cert_file.save(os.path.join(upload_path, filename))
+                                cert_file_path = os.path.join('documents', 'certificates', filename)
+                            except Exception as e:
+                                app.logger.error(f"Error saving cert file: {e}")
+            
+            # Convert specialized certificates to JSON string for storage
+            specialized_certs_json = json.dumps(specialized_certificates) if specialized_certificates else None
+            
             # Update database
             try:
-                c.execute("""
-                    UPDATE crew_members 
-                    SET vessel_id=?, first_name=?, last_name=?, department=?, rank=?, license_number=?,
-                        nationality=?, email=?, phone=?, emergency_contact=?, emergency_phone=?,
-                        stcw_certificate=?, stcw_expiry=?, gmdss_certificate=?, gmdss_expiry=?,
-                        mlc_certificate=?, mlc_expiry=?, medical_certificate=?, medical_expiry=?,
-                        updated_at=?
-                    WHERE crew_id=?
-                """, (vessel_id, first_name, last_name, department, rank, license_number,
-                     nationality, email, phone, emergency_contact, emergency_phone,
-                     stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
-                     mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
-                     datetime.now(), crew_id))
+                if profile_picture_path:
+                    c.execute("""
+                        UPDATE crew_members 
+                        SET vessel_id=?, first_name=?, last_name=?, department=?, rank=?, license_number=?,
+                            nationality=?, email=?, phone=?, emergency_contact=?, emergency_phone=?,
+                            stcw_certificate=?, stcw_expiry=?, gmdss_certificate=?, gmdss_expiry=?,
+                            mlc_certificate=?, mlc_expiry=?, medical_certificate=?, medical_expiry=?,
+                            profile_picture=?, specialized_certificates=?, updated_at=?
+                        WHERE crew_id=?
+                    """, (vessel_id, first_name, last_name, department, rank, license_number,
+                         nationality, email, phone, emergency_contact, emergency_phone,
+                         stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
+                         mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
+                         profile_picture_path, specialized_certs_json, datetime.now(), crew_id))
+                elif specialized_certs_json:
+                    c.execute("""
+                        UPDATE crew_members 
+                        SET vessel_id=?, first_name=?, last_name=?, department=?, rank=?, license_number=?,
+                            nationality=?, email=?, phone=?, emergency_contact=?, emergency_phone=?,
+                            stcw_certificate=?, stcw_expiry=?, gmdss_certificate=?, gmdss_expiry=?,
+                            mlc_certificate=?, mlc_expiry=?, medical_certificate=?, medical_expiry=?,
+                            specialized_certificates=?, updated_at=?
+                        WHERE crew_id=?
+                    """, (vessel_id, first_name, last_name, department, rank, license_number,
+                         nationality, email, phone, emergency_contact, emergency_phone,
+                         stcw_certificate, stcw_expiry, gmdss_certificate, gmdss_expiry,
+                         mlc_certificate, mlc_expiry, medical_certificate, medical_expiry,
+                         specialized_certs_json, datetime.now(), crew_id))
                 
                 conn.commit()
                 app.logger.info(f"Crew member {crew_id} updated by {current_user.user_id}")
@@ -12963,6 +13070,17 @@ def init_db():
         c.execute("CREATE INDEX IF NOT EXISTS idx_crew_vessel_id ON crew_members (vessel_id)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_crew_department ON crew_members (department)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_crew_status ON crew_members (status)")
+        
+        # Add missing columns to crew_members if they don't exist
+        try:
+            c.execute("ALTER TABLE crew_members ADD COLUMN profile_picture TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        try:
+            c.execute("ALTER TABLE crew_members ADD COLUMN specialized_certificates TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         # ==================== VESSEL MANAGEMENT TABLES ====================
         
