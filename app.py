@@ -7939,6 +7939,48 @@ def emission_reports_list():
     """View all emission reports."""
     return render_template('emission_reports_list.html')
 
+@app.route('/drill-report')
+@login_required
+@role_required(['chief_engineer', 'captain', 'harbour_master'])
+def drill_report():
+    """
+    Display emergency drill report form.
+    
+    Allows crew to document emergency drills in compliance with SOLAS requirements.
+    
+    Returns:
+        Rendered drill report form template
+    """
+    return render_template('drill_report.html')
+
+@app.route('/drill-reports')
+@login_required
+@role_required(['chief_engineer', 'captain', 'harbour_master'])
+def drill_reports_list():
+    """
+    Display list of emergency drill reports.
+    
+    Shows all completed drill reports with filtering and search capabilities.
+    
+    Returns:
+        Rendered drill reports list template
+    """
+    return render_template('drill_reports_list.html')
+
+@app.route('/crew-list-report')
+@login_required
+@role_required(['harbour_master', 'captain', 'chief_engineer'])
+def crew_list_report():
+    """
+    Display crew list report.
+    
+    Shows vessel crew members organized by department with documentation status.
+    
+    Returns:
+        Rendered crew list report template
+    """
+    return render_template('crew_list_report.html')
+
 @app.route('/view-request/<request_id>')
 @login_required
 def view_request(request_id):
