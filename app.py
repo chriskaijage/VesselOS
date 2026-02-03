@@ -7974,7 +7974,20 @@ def drill_reports_list():
     Returns:
         Rendered drill reports list template
     """
-    return render_template('drill_reports_list.html')
+    try:
+        # Provide context variables with default values
+        context = {
+            'drill_reports': [],
+            'total_drills': 0,
+            'this_month': 0,
+            'pending_actions': 0,
+            'avg_performance': 'N/A'
+        }
+        return render_template('drill_reports_list.html', **context)
+    except Exception as e:
+        app.logger.error(f"Error loading drill reports list: {e}", exc_info=True)
+        flash('Error loading drill reports. Please try again.', 'danger')
+        return redirect(url_for('dashboard'))
 
 @app.route('/crew-list-report')
 @login_required
@@ -7986,9 +7999,36 @@ def crew_list_report():
     Shows vessel crew members organized by department with documentation status.
     
     Returns:
-        Rendered crew list report template
+        Rendered crew list report template with crew data
     """
-    return render_template('crew_list_report.html')
+    try:
+        # For now, provide empty/default data
+        # In a full implementation, this would pull from database
+        vessel = {
+            'name': 'Vessel Name',
+            'imo': 'IMO 1234567',
+            'flag_state': 'Panama'
+        }
+        
+        crew_members = []
+        report_date = datetime.now().strftime('%Y-%m-%d')
+        deck_count = 0
+        engine_count = 0
+        catering_count = 0
+        
+        return render_template(
+            'crew_list_report.html',
+            vessel=vessel,
+            crew_members=crew_members,
+            report_date=report_date,
+            deck_count=deck_count,
+            engine_count=engine_count,
+            catering_count=catering_count
+        )
+    except Exception as e:
+        app.logger.error(f"Error loading crew list report: {e}", exc_info=True)
+        flash('Error loading crew list report. Please try again.', 'danger')
+        return redirect(url_for('dashboard'))
 
 @app.route('/view-request/<request_id>')
 @login_required
