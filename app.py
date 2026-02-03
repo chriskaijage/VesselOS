@@ -132,6 +132,15 @@ print(f"[OK] Database path: {DB_PATH}")
 print(f"[OK] Upload folder: {UPLOAD_FOLDER}")
 print(f"[OK] Data persistence: {'ENABLED (Render persistent disk)' if USING_PERSISTENT_STORAGE else 'DISABLED (ephemeral storage - data lost on redeploy)'}")
 
+# Verify database file exists and is accessible
+if os.path.exists(DB_PATH):
+    db_stat = os.stat(DB_PATH)
+    print(f"[OK] Database file verified at: {DB_PATH}")
+    print(f"[OK] Database size: {db_stat.st_size / (1024*1024):.2f} MB")
+    print(f"[OK] Last modified: {datetime.fromtimestamp(db_stat.st_mtime)}")
+else:
+    print(f"[INFO] Database will be created at first run: {DB_PATH}")
+
 
 # =====================================================================
 # EMAIL CONFIGURATION
@@ -11264,22 +11273,44 @@ def init_db():
     Initialize database schema while preserving existing data.
     Uses 'CREATE TABLE IF NOT EXISTS' to ensure NO DATA LOSS.
     Safe for repeated calls during deployments.
+    
+    All user accounts and conversations are PRESERVED across deployments.
+    Only demo accounts are ensured to exist (not reset).
     """
     conn = get_db_connection()
     try:
         c = conn.cursor()
         
+        # Log data BEFORE initialization
+        print("\n" + "="*70)
+        print("[DATABASE] PRESERVATION CHECK - PRE-INITIALIZATION")
+        print("="*70)
+        
+        try:
+            c.execute("SELECT COUNT(*) FROM users")
+            user_count_before = c.fetchone()[0]
+            print(f"[DATA] Users before: {user_count_before}")
+        except:
+            user_count_before = 0
+            print("[INFO] Users table does not exist yet")
+        
+        try:
+            c.execute("SELECT COUNT(*) FROM messages")
+            messages_before = c.fetchone()[0]
+            print(f"[DATA] Messages before: {messages_before}")
+        except:
+            messages_before = 0
+        
+        try:
+            c.execute("SELECT COUNT(*) FROM maintenance_requests")
+            requests_before = c.fetchone()[0]
+            print(f"[DATA] Maintenance requests before: {requests_before}")
+        except:
+            requests_before = 0
+        
         # Count existing records before initialization
         c.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'")
         table_count_before = c.fetchone()[0]
-        
-        # Count existing users if table exists
-        users_before = 0
-        try:
-            c.execute("SELECT COUNT(*) FROM users")
-            users_before = c.fetchone()[0]
-        except:
-            pass
 
         # Create users table
         c.execute('''
