@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Vessel Management - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-ship me-2"></i>Vessel Management</h2>
+            <p class="text-muted">Manage fleet vessel details and specifications</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('add_vessel') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add New Vessel
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Total Vessels</h6>
+                    <h2 class="card-text">{{ total_vessels }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by vessel name, IMO, or call sign...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="vesselTypeFilter">
+                        <option value="">All Vessel Types</option>
+                        <option value="Bulk Carrier">Bulk Carrier</option>
+                        <option value="Container Ship">Container Ship</option>
+                        <option value="Tanker">Tanker</option>
+                        <option value="General Cargo">General Cargo</option>
+                        <option value="RoRo">RoRo</option>
+                        <option value="LNG Carrier">LNG Carrier</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-secondary w-100" id="resetFilter">
+                        <i class="fas fa-redo me-2"></i>Reset Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vessels Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="vesselTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Vessel Name</th>
+                        <th>IMO Number</th>
+                        <th>Call Sign</th>
+                        <th>Type</th>
+                        <th>Flag State</th>
+                        <th>Tonnage (GT)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if vessels %}
+                        {% for vessel in vessels %}
+                        <tr>
+                            <td>
+                                <strong>{{ vessel.vessel_name }}</strong>
+                            </td>
+                            <td>
+                                <code>{{ vessel.imo_number }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ vessel.call_sign }}</span>
+                            </td>
+                            <td>{{ vessel.vessel_type }}</td>
+                            <td>{{ vessel.flag_state }}</td>
+                            <td>{{ vessel.gross_tonnage }}</td>
+                            <td>
+                                <a href="{{ url_for('view_vessel', vessel_id=vessel.id) }}" class="btn btn-sm btn-outline-info" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_vessel', vessel_id=vessel.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-success print-vessel-btn" data-vessel-id="{{ vessel.id }}" title="Print/Download">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-ship fa-3x mb-3"></i>
+                                    <p>No vessels registered yet</p>
+                                    <a href="{{ url_for('add_vessel') }}" class="btn btn-primary btn-sm">
+                                        Add First Vessel
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Search and filter functionality
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+document.getElementById('vesselTypeFilter').addEventListener('change', filterTable);
+document.getElementById('resetFilter').addEventListener('click', resetFilter);
+
+// Print/Download functionality
+document.querySelectorAll('.print-vessel-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const vesselId = this.getAttribute('data-vessel-id');
+        window.open(`{{ url_for('view_vessel', vessel_id=0) }}`.replace('/0', '/' + vesselId) + '?print=1', '_blank');
+    });
+});
+
+function filterTable() {
+    const searchValue = document.getElementById('searchInput').value.toLowerCase();
+    const typeValue = document.getElementById('vesselTypeFilter').value;
+    const table = document.getElementById('vesselTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+    for (let row of rows) {
+        if (row.innerHTML.includes('No vessels')) continue;
+
+        const searchMatch = row.textContent.toLowerCase().includes(searchValue);
+        let typeMatch = true;
+
+        if (typeValue) {
+            const cells = row.getElementsByTagName('td');
+            if (cells.length > 3) {
+                typeMatch = cells[3].textContent.includes(typeValue);
+            }
+        }
+
+        row.style.display = (searchMatch && typeMatch) ? '' : 'none';
+    }
+}
+
+function resetFilter() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('vesselTypeFilter').value = '';
+    filterTable();
+}
+</script>
+{% endblock %}

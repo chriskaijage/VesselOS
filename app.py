@@ -142,20 +142,14 @@ else:
     print(f"[INFO] Database will be created at first run: {DB_PATH}")
 
 
-# =====================================================================
 # EMAIL CONFIGURATION
-# =====================================================================
-
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'marineservice@gmail.com')
 SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', '')
 SMTP_ENABLED = bool(SENDER_PASSWORD)
 
-
-# =====================================================================
 # SMS CONFIGURATION (Twilio)
-# =====================================================================
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
 TWILIO_PHONE = os.environ.get('TWILIO_PHONE', '+1234567890')
@@ -8150,6 +8144,230 @@ def remove_crew_member(crew_id):
     except Exception as e:
         app.logger.error(f"Error removing crew member: {e}", exc_info=True)
         return jsonify({'status': 'error', 'message': 'Error removing crew member'}), 500
+
+# ======================== VESSEL MANAGEMENT ROUTES ========================
+
+@app.route('/vessel-management')
+@login_required
+@role_required(['harbour_master'])
+def vessel_management():
+    """
+    Display vessel management dashboard for Harbour Master.
+    
+    Shows list of all vessels with their details and quick actions.
+    
+    Returns:
+        Rendered vessel management template
+    """
+    try:
+        # For now, provide empty/default data
+        # In a full implementation, this would pull from database
+        vessels = []
+        total_vessels = 0
+        
+        return render_template(
+            'vessel_management.html',
+            vessels=vessels,
+            total_vessels=total_vessels
+        )
+    except Exception as e:
+        app.logger.error(f"Error loading vessel management: {e}", exc_info=True)
+        flash('Error loading vessel management. Please try again.', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/add-vessel', methods=['GET', 'POST'])
+@login_required
+@role_required(['harbour_master'])
+def add_vessel():
+    """
+    Add a new vessel to the system.
+    
+    GET: Display form to add vessel
+    POST: Save new vessel to database
+    
+    Returns:
+        GET: Rendered form template
+        POST: Redirect to vessel management on success
+    """
+    try:
+        if request.method == 'POST':
+            # Extract general vessel information
+            vessel_name = request.form.get('vessel_name')
+            imo_number = request.form.get('imo_number')
+            mmsi_number = request.form.get('mmsi_number')
+            call_sign = request.form.get('call_sign')
+            vessel_type = request.form.get('vessel_type')
+            port_of_registry = request.form.get('port_of_registry')
+            flag_state = request.form.get('flag_state')
+            year_built = request.form.get('year_built')
+            builder = request.form.get('builder')
+            place_of_build = request.form.get('place_of_build')
+            hull_material = request.form.get('hull_material')
+            class_society = request.form.get('class_society')
+            class_notation = request.form.get('class_notation')
+            gross_tonnage = request.form.get('gross_tonnage')
+            net_tonnage = request.form.get('net_tonnage')
+            deadweight = request.form.get('deadweight')
+            length_overall = request.form.get('length_overall')
+            breadth = request.form.get('breadth')
+            depth = request.form.get('depth')
+            summer_draft = request.form.get('summer_draft')
+            
+            # Validate required fields
+            if not all([vessel_name, imo_number, vessel_type, flag_state]):
+                flash('Please fill in all required fields.', 'danger')
+                return redirect(request.referrer or url_for('add_vessel'))
+            
+            # TODO: Save to database
+            # vessel_data = {
+            #     'vessel_name': vessel_name,
+            #     'imo_number': imo_number,
+            #     'mmsi_number': mmsi_number,
+            #     ...
+            # }
+            
+            flash(f'Vessel {vessel_name} added successfully!', 'success')
+            return redirect(url_for('vessel_management'))
+        
+        # GET request - show form
+        return render_template('add_vessel.html')
+    except Exception as e:
+        app.logger.error(f"Error in add_vessel: {e}", exc_info=True)
+        flash('Error adding vessel. Please try again.', 'danger')
+        return redirect(url_for('vessel_management'))
+
+@app.route('/edit-vessel/<int:vessel_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(['harbour_master'])
+def edit_vessel(vessel_id):
+    """
+    Edit an existing vessel's information.
+    
+    GET: Display form with vessel data
+    POST: Update vessel in database
+    
+    Args:
+        vessel_id: ID of vessel to edit
+    
+    Returns:
+        GET: Rendered form template with vessel data
+        POST: Redirect to vessel management on success
+    """
+    try:
+        if request.method == 'POST':
+            # Extract form data and update
+            vessel_name = request.form.get('vessel_name')
+            
+            if not vessel_name:
+                flash('Vessel name is required.', 'danger')
+                return redirect(request.referrer or url_for('edit_vessel', vessel_id=vessel_id))
+            
+            # TODO: Update database
+            # db.execute("UPDATE vessels SET vessel_name=?, ... WHERE id=?", (..., vessel_id))
+            
+            flash(f'Vessel {vessel_name} updated successfully!', 'success')
+            return redirect(url_for('vessel_management'))
+        
+        # GET request - show form with existing data
+        vessel = {}  # TODO: Fetch from database by vessel_id
+        
+        return render_template('edit_vessel.html', vessel=vessel)
+    except Exception as e:
+        app.logger.error(f"Error in edit_vessel: {e}", exc_info=True)
+        flash('Error editing vessel. Please try again.', 'danger')
+        return redirect(url_for('vessel_management'))
+
+@app.route('/view-vessel/<int:vessel_id>')
+@login_required
+@role_required(['harbour_master', 'captain', 'chief_engineer'])
+def view_vessel(vessel_id):
+    """
+    Display detailed vessel information in the standard template format.
+    
+    Allows for printing and downloading of vessel specifications.
+    
+    Args:
+        vessel_id: ID of vessel to view
+    
+    Returns:
+        Rendered vessel details template
+    """
+    try:
+        # TODO: Fetch vessel from database
+        vessel = {
+            'vessel_name': 'Sample Vessel',
+            'imo_number': '1234567',
+            'mmsi_number': '123456789',
+            'call_sign': 'CALLSIGN',
+            'vessel_type': 'Bulk Carrier',
+            'port_of_registry': 'Port Said',
+            'flag_state': 'Panama',
+            'year_built': '2015',
+            'builder': 'Hyundai Heavy Industries',
+            'place_of_build': 'South Korea',
+            'hull_material': 'Steel',
+            'class_society': 'DNV-GL',
+            'class_notation': 'A1 Bulk Carrier',
+            'gross_tonnage': '38000',
+            'net_tonnage': '20000',
+            'deadweight': '75000',
+            'length_overall': '235.5',
+            'breadth': '40.0',
+            'depth': '22.5',
+            'summer_draft': '14.5',
+            'registered_owner': 'Shipping Company Name',
+            'owner_address': 'Owner Address',
+            'ship_manager': 'Manager Name',
+            'technical_manager': 'Technical Manager',
+            'ism_manager': 'ISM Manager',
+            'commercial_operator': 'Operator Name',
+            'pi_club': 'P&I Club Name',
+            'hull_machinery_insurer': 'Insurer Name',
+            'certificates': [],
+            'main_engine_make': 'MAN B&W',
+            'engine_type': '2-stroke',
+            'mcr': '10000',
+            'rated_speed': '85',
+            'number_of_engines': '1',
+            'propeller_type': 'Fixed Pitch',
+            'auxiliary_engines': '3 x 1000 kW',
+            'boiler': 'Exhaust Gas Economizer',
+            'fuel_type': 'HFO/MGO',
+            'service_speed': '14.5',
+            'maximum_speed': '15.5',
+            'fuel_consumption_service': '45.0',
+            'fuel_consumption_eco': '35.0',
+            'auxiliary_consumption': '5.0',
+            'sfoc': '185',
+            'shaft_power': '9800',
+            'propulsion_efficiency': '0.88',
+            'eedi_value': '5.2',
+            'required_eedi': '5.5',
+            'eedi_compliance': 'Yes',
+            'cii_rating': 'B',
+            'co2_emissions': '10.5',
+            'nox_tier': 'Tier II',
+            'sox_compliance': '0.5%',
+            'energy_saving_devices': 'Weather Routing, Propeller Optimization',
+            'performance_monitoring': 'Automated IoT-based',
+            'data_sources': 'FOC meters, GPS, Engine Logs',
+            'reporting_frequency': 'Daily',
+            'hull_propeller_monitoring': 'Quarterly',
+            'weather_routing': 'Yes',
+            'dry_dock_interval': '5 years',
+            'trading_area': 'Global',
+            'ice_class': 'Not Ice Classed',
+            'maximum_sea_state': 'Sea State 8',
+            'temperature_limits': '-5 to +45°C',
+            'ballast_treatment': 'UV-based BWTS',
+            'remarks': 'Vessel maintains excellent operational efficiency'
+        }
+        
+        return render_template('view_vessel.html', vessel=vessel)
+    except Exception as e:
+        app.logger.error(f"Error viewing vessel: {e}", exc_info=True)
+        flash('Error loading vessel details. Please try again.', 'danger')
+        return redirect(url_for('vessel_management'))
 
 @app.route('/crew-list-report')
 @login_required

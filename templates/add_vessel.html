@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}Add Vessel - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-ship me-2"></i>Add New Vessel</h2>
+            <p class="text-muted">Register a new vessel in the fleet management system</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('vessel_management') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Vessels
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('add_vessel') }}" id="addVesselForm" class="needs-validation">
+        <!-- 1. GENERAL VESSEL INFORMATION -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>1. General Vessel Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="vessel_name" class="form-label">Vessel Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="vessel_name" name="vessel_name" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="imo_number" class="form-label">IMO Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="imo_number" name="imo_number" placeholder="e.g., 1234567" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="mmsi_number" class="form-label">MMSI Number</label>
+                        <input type="text" class="form-control" id="mmsi_number" name="mmsi_number" placeholder="e.g., 123456789">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="call_sign" class="form-label">Call Sign</label>
+                        <input type="text" class="form-control" id="call_sign" name="call_sign" placeholder="e.g., CALLSIGN">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="vessel_type" class="form-label">Vessel Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="vessel_type" name="vessel_type" required>
+                            <option value="">Select Type</option>
+                            <option value="Bulk Carrier">Bulk Carrier</option>
+                            <option value="Container Ship">Container Ship</option>
+                            <option value="Tanker">Tanker</option>
+                            <option value="General Cargo">General Cargo</option>
+                            <option value="RoRo">RoRo</option>
+                            <option value="LNG Carrier">LNG Carrier</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="port_of_registry" class="form-label">Port of Registry</label>
+                        <input type="text" class="form-control" id="port_of_registry" name="port_of_registry">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="flag_state" class="form-label">Flag State <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="flag_state" name="flag_state" placeholder="e.g., Panama" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="year_built" class="form-label">Year Built</label>
+                        <input type="number" class="form-control" id="year_built" name="year_built" min="1900" max="2100">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="builder" class="form-label">Builder / Shipyard</label>
+                        <input type="text" class="form-control" id="builder" name="builder">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="place_of_build" class="form-label">Place of Build</label>
+                        <input type="text" class="form-control" id="place_of_build" name="place_of_build">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="hull_material" class="form-label">Hull Material</label>
+                        <input type="text" class="form-control" id="hull_material" name="hull_material" placeholder="e.g., Steel">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="class_society" class="form-label">Class Society</label>
+                        <input type="text" class="form-control" id="class_society" name="class_society" placeholder="e.g., DNV-GL">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="class_notation" class="form-label">Class Notation</label>
+                        <input type="text" class="form-control" id="class_notation" name="class_notation">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="gross_tonnage" class="form-label">Gross Tonnage (GT)</label>
+                        <input type="number" class="form-control" id="gross_tonnage" name="gross_tonnage" step="0.01">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="net_tonnage" class="form-label">Net Tonnage (NT)</label>
+                        <input type="number" class="form-control" id="net_tonnage" name="net_tonnage" step="0.01">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="deadweight" class="form-label">Deadweight (DWT)</label>
+                        <input type="number" class="form-control" id="deadweight" name="deadweight" step="0.01">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="length_overall" class="form-label">Overall Length (LOA) - m</label>
+                        <input type="number" class="form-control" id="length_overall" name="length_overall" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="breadth" class="form-label">Breadth (B) - m</label>
+                        <input type="number" class="form-control" id="breadth" name="breadth" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="depth" class="form-label">Depth (D) - m</label>
+                        <input type="number" class="form-control" id="depth" name="depth" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="summer_draft" class="form-label">Summer Draft - m</label>
+                        <input type="number" class="form-control" id="summer_draft" name="summer_draft" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. OWNERSHIP & MANAGEMENT -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>2. Ownership & Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="registered_owner" class="form-label">Registered Owner</label>
+                        <input type="text" class="form-control" id="registered_owner" name="registered_owner">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="owner_address" class="form-label">Owner Address</label>
+                        <input type="text" class="form-control" id="owner_address" name="owner_address">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="ship_manager" class="form-label">Ship Manager</label>
+                        <input type="text" class="form-control" id="ship_manager" name="ship_manager">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="technical_manager" class="form-label">Technical Manager</label>
+                        <input type="text" class="form-control" id="technical_manager" name="technical_manager">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="ism_manager" class="form-label">ISM Manager</label>
+                        <input type="text" class="form-control" id="ism_manager" name="ism_manager">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="commercial_operator" class="form-label">Commercial Operator / Charterer</label>
+                        <input type="text" class="form-control" id="commercial_operator" name="commercial_operator">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="pi_club" class="form-label">P&I Club</label>
+                        <input type="text" class="form-control" id="pi_club" name="pi_club">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="hull_machinery_insurer" class="form-label">Hull & Machinery Insurer</label>
+                        <input type="text" class="form-control" id="hull_machinery_insurer" name="hull_machinery_insurer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. MAIN PROPULSION & MACHINERY -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>3. Main Propulsion & Machinery</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="main_engine_make" class="form-label">Main Engine Make & Model</label>
+                        <input type="text" class="form-control" id="main_engine_make" name="main_engine_make">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="engine_type" class="form-label">Engine Type</label>
+                        <select class="form-select" id="engine_type" name="engine_type">
+                            <option value="">Select Type</option>
+                            <option value="2-stroke">2-stroke</option>
+                            <option value="4-stroke">4-stroke</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="mcr" class="form-label">MCR (kW)</label>
+                        <input type="number" class="form-control" id="mcr" name="mcr" step="0.01">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="rated_speed" class="form-label">Rated Speed (RPM)</label>
+                        <input type="number" class="form-control" id="rated_speed" name="rated_speed">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="number_of_engines" class="form-label">Number of Engines</label>
+                        <input type="number" class="form-control" id="number_of_engines" name="number_of_engines" min="1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="propeller_type" class="form-label">Propeller Type</label>
+                        <input type="text" class="form-control" id="propeller_type" name="propeller_type">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="auxiliary_engines" class="form-label">Auxiliary Engines (Make & Rating)</label>
+                        <input type="text" class="form-control" id="auxiliary_engines" name="auxiliary_engines">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="boiler" class="form-label">Boiler / Exhaust Gas Economizer</label>
+                        <input type="text" class="form-control" id="boiler" name="boiler">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="fuel_type" class="form-label">Fuel Type</label>
+                        <input type="text" class="form-control" id="fuel_type" name="fuel_type" placeholder="e.g., HFO, MGO, LNG">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. PERFORMANCE CHARACTERISTICS -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>4. Performance Characteristics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="service_speed" class="form-label">Service Speed (knots)</label>
+                        <input type="number" class="form-control" id="service_speed" name="service_speed" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="maximum_speed" class="form-label">Maximum Speed (knots)</label>
+                        <input type="number" class="form-control" id="maximum_speed" name="maximum_speed" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="fuel_consumption_service" class="form-label">Fuel Consumption @ Service Speed (t/day)</label>
+                        <input type="number" class="form-control" id="fuel_consumption_service" name="fuel_consumption_service" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="fuel_consumption_eco" class="form-label">Fuel Consumption @ Eco Speed (t/day)</label>
+                        <input type="number" class="form-control" id="fuel_consumption_eco" name="fuel_consumption_eco" step="0.1">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="auxiliary_consumption" class="form-label">Daily Auxiliary Consumption (t/day)</label>
+                        <input type="number" class="form-control" id="auxiliary_consumption" name="auxiliary_consumption" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="sfoc" class="form-label">SFOC (g/kWh)</label>
+                        <input type="number" class="form-control" id="sfoc" name="sfoc" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="shaft_power" class="form-label">Shaft Power @ Service Speed (kW)</label>
+                        <input type="number" class="form-control" id="shaft_power" name="shaft_power" step="0.01">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="propulsion_efficiency" class="form-label">Propulsion Efficiency</label>
+                        <input type="number" class="form-control" id="propulsion_efficiency" name="propulsion_efficiency" step="0.01" min="0" max="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ENERGY EFFICIENCY & EMISSIONS -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-leaf me-2"></i>5. Energy Efficiency & Emissions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="eedi_value" class="form-label">EEDI / EEXI Value</label>
+                        <input type="number" class="form-control" id="eedi_value" name="eedi_value" step="0.01">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="required_eedi" class="form-label">Required EEDI / EEXI</label>
+                        <input type="number" class="form-control" id="required_eedi" name="required_eedi" step="0.01">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="eedi_compliance" class="form-label">EEDI / EEXI Compliance</label>
+                        <select class="form-select" id="eedi_compliance" name="eedi_compliance">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="cii_rating" class="form-label">CII Rating (Current Year)</label>
+                        <input type="text" class="form-control" id="cii_rating" name="cii_rating" placeholder="e.g., A, B, C">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="co2_emissions" class="form-label">CO₂ Emissions (g CO₂/ton-nm)</label>
+                        <input type="number" class="form-control" id="co2_emissions" name="co2_emissions" step="0.01">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="nox_tier" class="form-label">NOx Tier</label>
+                        <select class="form-select" id="nox_tier" name="nox_tier">
+                            <option value="">Select</option>
+                            <option value="Tier I">Tier I</option>
+                            <option value="Tier II">Tier II</option>
+                            <option value="Tier III">Tier III</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="sox_compliance" class="form-label">SOx Compliance</label>
+                        <select class="form-select" id="sox_compliance" name="sox_compliance">
+                            <option value="">Select</option>
+                            <option value="0.5%">0.5%</option>
+                            <option value="0.1%">0.1% (ECAs)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="energy_saving_devices" class="form-label">Energy Saving Devices Installed</label>
+                        <input type="text" class="form-control" id="energy_saving_devices" name="energy_saving_devices">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. OPERATIONAL PARAMETERS -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>6. Operational Parameters</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="trading_area" class="form-label">Trading Area</label>
+                        <input type="text" class="form-control" id="trading_area" name="trading_area">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="ice_class" class="form-label">Ice Class</label>
+                        <input type="text" class="form-control" id="ice_class" name="ice_class">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="maximum_sea_state" class="form-label">Maximum Sea State</label>
+                        <input type="text" class="form-control" id="maximum_sea_state" name="maximum_sea_state">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="temperature_limits" class="form-label">Temperature Limits</label>
+                        <input type="text" class="form-control" id="temperature_limits" name="temperature_limits">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="ballast_treatment" class="form-label">Ballast Water Treatment System</label>
+                        <input type="text" class="form-control" id="ballast_treatment" name="ballast_treatment">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="dry_dock_interval" class="form-label">Dry Dock Interval</label>
+                        <input type="text" class="form-control" id="dry_dock_interval" name="dry_dock_interval" placeholder="e.g., 5 years">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. REMARKS -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>7. Remarks</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Any special operational notes, deficiencies, upgrades, retrofits, or performance deviations</label>
+                    <textarea class="form-control" id="remarks" name="remarks" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="row">
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save me-2"></i>Add Vessel
+                </button>
+                <a href="{{ url_for('vessel_management') }}" class="btn btn-outline-secondary btn-lg ms-2">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// Form validation
+document.getElementById('addVesselForm').addEventListener('submit', function(e) {
+    const requiredFields = ['vessel_name', 'imo_number', 'vessel_type', 'flag_state'];
+    
+    for (let field of requiredFields) {
+        const input = document.getElementById(field);
+        if (!input.value.trim()) {
+            e.preventDefault();
+            alert('Please fill in all required fields');
+            input.focus();
+            return false;
+        }
+    }
+});
+</script>
+{% endblock %}

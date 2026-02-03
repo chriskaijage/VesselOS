@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Vessel - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-ship me-2"></i>Edit Vessel</h2>
+            <p class="text-muted">Update vessel information and specifications</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('vessel_management') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Vessels
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('edit_vessel', vessel_id=vessel.get('id', 0)) }}" id="editVesselForm" class="needs-validation">
+        <!-- 1. GENERAL VESSEL INFORMATION -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>1. General Vessel Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="vessel_name" class="form-label">Vessel Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="vessel_name" name="vessel_name" value="{{ vessel.get('vessel_name', '') }}" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="imo_number" class="form-label">IMO Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="imo_number" name="imo_number" value="{{ vessel.get('imo_number', '') }}" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="mmsi_number" class="form-label">MMSI Number</label>
+                        <input type="text" class="form-control" id="mmsi_number" name="mmsi_number" value="{{ vessel.get('mmsi_number', '') }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="call_sign" class="form-label">Call Sign</label>
+                        <input type="text" class="form-control" id="call_sign" name="call_sign" value="{{ vessel.get('call_sign', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="vessel_type" class="form-label">Vessel Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="vessel_type" name="vessel_type" required>
+                            <option value="">Select Type</option>
+                            <option value="Bulk Carrier" {% if vessel.get('vessel_type') == 'Bulk Carrier' %}selected{% endif %}>Bulk Carrier</option>
+                            <option value="Container Ship" {% if vessel.get('vessel_type') == 'Container Ship' %}selected{% endif %}>Container Ship</option>
+                            <option value="Tanker" {% if vessel.get('vessel_type') == 'Tanker' %}selected{% endif %}>Tanker</option>
+                            <option value="General Cargo" {% if vessel.get('vessel_type') == 'General Cargo' %}selected{% endif %}>General Cargo</option>
+                            <option value="RoRo" {% if vessel.get('vessel_type') == 'RoRo' %}selected{% endif %}>RoRo</option>
+                            <option value="LNG Carrier" {% if vessel.get('vessel_type') == 'LNG Carrier' %}selected{% endif %}>LNG Carrier</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="port_of_registry" class="form-label">Port of Registry</label>
+                        <input type="text" class="form-control" id="port_of_registry" name="port_of_registry" value="{{ vessel.get('port_of_registry', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="flag_state" class="form-label">Flag State <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="flag_state" name="flag_state" value="{{ vessel.get('flag_state', '') }}" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="year_built" class="form-label">Year Built</label>
+                        <input type="number" class="form-control" id="year_built" name="year_built" value="{{ vessel.get('year_built', '') }}" min="1900" max="2100">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="builder" class="form-label">Builder / Shipyard</label>
+                        <input type="text" class="form-control" id="builder" name="builder" value="{{ vessel.get('builder', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="place_of_build" class="form-label">Place of Build</label>
+                        <input type="text" class="form-control" id="place_of_build" name="place_of_build" value="{{ vessel.get('place_of_build', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="hull_material" class="form-label">Hull Material</label>
+                        <input type="text" class="form-control" id="hull_material" name="hull_material" value="{{ vessel.get('hull_material', '') }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="class_society" class="form-label">Class Society</label>
+                        <input type="text" class="form-control" id="class_society" name="class_society" value="{{ vessel.get('class_society', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="class_notation" class="form-label">Class Notation</label>
+                        <input type="text" class="form-control" id="class_notation" name="class_notation" value="{{ vessel.get('class_notation', '') }}">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="gross_tonnage" class="form-label">Gross Tonnage (GT)</label>
+                        <input type="number" class="form-control" id="gross_tonnage" name="gross_tonnage" value="{{ vessel.get('gross_tonnage', '') }}" step="0.01">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="net_tonnage" class="form-label">Net Tonnage (NT)</label>
+                        <input type="number" class="form-control" id="net_tonnage" name="net_tonnage" value="{{ vessel.get('net_tonnage', '') }}" step="0.01">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="deadweight" class="form-label">Deadweight (DWT)</label>
+                        <input type="number" class="form-control" id="deadweight" name="deadweight" value="{{ vessel.get('deadweight', '') }}" step="0.01">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="length_overall" class="form-label">Overall Length (LOA) - m</label>
+                        <input type="number" class="form-control" id="length_overall" name="length_overall" value="{{ vessel.get('length_overall', '') }}" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="breadth" class="form-label">Breadth (B) - m</label>
+                        <input type="number" class="form-control" id="breadth" name="breadth" value="{{ vessel.get('breadth', '') }}" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="depth" class="form-label">Depth (D) - m</label>
+                        <input type="number" class="form-control" id="depth" name="depth" value="{{ vessel.get('depth', '') }}" step="0.1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="summer_draft" class="form-label">Summer Draft - m</label>
+                        <input type="number" class="form-control" id="summer_draft" name="summer_draft" value="{{ vessel.get('summer_draft', '') }}" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Save Alert -->
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> This form shows a subset of vessel details. For comprehensive editing, use the vessel view page which contains all technical specifications.
+        </div>
+
+        <!-- Form Actions -->
+        <div class="row">
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+                <a href="{{ url_for('vessel_management') }}" class="btn btn-outline-secondary btn-lg ms-2">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// Form validation
+document.getElementById('editVesselForm').addEventListener('submit', function(e) {
+    const requiredFields = ['vessel_name', 'imo_number', 'vessel_type', 'flag_state'];
+    
+    for (let field of requiredFields) {
+        const input = document.getElementById(field);
+        if (!input.value.trim()) {
+            e.preventDefault();
+            alert('Please fill in all required fields');
+            input.focus();
+            return false;
+        }
+    }
+});
+</script>
+{% endblock %}

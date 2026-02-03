@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vessel.vessel_name }} - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>{{ vessel.vessel_name }}</h2>
+            <p class="text-muted">
+                <i class="fas fa-ship me-2"></i>IMO: {{ vessel.imo_number }} | Call Sign: {{ vessel.call_sign }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Print / Download PDF
+            </button>
+            <a href="{{ url_for('edit_vessel', vessel_id=vessel.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-2"></i>Edit
+            </a>
+            <a href="{{ url_for('vessel_management') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Printable Content -->
+    <div id="printable-content" class="bg-white p-5">
+        <!-- Header -->
+        <div class="text-center mb-5 border-bottom pb-4">
+            <h1>VESSEL INFORMATION REPORT</h1>
+            <p class="text-muted">Marine Service Center Fleet Management System</p>
+        </div>
+
+        <!-- 1. GENERAL VESSEL INFORMATION -->
+        <h3 class="border-bottom pb-2 mb-3"><strong>1. General Vessel Information</strong></h3>
+        <table class="table table-sm table-bordered mb-4">
+            <tr>
+                <td style="width: 40%"><strong>Vessel Name</strong></td>
+                <td>{{ vessel.vessel_name }}</td>
+            </tr>
+            <tr>
+                <td><strong>IMO Number</strong></td>
+                <td>{{ vessel.imo_number }}</td>
+            </tr>
+            <tr>
+                <td><strong>MMSI Number</strong></td>
+                <td>{{ vessel.mmsi_number }}</td>
+            </tr>
+            <tr>
+                <td><strong>Call Sign</strong></td>
+                <td>{{ vessel.call_sign }}</td>
+            </tr>
+            <tr>
+                <td><strong>Vessel Type</strong></td>
+                <td>{{ vessel.vessel_type }}</td>
+            </tr>
+            <tr>
+                <td><strong>Port of Registry</strong></td>
+                <td>{{ vessel.port_of_registry }}</td>
+            </tr>
+            <tr>
+                <td><strong>Flag State</strong></td>
+                <td>{{ vessel.flag_state }}</td>
+            </tr>
+            <tr>
+                <td><strong>Year Built</strong></td>
+                <td>{{ vessel.year_built }}</td>
+            </tr>
+            <tr>
+                <td><strong>Builder / Shipyard</strong></td>
+                <td>{{ vessel.builder }}</td>
+            </tr>
+            <tr>
+                <td><strong>Place of Build</strong></td>
+                <td>{{ vessel.place_of_build }}</td>
+            </tr>
+            <tr>
+                <td><strong>Hull Material</strong></td>
+                <td>{{ vessel.hull_material }}</td>
+            </tr>
+            <tr>
+                <td><strong>Class Society</strong></td>
+                <td>{{ vessel.class_society }}</td>
+            </tr>
+            <tr>
+                <td><strong>Class Notation</strong></td>
+                <td>{{ vessel.class_notation }}</td>
+            </tr>
+            <tr>
+                <td><strong>Gross Tonnage (GT)</strong></td>
+                <td>{{ vessel.gross_tonnage }}</td>
+            </tr>
+            <tr>
+                <td><strong>Net Tonnage (NT)</strong></td>
+                <td>{{ vessel.net_tonnage }}</td>
+            </tr>
+            <tr>
+                <td><strong>Deadweight (DWT)</strong></td>
+                <td>{{ vessel.deadweight }}</td>
+            </tr>
+            <tr>
+                <td><strong>Overall Length (LOA)</strong></td>
+                <td>{{ vessel.length_overall }} m</td>
+            </tr>
+            <tr>
+                <td><strong>Breadth (B)</strong></td>
+                <td>{{ vessel.breadth }} m</td>
+            </tr>
+            <tr>
+                <td><strong>Depth (D)</strong></td>
+                <td>{{ vessel.depth }} m</td>
+            </tr>
+            <tr>
+                <td><strong>Summer Draft</strong></td>
+                <td>{{ vessel.summer_draft }} m</td>
+            </tr>
+        </table>
+
+        <!-- 2. OWNERSHIP & MANAGEMENT -->
+        <h3 class="border-bottom pb-2 mb-3"><strong>2. Ownership & Management</strong></h3>
+        <table class="table table-sm table-bordered mb-4">
+            <tr>
+                <td style="width: 40%"><strong>Registered Owner</strong></td>
+                <td>{{ vessel.registered_owner }}</td>
+            </tr>
+            <tr>
+                <td><strong>Owner Address</strong></td>
+                <td>{{ vessel.owner_address }}</td>
+            </tr>
+            <tr>
+                <td><strong>Ship Manager</strong></td>
+                <td>{{ vessel.ship_manager }}</td>
+            </tr>
+            <tr>
+                <td><strong>Technical Manager</strong></td>
+                <td>{{ vessel.technical_manager }}</td>
+            </tr>
+            <tr>
+                <td><strong>ISM Manager</strong></td>
+                <td>{{ vessel.ism_manager }}</td>
+            </tr>
+            <tr>
+                <td><strong>Commercial Operator / Charterer</strong></td>
+                <td>{{ vessel.commercial_operator }}</td>
+            </tr>
+            <tr>
+                <td><strong>P&I Club</strong></td>
+                <td>{{ vessel.pi_club }}</td>
+            </tr>
+            <tr>
+                <td><strong>Hull & Machinery Insurer</strong></td>
+                <td>{{ vessel.hull_machinery_insurer }}</td>
+            </tr>
+        </table>
+
+        <!-- 3. MAIN PROPULSION & MACHINERY -->
+        <h3 class="border-bottom pb-2 mb-3"><strong>3. Main Propulsion & Machinery</strong></h3>
+        <table class="table table-sm table-bordered mb-4">
+            <tr>
+                <td style="width: 40%"><strong>Main Engine Make & Model</strong></td>
+                <td>{{ vessel.main_engine_make }}</td>
+            </tr>
+            <tr>
+                <td><strong>Engine Type</strong></td>
+                <td>{{ vessel.engine_type }}</td>
+            </tr>
+            <tr>
+                <td><strong>Maximum Continuous Rating (MCR)</strong></td>
+                <td>{{ vessel.mcr }} kW</td>
+            </tr>
+            <tr>
+                <td><strong>Rated Speed (RPM)</strong></td>
+                <td>{{ vessel.rated_speed }}</td>
+            </tr>
+            <tr>
+                <td><strong>Number of Engines</strong></td>
+                <td>{{ vessel.number_of_engines }}</td>
+            </tr>
+            <tr>
+                <td><strong>Propeller Type</strong></td>
+                <td>{{ vessel.propeller_type }}</td>
+            </tr>
+            <tr>
+                <td><strong>Auxiliary Engines (Make & Rating)</strong></td>
+                <td>{{ vessel.auxiliary_engines }}</td>
+            </tr>
+            <tr>
+                <td><strong>Boiler / Exhaust Gas Economizer</strong></td>
+                <td>{{ vessel.boiler }}</td>
+            </tr>
+            <tr>
+                <td><strong>Fuel Type</strong></td>
+                <td>{{ vessel.fuel_type }}</td>
+            </tr>
+        </table>
+
+        <!-- 4. PERFORMANCE CHARACTERISTICS -->
+        <h3 class="border-bottom pb-2 mb-3"><strong>4. Performance Characteristics</strong></h3>
+        <table class="table table-sm table-bordered mb-4">
+            <tr>
+                <td style="width: 40%"><strong>Service Speed (knots)</strong></td>
+                <td>{{ vessel.service_speed }}</td>
+            </tr>
+            <tr>
+                <td><strong>Maximum Speed (knots)</strong></td>
+                <td>{{ vessel.maximum_speed }}</td>
+            </tr>
+            <tr>
+                <td><strong>Fuel Consumption @ Service Speed</strong></td>
+                <td>{{ vessel.fuel_consumption_service }} t/day</td>
+            </tr>
+            <tr>
+                <td><strong>Fuel Consumption @ Eco Speed</strong></td>
+                <td>{{ vessel.fuel_consumption_eco }} t/day</td>
+            </tr>
+            <tr>
+                <td><strong>Daily Auxiliary Consumption</strong></td>
+                <td>{{ vessel.auxiliary_consumption }} t/day</td>
+            </tr>
+            <tr>
+                <td><strong>Specific Fuel Oil Consumption (SFOC)</strong></td>
+                <td>{{ vessel.sfoc }} g/kWh</td>
+            </tr>
+            <tr>
+                <td><strong>Shaft Power @ Service Speed</strong></td>
+                <td>{{ vessel.shaft_power }} kW</td>
+            </tr>
+            <tr>
+                <td><strong>Propulsion Efficiency</strong></td>
+                <td>{{ vessel.propulsion_efficiency }}</td>
+            </tr>
+        </table>
+
+        <!-- 5. ENERGY EFFICIENCY & EMISSIONS -->
+        <h3 class="border-bottom pb-2 mb-3"><strong>5. Energy Efficiency & Emissions</strong></h3>
+        <table class="table table-sm table-bordered mb-4">
+            <tr>
+                <td style="width: 40%"><strong>EEDI / EEXI Value</strong></td>
+                <td>{{ vessel.eedi_value }}</td>
+            </tr>
+            <tr>
+                <td><strong>Required EEDI / EEXI</strong></td>
+                <td>{{ vessel.required_eedi }}</td>
+            </tr>
+            <tr>
+                <td><strong>EEDI / EEXI Compliance</strong></td>
+                <td>{{ vessel.eedi_compliance }}</td>
+            </tr>
+            <tr>
+                <td><strong>CII Rating (Current Year)</strong></td>
+                <td>{{ vessel.cii_rating }}</td>
+            </tr>
+            <tr>
+                <td><strong>CO₂ Emissions</strong></td>
+                <td>{{ vessel.co2_emissions }} g CO₂/ton-nm</td>
+            </tr>
+            <tr>
+                <td><strong>NOx Tier</strong></td>
+                <td>{{ vessel.nox_tier }}</td>
+            </tr>
+            <tr>
+                <td><strong>SOx Compliance</strong></td>
+                <td>{{ vessel.sox_compliance }}</td>
+            </tr>
+            <tr>
+                <td><strong>Energy Saving Devices Installed</strong></td>
+                <td>{{ vessel.energy_saving_devices }}</td>
+            </tr>
+        </table>
+
+        <!-- 6. OPERATIONAL PARAMETERS -->
+        <h3 class="border-bottom pb-2 mb-3"><strong>6. Operational Parameters</strong></h3>
+        <table class="table table-sm table-bordered mb-4">
+            <tr>
+                <td style="width: 40%"><strong>Performance Monitoring System</strong></td>
+                <td>{{ vessel.performance_monitoring }}</td>
+            </tr>
+            <tr>
+                <td><strong>Data Sources</strong></td>
+                <td>{{ vessel.data_sources }}</td>
+            </tr>
+            <tr>
+                <td><strong>Reporting Frequency</strong></td>
+                <td>{{ vessel.reporting_frequency }}</td>
+            </tr>
+            <tr>
+                <td><strong>Hull & Propeller Condition Monitoring</strong></td>
+                <td>{{ vessel.hull_propeller_monitoring }}</td>
+            </tr>
+            <tr>
+                <td><strong>Weather Routing Applied</strong></td>
+                <td>{{ vessel.weather_routing }}</td>
+            </tr>
+            <tr>
+                <td><strong>Dry Dock Interval</strong></td>
+                <td>{{ vessel.dry_dock_interval }}</td>
+            </tr>
+            <tr>
+                <td><strong>Trading Area</strong></td>
+                <td>{{ vessel.trading_area }}</td>
+            </tr>
+            <tr>
+                <td><strong>Ice Class</strong></td>
+                <td>{{ vessel.ice_class }}</td>
+            </tr>
+            <tr>
+                <td><strong>Maximum Sea State</strong></td>
+                <td>{{ vessel.maximum_sea_state }}</td>
+            </tr>
+            <tr>
+                <td><strong>Temperature Limits</strong></td>
+                <td>{{ vessel.temperature_limits }}</td>
+            </tr>
+            <tr>
+                <td><strong>Ballast Water Treatment System</strong></td>
+                <td>{{ vessel.ballast_treatment }}</td>
+            </tr>
+        </table>
+
+        <!-- 7. REMARKS -->
+        {% if vessel.remarks %}
+        <h3 class="border-bottom pb-2 mb-3"><strong>7. Remarks</strong></h3>
+        <div class="alert alert-info mb-4">
+            {{ vessel.remarks }}
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="border-top pt-4 mt-5" style="page-break-inside: avoid;">
+            <h5>DECLARATION</h5>
+            <table class="table table-sm" style="border: none;">
+                <tr>
+                    <td style="border: none; width: 30%;">Prepared by:</td>
+                    <td style="border: none; border-bottom: 1px solid #000;">_________________________</td>
+                </tr>
+                <tr>
+                    <td style="border: none;">Position:</td>
+                    <td style="border: none; border-bottom: 1px solid #000;">_________________________</td>
+                </tr>
+                <tr>
+                    <td style="border: none;">Date:</td>
+                    <td style="border: none; border-bottom: 1px solid #000;">_________________________</td>
+                </tr>
+                <tr>
+                    <td style="border: none;">Signature:</td>
+                    <td style="border: none; border-bottom: 1px solid #000;">_________________________</td>
+                </tr>
+            </table>
+            <p class="text-muted small mt-4">Report Generated: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+    </div>
+</div>
+
+<style media="print">
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    .row.mb-4:first-child {
+        display: none;
+    }
+    #printable-content {
+        page-break-after: always;
+    }
+    table.table {
+        page-break-inside: avoid;
+    }
+    h3 {
+        page-break-after: avoid;
+    }
+</style>
+
+<script>
+    // Replace now with current date/time in template
+    const printableContent = document.getElementById('printable-content');
+    if (printableContent) {
+        const now = new Date();
+        const dateStr = now.toLocaleString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        const reportDate = printableContent.innerHTML.replace('{{ now.strftime(\'%Y-%m-%d %H:%M:%S\') }}', dateStr);
+        printableContent.innerHTML = reportDate;
+    }
+</script>
+{% endblock %}

@@ -3276,6 +3276,31 @@ function showFilePreview(fileUrl, fileName) {
                         </ul>
                     </div>
                 </li>
+                
+                <!-- Vessel Management Section for Harbour Master -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['vessel_management', 'add_vessel', 'edit_vessel', 'view_vessel'] %}active{% endif %}" 
+                       href="#vesselManagement" data-bs-toggle="collapse" aria-expanded="false" title="Vessel Management">
+                        <i class="fas fa-ship"></i>
+                        <span>Vessel Management</span>
+                    </a>
+                    <div class="collapse {% if request.endpoint in ['vessel_management', 'add_vessel', 'edit_vessel', 'view_vessel'] %}show{% endif %}" id="vesselManagement">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'vessel_management' %}active{% endif %}" href="{{ url_for('vessel_management') }}" title="View Vessels">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Vessels</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'add_vessel' %}active{% endif %}" href="{{ url_for('add_vessel') }}" title="Add Vessel">
+                                    <i class="fas fa-plus fa-sm"></i>
+                                    <span>Add Vessel</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
                 {% endif %}
                 
                 <li class="nav-item">
