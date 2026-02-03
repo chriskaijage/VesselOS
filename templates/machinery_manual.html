@@ -96,8 +96,10 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Ship Name *</label>
-                            <input type="text" class="form-control" id="shipNameInput" name="ship_name" required placeholder="e.g., MV Oceanic">
-                            <small class="text-muted">Enter the exact ship name</small>
+                            <select class="form-select" id="shipNameInput" name="ship_name" required>
+                                <option value="">Select a vessel</option>
+                            </select>
+                            <small class="text-muted">Choose from your registered vessels</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Folder Name *</label>
@@ -447,8 +449,36 @@ function uploadMachineryFolder() {
     document.getElementById('uploadMachineryBtn').disabled = false;
     document.getElementById('fileList').style.display = 'none';
     
+    // Load vessels into dropdown
+    loadVesselsForDropdown();
+    
     const modal = new bootstrap.Modal(document.getElementById('uploadMachineryModal'));
     modal.show();
+}
+
+// Load vessels from database
+function loadVesselsForDropdown() {
+    fetch('/api/vessels', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.vessels && data.vessels.length > 0) {
+            let html = '<option value="">Select a vessel</option>';
+            data.vessels.forEach(vessel => {
+                html += `<option value="${vessel.name}">${vessel.name} (${vessel.vessel_type || 'Unknown Type'}) - IMO: ${vessel.imo || 'N/A'}</option>`;
+            });
+            document.getElementById('shipNameInput').innerHTML = html;
+        } else {
+            let html = '<option value="">No vessels available</option>';
+            document.getElementById('shipNameInput').innerHTML = html;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading vessels:', error);
+        document.getElementById('shipNameInput').innerHTML = '<option value="">Error loading vessels</option>';
+    });
 }
 
 function updateFileList() {

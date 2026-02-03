@@ -8272,6 +8272,38 @@ def remove_crew_member(crew_id):
 
 # ======================== VESSEL MANAGEMENT ROUTES ========================
 
+@app.route('/api/vessels', methods=['GET'])
+@login_required
+def api_get_vessels():
+    """
+    API endpoint to get list of all vessels.
+    
+    Returns JSON with:
+        - success (bool): Operation status
+        - vessels (list): Array of vessel objects with id, name, type, imo
+    """
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Fetch all active vessels
+        c.execute("""
+            SELECT vessel_id, vessel_name as name, vessel_type, imo_number as imo
+            FROM vessels 
+            WHERE status='active'
+            ORDER BY vessel_name
+        """)
+        vessels = [dict(zip([col[0] for col in c.description], row)) 
+                  for row in c.fetchall()]
+        
+        conn.close()
+        
+        return jsonify(success=True, vessels=vessels)
+    except Exception as e:
+        app.logger.error(f"Error fetching vessels API: {e}")
+        return jsonify(success=False, error='Failed to fetch vessels'), 500
+
+
 @app.route('/vessel-management')
 @login_required
 @role_required(['harbour_master'])
