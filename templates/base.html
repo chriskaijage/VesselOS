@@ -779,6 +779,51 @@ function showFilePreview(fileUrl, fileName) {
             color: inherit;
         }
         
+        /* Sidebar collapse submenus */
+        .sidebar-nav .nav-item .collapse {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin: 0.25rem 0 0.25rem 0.5rem;
+            border-left: 3px solid rgba(var(--primary-rgb), 0.3);
+        }
+        .sidebar-nav .nav-item .collapse .nav {
+            padding: 0.35rem 0;
+        }
+        .sidebar-nav .nav-item .collapse .nav-item {
+            margin: 0 0.5rem;
+        }
+        .sidebar-nav .nav-item .collapse .nav-link {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            border-radius: 6px;
+        }
+        .sidebar-nav .nav-item .collapse .nav-link i {
+            width: 18px;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        /* Chevron on collapse toggles: rotate when open */
+        .sidebar-nav .nav-link[data-bs-toggle="collapse"] {
+            position: relative;
+        }
+        .sidebar-nav .nav-link[data-bs-toggle="collapse"]::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-left: auto;
+            transition: transform 0.25s ease;
+            border: none !important;
+            width: auto;
+            height: auto;
+            vertical-align: middle;
+        }
+        .sidebar-nav .nav-item:has(.collapse.show) .nav-link[data-bs-toggle="collapse"]::after {
+            transform: rotate(180deg);
+        }
+        .sidebar.collapsed .sidebar-nav .nav-link[data-bs-toggle="collapse"]::after {
+            display: none;
+        }
+        
         .sidebar-footer {
             padding: 1rem 1.5rem;
             background: white;
@@ -1030,22 +1075,33 @@ function showFilePreview(fileUrl, fileName) {
             color: var(--primary-color) !important;
         }
         
-        /* Sidebar scrollbar styling */
+        /* Sidebar scrollbar styling - theme-aware */
         .sidebar-nav::-webkit-scrollbar {
             width: 6px;
         }
         
         .sidebar-nav::-webkit-scrollbar-track {
-            background: #f3f4f6;
+            background: var(--bg-tertiary);
         }
         
         .sidebar-nav::-webkit-scrollbar-thumb {
-            background: #d1d5db;
+            background: var(--border-color);
             border-radius: 3px;
         }
         
         .sidebar-nav::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
+            background: var(--primary-color);
+            opacity: 0.6;
+        }
+        
+        /* Sidebar nav section divider (optional visual grouping) */
+        .sidebar-nav .nav-item.nav-divider {
+            margin: 0.5rem 0.75rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-nav .nav-item.nav-divider + .nav-item {
+            margin-top: 0.25rem;
         }
         
         /* User dropdown menu icons - match system theme */
@@ -5517,8 +5573,7 @@ function showFilePreview(fileUrl, fileName) {
         
         if (sidebar && savedState === 'true') {
             sidebar.classList.add('collapsed');
-            // Don't add body padding class since header always stays visible
-            // body.classList.add('sidebar-collapsed');
+            body.classList.add('sidebar-collapsed');
             
             if (toggleIcon) {
                 toggleIcon.classList.remove('fa-chevron-left');
