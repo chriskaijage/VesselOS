@@ -343,13 +343,26 @@ function renderCertificates() {
                                 </label>
                                 <small class="text-muted d-block">STCW ${cert.regulation} | Valid: ${cert.validity}</small>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="${certId}_number" class="form-label">Certificate Number</label>
                                 <input type="text" class="form-control form-control-sm" id="${certId}_number" name="cert_number_${index}" placeholder="e.g., ABC123456" data-cert-name="${cert.name}">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="${certId}_expiry" class="form-label">Expiry Date</label>
                                 <input type="date" class="form-control form-control-sm" id="${certId}_expiry" name="cert_expiry_${index}" data-cert-name="${cert.name}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label d-block">Upload Document</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="file" class="form-control form-control-sm" id="${certId}_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="max-width: 0.1px; opacity: 0;">
+                                    <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('${certId}_file').click();" title="Upload certificate document">
+                                        <i class="fas fa-upload"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted d-block mt-1">
+                                    <span id="${certId}_file_name" style="display: none;"><i class="fas fa-check text-success"></i> <span></span></span>
+                                    <span id="${certId}_file_label" style="font-size: 0.75rem;">PDF, JPG, DOC</span>
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -360,6 +373,28 @@ function renderCertificates() {
     
     html += '</div>';
     container.innerHTML = html;
+    
+    // Add file input change handlers
+    certs.forEach((cert, index) => {
+        const certId = `cert_${index}`;
+        const fileInput = document.getElementById(certId + '_file');
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const fileName = this.files[0]?.name || '';
+                const fileNameSpan = document.getElementById(certId + '_file_name');
+                const fileLabel = document.getElementById(certId + '_file_label');
+                
+                if (fileName) {
+                    fileNameSpan.style.display = 'block';
+                    fileNameSpan.querySelector('span').textContent = fileName;
+                    fileLabel.style.display = 'none';
+                } else {
+                    fileNameSpan.style.display = 'none';
+                    fileLabel.style.display = 'block';
+                }
+            });
+        }
+    });
 }
 
 // Function to populate rank dropdown based on department
