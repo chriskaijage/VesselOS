@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Crew Member - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-edit me-2"></i>Edit Crew Member</h2>
+            <p class="text-muted">Update crew member information</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('crew_management') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Crew Management
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_crew_member', crew_id=crew_member.get('id', 0)) }}" id="editCrewForm">
+                        <!-- Vessel Selection -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="vessel_id" class="form-label">
+                                    <i class="fas fa-ship me-2"></i>Vessel <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="vessel_id" name="vessel_id" required>
+                                    <option value="">Select a vessel</option>
+                                    {% for vessel in vessels %}
+                                        <option value="{{ vessel.id }}" {% if vessel.id == crew_member.get('vessel_id') %}selected{% endif %}>
+                                            {{ vessel.name }} (IMO: {{ vessel.imo }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Personal Information -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ crew_member.get('first_name', '') }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ crew_member.get('last_name', '') }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Position Information -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-briefcase me-2"></i>Position Information
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Department <span class="text-danger">*</span></label>
+                                <select class="form-select" id="department" name="department" required>
+                                    <option value="">Select department</option>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept }}" {% if dept == crew_member.get('department') %}selected{% endif %}>{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="rank" class="form-label">Rank/Position <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="rank" name="rank" value="{{ crew_member.get('rank', '') }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Certification Information -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-certificate me-2"></i>Certification & Documentation
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="license_number" class="form-label">License Number</label>
+                                <input type="text" class="form-control" id="license_number" name="license_number" value="{{ crew_member.get('license_number', '') }}">
+                                <small class="form-text text-muted">Maritime license number</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="certification" class="form-label">Certification Type</label>
+                                <input type="text" class="form-control" id="certification" name="certification" value="{{ crew_member.get('certification', '') }}">
+                                <small class="form-text text-muted">e.g., STCW, GMDSS, ADVANCED FIREFIGHTING</small>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Member Since:</strong> {{ crew_member.get('date_added', 'N/A') }}
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                                <a href="{{ url_for('crew_management') }}" class="btn btn-outline-secondary ms-2">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Edit Instructions
+                    </h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Update Information</strong>
+                            <p class="text-muted small">Modify any crew member details as needed</p>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Keep Records Current</strong>
+                            <p class="text-muted small">Ensure certifications and licenses are up-to-date</p>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Vessel Transfer</strong>
+                            <p class="text-muted small">You can reassign the crew member to a different vessel</p>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Save Changes</strong>
+                            <p class="text-muted small">Click 'Save Changes' to update the record</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-warning me-2"></i>Required Fields
+                    </h6>
+                    <p class="text-muted small">Fields marked with <span class="text-danger">*</span> are required</p>
+                    <ul class="small text-muted">
+                        <li>Vessel</li>
+                        <li>First Name</li>
+                        <li>Last Name</li>
+                        <li>Department</li>
+                        <li>Rank/Position</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3 border-danger">
+                <div class="card-body">
+                    <h6 class="card-title text-danger">
+                        <i class="fas fa-trash me-2"></i>Danger Zone
+                    </h6>
+                    <p class="text-muted small">To remove this crew member from the system, go back to Crew Management and use the delete button.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.getElementById('editCrewForm').addEventListener('submit', function(e) {
+    const requiredFields = ['vessel_id', 'first_name', 'last_name', 'department', 'rank'];
+    
+    for (let field of requiredFields) {
+        const input = document.getElementById(field);
+        if (!input.value.trim()) {
+            e.preventDefault();
+            alert('Please fill in all required fields');
+            input.focus();
+            return false;
+        }
+    }
+});
+
+// Department-specific suggestions
+document.getElementById('department').addEventListener('change', function() {
+    const rankSuggestions = {
+        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Bosun', 'Able Seaman'],
+        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'Electrician', 'Engine Cadet'],
+        'Catering': ['Chief Steward', 'Cook', 'Steward', 'Cleaner']
+    };
+    
+    const dept = this.value;
+    const rankInput = document.getElementById('rank');
+    
+    if (dept && rankSuggestions[dept]) {
+        rankInput.placeholder = 'e.g., ' + rankSuggestions[dept].join(', ');
+    }
+});
+</script>
+{% endblock %}

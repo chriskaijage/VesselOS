@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Add Crew Member - Marine Service Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-user-plus me-2"></i>Add Crew Member</h2>
+            <p class="text-muted">Add a new crew member to a vessel</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('crew_management') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Crew Management
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_crew_member') }}" id="addCrewForm">
+                        <!-- Vessel Selection -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="vessel_id" class="form-label">
+                                    <i class="fas fa-ship me-2"></i>Vessel <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="vessel_id" name="vessel_id" required>
+                                    <option value="">Select a vessel</option>
+                                    {% for vessel in vessels %}
+                                        <option value="{{ vessel.id }}">{{ vessel.name }} (IMO: {{ vessel.imo }})</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Choose the vessel this crew member will be assigned to</small>
+                            </div>
+                        </div>
+
+                        <!-- Personal Information -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            </div>
+                        </div>
+
+                        <!-- Position Information -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-briefcase me-2"></i>Position Information
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Department <span class="text-danger">*</span></label>
+                                <select class="form-select" id="department" name="department" required>
+                                    <option value="">Select department</option>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Deck, Engine, or Catering</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="rank" class="form-label">Rank/Position <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="rank" name="rank" placeholder="e.g., Captain, Chief Engineer, etc." required>
+                            </div>
+                        </div>
+
+                        <!-- Certification Information -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-certificate me-2"></i>Certification & Documentation
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="license_number" class="form-label">License Number</label>
+                                <input type="text" class="form-control" id="license_number" name="license_number" placeholder="e.g., LIC-2024-001">
+                                <small class="form-text text-muted">Maritime license number</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="certification" class="form-label">Certification Type</label>
+                                <input type="text" class="form-control" id="certification" name="certification" placeholder="e.g., STCW, GMDSS, etc.">
+                                <small class="form-text text-muted">e.g., STCW, GMDSS, ADVANCED FIREFIGHTING</small>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Add Crew Member
+                                </button>
+                                <a href="{{ url_for('crew_management') }}" class="btn btn-outline-secondary ms-2">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Instructions
+                    </h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>1. Select Vessel</strong>
+                            <p class="text-muted small">Choose which vessel this crew member belongs to</p>
+                        </li>
+                        <li class="mb-2">
+                            <strong>2. Enter Details</strong>
+                            <p class="text-muted small">Fill in the crew member's name, position, and department</p>
+                        </li>
+                        <li class="mb-2">
+                            <strong>3. Add Certifications</strong>
+                            <p class="text-muted small">Include any relevant maritime licenses or certifications</p>
+                        </li>
+                        <li class="mb-2">
+                            <strong>4. Submit</strong>
+                            <p class="text-muted small">Click 'Add Crew Member' to save the record</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-warning me-2"></i>Required Fields
+                    </h6>
+                    <p class="text-muted small">Fields marked with <span class="text-danger">*</span> are required</p>
+                    <ul class="small text-muted">
+                        <li>Vessel</li>
+                        <li>First Name</li>
+                        <li>Last Name</li>
+                        <li>Department</li>
+                        <li>Rank/Position</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.getElementById('addCrewForm').addEventListener('submit', function(e) {
+    const requiredFields = ['vessel_id', 'first_name', 'last_name', 'department', 'rank'];
+    
+    for (let field of requiredFields) {
+        const input = document.getElementById(field);
+        if (!input.value.trim()) {
+            e.preventDefault();
+            alert('Please fill in all required fields');
+            input.focus();
+            return false;
+        }
+    }
+});
+
+// Department-specific suggestions
+document.getElementById('department').addEventListener('change', function() {
+    const rankSuggestions = {
+        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Bosun', 'Able Seaman'],
+        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'Electrician', 'Engine Cadet'],
+        'Catering': ['Chief Steward', 'Cook', 'Steward', 'Cleaner']
+    };
+    
+    const dept = this.value;
+    const rankInput = document.getElementById('rank');
+    
+    if (dept && rankSuggestions[dept]) {
+        rankInput.placeholder = 'e.g., ' + rankSuggestions[dept].join(', ');
+    }
+});
+</script>
+{% endblock %}
