@@ -47,12 +47,54 @@
                         <label for="vessel_type" class="form-label">Vessel Type <span class="text-danger">*</span></label>
                         <select class="form-select" id="vessel_type" name="vessel_type" required>
                             <option value="">Select Type</option>
+                            <option value="Barge" {% if vessel.get('vessel_type') == 'Barge' %}selected{% endif %}>Barge</option>
                             <option value="Bulk Carrier" {% if vessel.get('vessel_type') == 'Bulk Carrier' %}selected{% endif %}>Bulk Carrier</option>
+                            <option value="Cargo Ship" {% if vessel.get('vessel_type') == 'Cargo Ship' %}selected{% endif %}>Cargo Ship</option>
+                            <option value="Catamaran" {% if vessel.get('vessel_type') == 'Catamaran' %}selected{% endif %}>Catamaran</option>
+                            <option value="Canoe" {% if vessel.get('vessel_type') == 'Canoe' %}selected{% endif %}>Canoe</option>
                             <option value="Container Ship" {% if vessel.get('vessel_type') == 'Container Ship' %}selected{% endif %}>Container Ship</option>
+                            <option value="Coaster" {% if vessel.get('vessel_type') == 'Coaster' %}selected{% endif %}>Coaster</option>
+                            <option value="Cruise Ship" {% if vessel.get('vessel_type') == 'Cruise Ship' %}selected{% endif %}>Cruise Ship</option>
+                            <option value="Dhow" {% if vessel.get('vessel_type') == 'Dhow' %}selected{% endif %}>Dhow</option>
+                            <option value="Dredger" {% if vessel.get('vessel_type') == 'Dredger' %}selected{% endif %}>Dredger</option>
+                            <option value="Ferry" {% if vessel.get('vessel_type') == 'Ferry' %}selected{% endif %}>Ferry</option>
+                            <option value="Fishing Trawler" {% if vessel.get('vessel_type') == 'Fishing Trawler' %}selected{% endif %}>Fishing Trawler</option>
+                            <option value="Flatboat" {% if vessel.get('vessel_type') == 'Flatboat' %}selected{% endif %}>Flatboat</option>
+                            <option value="General Cargo Ship" {% if vessel.get('vessel_type') == 'General Cargo Ship' %}selected{% endif %}>General Cargo Ship</option>
+                            <option value="Gunboat (Police/Marine)" {% if vessel.get('vessel_type') == 'Gunboat (Police/Marine)' %}selected{% endif %}>Gunboat (Police/Marine)</option>
+                            <option value="Hopper Barge" {% if vessel.get('vessel_type') == 'Hopper Barge' %}selected{% endif %}>Hopper Barge</option>
+                            <option value="Hydrofoil" {% if vessel.get('vessel_type') == 'Hydrofoil' %}selected{% endif %}>Hydrofoil</option>
+                            <option value="Kayak" {% if vessel.get('vessel_type') == 'Kayak' %}selected{% endif %}>Kayak</option>
+                            <option value="Landing Craft" {% if vessel.get('vessel_type') == 'Landing Craft' %}selected{% endif %}>Landing Craft</option>
+                            <option value="Launch" {% if vessel.get('vessel_type') == 'Launch' %}selected{% endif %}>Launch</option>
+                            <option value="Liquefied Petroleum Gas Carrier (LPG)" {% if vessel.get('vessel_type') == 'Liquefied Petroleum Gas Carrier (LPG)' %}selected{% endif %}>Liquefied Petroleum Gas Carrier (LPG)</option>
+                            <option value="Longliner" {% if vessel.get('vessel_type') == 'Longliner' %}selected{% endif %}>Longliner</option>
+                            <option value="Motor Vessel" {% if vessel.get('vessel_type') == 'Motor Vessel' %}selected{% endif %}>Motor Vessel</option>
+                            <option value="Oil Tanker" {% if vessel.get('vessel_type') == 'Oil Tanker' %}selected{% endif %}>Oil Tanker</option>
+                            <option value="Outrigger Canoe" {% if vessel.get('vessel_type') == 'Outrigger Canoe' %}selected{% endif %}>Outrigger Canoe</option>
+                            <option value="Passenger Liner" {% if vessel.get('vessel_type') == 'Passenger Liner' %}selected{% endif %}>Passenger Liner</option>
+                            <option value="Patrol Boat" {% if vessel.get('vessel_type') == 'Patrol Boat' %}selected{% endif %}>Patrol Boat</option>
+                            <option value="Pontoon" {% if vessel.get('vessel_type') == 'Pontoon' %}selected{% endif %}>Pontoon</option>
+                            <option value="Research Vessel" {% if vessel.get('vessel_type') == 'Research Vessel' %}selected{% endif %}>Research Vessel</option>
+                            <option value="Reefer Ship" {% if vessel.get('vessel_type') == 'Reefer Ship' %}selected{% endif %}>Reefer Ship</option>
+                            <option value="Rigid Inflatable Boat (RIB)" {% if vessel.get('vessel_type') == 'Rigid Inflatable Boat (RIB)' %}selected{% endif %}>Rigid Inflatable Boat (RIB)</option>
+                            <option value="Riverboat" {% if vessel.get('vessel_type') == 'Riverboat' %}selected{% endif %}>Riverboat</option>
+                            <option value="Ro-Ro (Roll-on/Roll-off)" {% if vessel.get('vessel_type') == 'Ro-Ro (Roll-on/Roll-off)' %}selected{% endif %}>Ro-Ro (Roll-on/Roll-off)</option>
+                            <option value="Sampan" {% if vessel.get('vessel_type') == 'Sampan' %}selected{% endif %}>Sampan</option>
+                            <option value="Schooner" {% if vessel.get('vessel_type') == 'Schooner' %}selected{% endif %}>Schooner</option>
+                            <option value="Seiner" {% if vessel.get('vessel_type') == 'Seiner' %}selected{% endif %}>Seiner</option>
+                            <option value="Sloop" {% if vessel.get('vessel_type') == 'Sloop' %}selected{% endif %}>Sloop</option>
+                            <option value="Sternwheeler" {% if vessel.get('vessel_type') == 'Sternwheeler' %}selected{% endif %}>Sternwheeler</option>
+                            <option value="Supply Ship" {% if vessel.get('vessel_type') == 'Supply Ship' %}selected{% endif %}>Supply Ship</option>
+                            <option value="Survey Vessel" {% if vessel.get('vessel_type') == 'Survey Vessel' %}selected{% endif %}>Survey Vessel</option>
                             <option value="Tanker" {% if vessel.get('vessel_type') == 'Tanker' %}selected{% endif %}>Tanker</option>
-                            <option value="General Cargo" {% if vessel.get('vessel_type') == 'General Cargo' %}selected{% endif %}>General Cargo</option>
-                            <option value="RoRo" {% if vessel.get('vessel_type') == 'RoRo' %}selected{% endif %}>RoRo</option>
-                            <option value="LNG Carrier" {% if vessel.get('vessel_type') == 'LNG Carrier' %}selected{% endif %}>LNG Carrier</option>
+                            <option value="Tender" {% if vessel.get('vessel_type') == 'Tender' %}selected{% endif %}>Tender</option>
+                            <option value="Tugboat" {% if vessel.get('vessel_type') == 'Tugboat' %}selected{% endif %}>Tugboat</option>
+                            <option value="Vaporetto (water taxi)" {% if vessel.get('vessel_type') == 'Vaporetto (water taxi)' %}selected{% endif %}>Vaporetto (water taxi)</option>
+                            <option value="Warship (Navy)" {% if vessel.get('vessel_type') == 'Warship (Navy)' %}selected{% endif %}>Warship (Navy)</option>
+                            <option value="Whaler" {% if vessel.get('vessel_type') == 'Whaler' %}selected{% endif %}>Whaler</option>
+                            <option value="Wooden Dinghy" {% if vessel.get('vessel_type') == 'Wooden Dinghy' %}selected{% endif %}>Wooden Dinghy</option>
+                            <option value="Yacht" {% if vessel.get('vessel_type') == 'Yacht' %}selected{% endif %}>Yacht</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
