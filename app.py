@@ -4111,7 +4111,13 @@ def login():
             flash('Invalid email or password.', 'danger')
             return render_template('login.html')
 
-        user_dict = dict(user_data)
+        try:
+            user_dict = dict(user_data)
+        except Exception as dict_err:
+            app.logger.error(f"Error converting user data to dict for {email}: {dict_err}")
+            app.logger.error(f"User data type: {type(user_data)}, value: {user_data}")
+            flash('Login system error. Please contact support.', 'danger')
+            return render_template('login.html')
         
         # Verify password hash
         if not check_password_hash(user_dict['password'], password):
@@ -4146,7 +4152,13 @@ def login():
 
         # Successful authentication - create user session
         try:
-            user = User(user_dict)
+            try:
+                user = User(user_dict)
+            except Exception as user_err:
+                app.logger.error(f"Error creating User object: {user_err}")
+                app.logger.error(f"User dict keys: {user_dict.keys() if isinstance(user_dict, dict) else 'Not a dict'}")
+                raise user_err
+            
             login_user(user, remember=True)
 
             # Update login timestamp
@@ -4170,7 +4182,7 @@ def login():
             flash(f'Welcome back, {user.first_name}!', 'success')
             return redirect(url_for('dashboard'))
         except Exception as auth_err:
-            app.logger.error(f"Authentication error for email {email}: {auth_err}")
+            app.logger.error(f"Authentication error for email {email}: {auth_err}", exc_info=True)
             flash('An error occurred during login. Please try again.', 'danger')
             return render_template('login.html')
 
@@ -4289,11 +4301,20 @@ def register():
         confirm_password = request.form.get('confirm_password', '')
         first_name = request.form.get('first_name', '').strip()
         last_name = request.form.get('last_name', '').strip()
-        role = request.form.get('role', '')
+        role = request.form.get('role', '').strip()
         rank = request.form.get('rank', '').strip()
         phone = request.form.get('phone', '').strip()
         department = request.form.get('department', '').strip()
         location = request.form.get('location', '').strip()
+
+        # Validate required fields
+        if not first_name or not last_name:
+            flash('First name and last name are required.', 'danger')
+            return render_template('register.html')
+        
+        if not role:
+            flash('Please select a role.', 'danger')
+            return render_template('register.html')
 
         # Validate password confirmation
         if password != confirm_password:
