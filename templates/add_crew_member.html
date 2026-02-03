@@ -71,7 +71,10 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="rank" class="form-label">Rank/Position <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="rank" name="rank" placeholder="e.g., Captain, Chief Engineer, etc." required>
+                                <select class="form-select" id="rank" name="rank" required disabled>
+                                    <option value="">Select rank first (choose department above)</option>
+                                </select>
+                                <small class="form-text text-muted">Select department to populate available ranks</small>
                             </div>
                         </div>
 
@@ -300,13 +303,13 @@ function renderCertificates() {
     const container = document.getElementById('certificatesContainer');
     
     if (!department || !rank) {
-        container.innerHTML = '<p class="text-muted">Select a department and rank to view required certificates</p>';
+        container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Select both department and rank to view required certificates</div>';
         return;
     }
     
     const deptCerts = certificateMapping[department];
     if (!deptCerts || !deptCerts[rank]) {
-        container.innerHTML = '<p class="text-muted">No certificate mapping found for this rank</p>';
+        container.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No certificate mapping found for this rank</div>';
         return;
     }
     
@@ -347,6 +350,38 @@ function renderCertificates() {
     container.innerHTML = html;
 }
 
+// Function to populate rank dropdown based on department
+function updateRankDropdown() {
+    const dept = document.getElementById('department').value;
+    const rankSelect = document.getElementById('rank');
+    
+    const rankSuggestions = {
+        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Able Seaman', 'Bosun'],
+        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'EOOW', 'Electrician', 'Oiler'],
+        'Catering': ['Chief Steward', 'Cook', 'Steward']
+    };
+    
+    // Clear rank value and disable when department changes
+    rankSelect.value = '';
+    rankSelect.innerHTML = '<option value="">Select rank</option>';
+    
+    if (dept && rankSuggestions[dept]) {
+        rankSuggestions[dept].forEach(rank => {
+            const option = document.createElement('option');
+            option.value = rank;
+            option.textContent = rank;
+            rankSelect.appendChild(option);
+        });
+        rankSelect.disabled = false;
+    } else {
+        rankSelect.disabled = true;
+        rankSelect.innerHTML = '<option value="">Select department first</option>';
+    }
+    
+    // Clear certificates when department changes
+    renderCertificates();
+}
+
 // Form validation
 document.getElementById('addCrewForm').addEventListener('submit', function(e) {
     const requiredFields = ['vessel_id', 'first_name', 'last_name', 'department', 'rank'];
@@ -364,23 +399,7 @@ document.getElementById('addCrewForm').addEventListener('submit', function(e) {
 
 // Event listeners for certificate rendering
 document.getElementById('department').addEventListener('change', function() {
-    const rankSuggestions = {
-        'Deck': ['Captain', 'Chief Officer', 'Second Officer', 'Able Seaman', 'Bosun'],
-        'Engine': ['Chief Engineer', 'First Engineer', 'Second Engineer', 'EOOW', 'Electrician', 'Oiler'],
-        'Catering': ['Chief Steward', 'Cook', 'Steward']
-    };
-    
-    const dept = this.value;
-    const rankInput = document.getElementById('rank');
-    
-    // Clear rank value when department changes
-    rankInput.value = '';
-    
-    if (dept && rankSuggestions[dept]) {
-        rankInput.placeholder = 'e.g., ' + rankSuggestions[dept].join(', ');
-    }
-    
-    renderCertificates();
+    updateRankDropdown();
 });
 
 document.getElementById('rank').addEventListener('change', function() {
