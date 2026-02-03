@@ -54,21 +54,32 @@ class TabManager {
         // Check if button already exists
         if (tabElement.querySelector('.tab-refresh-btn')) return;
 
+        // Create a wrapper for tab label and button
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tab-header-wrapper';
+        wrapper.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+        `;
+
+        // Get the current tab text
+        const tabText = tabElement.textContent.trim();
+        
+        // Create label span
+        const label = document.createElement('span');
+        label.textContent = tabText;
+        label.className = 'tab-label';
+        wrapper.appendChild(label);
+
         // Create refresh button
         const refreshBtn = document.createElement('button');
-        refreshBtn.className = 'tab-refresh-btn ms-2';
+        refreshBtn.className = 'tab-refresh-btn ms-auto';
         refreshBtn.type = 'button';
         refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
         refreshBtn.title = 'Refresh this tab';
-        refreshBtn.style.cssText = `
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            padding: 2px 6px;
-            font-size: 0.9rem;
-            transition: transform 0.3s ease;
-        `;
+        refreshBtn.setAttribute('aria-label', `Refresh ${tabText} tab`);
 
         // Add hover effect
         refreshBtn.addEventListener('mouseenter', () => {
@@ -88,7 +99,11 @@ class TabManager {
             this.refreshTab(targetId, refreshBtn);
         });
 
-        tabElement.appendChild(refreshBtn);
+        wrapper.appendChild(refreshBtn);
+        
+        // Replace tab element content
+        tabElement.textContent = '';
+        tabElement.appendChild(wrapper);
     }
 
     /**

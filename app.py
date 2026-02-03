@@ -46,9 +46,6 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_compress import Compress
 
-# Import firewall module
-from firewall import init_firewall, firewall_protect, InputValidator, RequestValidator
-
 # Ensure UTF-8 encoding for output on Windows
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -92,10 +89,6 @@ limiter = Limiter(
 
 # Enable gzip compression for faster page loads
 Compress(app)
-
-# Initialize application firewall
-init_firewall(app)
-print("[OK] Application firewall initialized with security headers and request validation")
 
 
 # =====================================================================
