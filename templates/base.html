@@ -3069,12 +3069,12 @@ function showFilePreview(fileUrl, fileName) {
                 
                 <!-- International Reports Section -->
                 <li class="nav-item">
-                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list'] %}active{% endif %}" 
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'drill_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list', 'drill_reports_list'] %}active{% endif %}" 
                        href="#internationalReports" data-bs-toggle="collapse" aria-expanded="false" title="International Reports">
                         <i class="fas fa-globe"></i>
                         <span>Int'l Reports</span>
                     </a>
-                    <div class="collapse {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list'] %}show{% endif %}" id="internationalReports">
+                    <div class="collapse {% if request.endpoint in ['bilge_report', 'fuel_report', 'sewage_report', 'logbook', 'emission_report', 'drill_report', 'bilge_reports_list', 'fuel_reports_list', 'sewage_reports_list', 'logbook_entries_list', 'emission_reports_list', 'drill_reports_list'] %}show{% endif %}" id="internationalReports">
                         <ul class="nav flex-column ms-3">
                             <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'bilge_report' %}active{% endif %}" href="{{ url_for('bilge_report') }}" title="Bilge Report">
@@ -3134,6 +3134,18 @@ function showFilePreview(fileUrl, fileName) {
                                 <a class="nav-link {% if request.endpoint == 'emission_reports_list' %}active{% endif %}" href="{{ url_for('emission_reports_list') }}" title="Emission Reports">
                                     <i class="fas fa-list fa-sm"></i>
                                     <span>View Emissions</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'drill_report' %}active{% endif %}" href="{{ url_for('drill_report') }}" title="Drill Report">
+                                    <i class="fas fa-fire fa-sm"></i>
+                                    <span>Drill Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'drill_reports_list' %}active{% endif %}" href="{{ url_for('drill_reports_list') }}" title="Drill Reports">
+                                    <i class="fas fa-list fa-sm"></i>
+                                    <span>View Drills</span>
                                 </a>
                             </li>
                         </ul>
