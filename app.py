@@ -9818,14 +9818,14 @@ def api_messaging_stats():
 @app.route('/api/notifications')
 @login_required
 def api_notifications():
-    """Get user notifications."""
+    """Get user notifications with sound support for messages."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
         c.execute("""
             SELECT id, title, message, type, action_url, created_at, is_read
             FROM notifications
-            WHERE user_id = ? OR user_id = 'system'
+            WHERE user_id = ?
             ORDER BY created_at DESC
             LIMIT 20
         """, (current_user.id,))
@@ -9834,6 +9834,10 @@ def api_notifications():
         for row in c.fetchall():
             notification = dict(row)
             notification['timestamp'] = notification['created_at']
+            # Ensure message notifications have correct type for sound playback
+            if notification['type'] in ['normal', 'message', 'info']:
+                notification['type'] = 'message'
+            notification['id'] = f"notif_{notification['id']}"  # Ensure unique ID format
             notifications.append(notification)
 
         return jsonify({'success': True, 'notifications': notifications})

@@ -10,14 +10,12 @@ class NotificationHandler {
         this.isSystemMuted = false;
         this.notificationQueue = [];
         this.activeNotifications = new Map();
-        
-        // Embedded audio data URIs - simple sine wave beeps
-        // Each generates a short beep sound using Web Audio API
+        this.playedSounds = new Set(); // Track notifications that have had sound played
         this.soundUrls = {
-            message: null,   // Will use Web Audio API
-            alert: null,     // Will use Web Audio API
-            success: null,   // Will use Web Audio API
-            error: null      // Will use Web Audio API
+            message: '/static/sounds/notification.mp3',
+            alert: '/static/sounds/alert.mp3',
+            success: '/static/sounds/success.mp3',
+            error: '/static/sounds/error.mp3'
         };
         
         this.initialize();
@@ -138,14 +136,20 @@ class NotificationHandler {
      * Main notification handler
      */
     async handleNotification(notification) {
+        // Skip if sound has already been played for this notification
+        if (this.playedSounds.has(notification.id)) {
+            return;
+        }
+
         // Track this notification as active
         this.activeNotifications.set(notification.id, notification);
 
         // Determine notification type
         const type = this.getNotificationType(notification);
         
-        // Play sound if enabled
+        // Play sound ONCE if enabled (mark as played immediately)
         if (this.soundEnabled && this.notificationPermission !== 'denied') {
+            this.playedSounds.add(notification.id);
             await this.playSound(type);
         }
 
@@ -163,64 +167,57 @@ class NotificationHandler {
 
     /**
      * Determine notification type based on content
+     * Recognizes system notifications and messages
      */
     getNotificationType(notification) {
+        // Check message-related fields
+        if (notification.type === 'message' || 
+            notification.message_id || 
+            notification.sender_id ||
+            (notification.message && notification.sender_name)) {
+            return 'message';
+        }
+        
+        // Check error/alert conditions
         if (notification.type === 'error' || notification.severity === 'critical') {
-            return 'alert';
-        } else if (notification.type === 'success') {
-            return 'success';
-        } else if (notification.type === 'error') {
             return 'error';
         }
+        if (notification.type === 'alert' || notification.severity === 'high') {
+            return 'alert';
+        }
+        
+        // Check success conditions
+        if (notification.type === 'success' || notification.severity === 'success') {
+            return 'success';
+        }
+        
+        // Default to message type (ensures sound plays)
         return 'message';
     }
 
     /**
-     * Play notification sound using Web Audio API
-     * No external files needed - generates sounds programmatically
+     * Play notification sound
      */
     async playSound(type = 'message') {
-        if (!this.soundEnabled || this.isSystemMuted) {
+        if (!this.soundEnabled || !('Audio' in window)) {
             return;
         }
 
         try {
-            // Try to use Web Audio API for sound generation
-            const audioContext = window.audioContext || 
-                                 new (window.AudioContext || window.webkitAudioContext)();
-            window.audioContext = audioContext;
+            const soundUrl = this.soundUrls[type] || this.soundUrls.message;
+            const audio = new Audio(soundUrl);
 
-            // Different frequencies for different notification types
-            const frequencies = {
-                message: 800,   // 800 Hz - neutral
-                alert: 1000,    // 1000 Hz - higher, more alarming
-                success: 600,   // 600 Hz - lower, pleasant
-                error: 1200     // 1200 Hz - very high, urgent
-            };
-
-            const frequency = frequencies[type] || frequencies.message;
-            const duration = type === 'alert' ? 0.6 : 0.4; // Longer alert sound
-
-            // Create oscillator and gain node
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.type = 'sine';
-            oscillator.frequency.value = frequency;
-
-            // Set volume to 70% and apply envelope
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-
-            // Connect and play
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + duration);
-
+            // Respect device volume settings
+            audio.volume = 0.7; // 70% volume
+            
+            // Only play if not already muted by device
+            if (!this.isSystemMuted) {
+                audio.play().catch(error => {
+                    console.warn(`Could not play notification sound (${type}):`, error);
+                });
+            }
         } catch (error) {
-            console.warn(`Could not play notification sound (${type}):`, error);
+            console.error('Error playing notification sound:', error);
         }
     }
 
@@ -391,7 +388,7 @@ class NotificationHandler {
     }
 
     /**
-     * Clear all active notifications
+     * Clear all active notifications and reset sound tracking
      */
     clearAll() {
         this.activeNotifications.forEach((notif, id) => {
@@ -401,6 +398,7 @@ class NotificationHandler {
             }
         });
         this.activeNotifications.clear();
+        this.playedSounds.clear(); // Reset sound tracking when clearing notifications
         navigator.clearAppBadge?.();
     }
 
