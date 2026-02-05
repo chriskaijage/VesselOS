@@ -475,7 +475,7 @@ function showFilePreview(fileUrl, fileName) {
             padding: 0.8rem 1.5rem;
             position: fixed;
             top: 0;
-            left: 0;
+            left: 0; /* Start from left edge */
             right: 0;
             z-index: 1020;
             height: 70px;
@@ -484,40 +484,6 @@ function showFilePreview(fileUrl, fileName) {
             align-items: center;
             justify-content: flex-end;
             gap: 1rem;
-        }
-        .top-navbar-title {
-            min-width: 0;
-            overflow: hidden;
-        }
-        .navbar-page-title {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        @media (max-width: 768px) {
-            .navbar-page-title { font-size: 1rem; }
-            .top-navbar-title { max-width: 140px; }
-        }
-        
-        /* Skip to main content - accessibility */
-        .skip-to-main {
-            position: absolute;
-            left: -9999px;
-            z-index: 9999;
-            padding: 0.75rem 1.25rem;
-            background: var(--primary-color);
-            color: white !important;
-            font-weight: 600;
-            border-radius: 6px;
-            transition: left 0.2s ease;
-        }
-        .skip-to-main:focus {
-            left: 1rem;
-            top: 1rem;
         }
         
         /* Sidebar Navigation */
@@ -813,52 +779,6 @@ function showFilePreview(fileUrl, fileName) {
             color: inherit;
         }
         
-        /* Sidebar collapse submenus */
-        .sidebar-nav .nav-item .collapse {
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin: 0.25rem 0 0.25rem 0.5rem;
-            border-left: 3px solid rgba(var(--primary-rgb), 0.3);
-        }
-        .sidebar-nav .nav-item .collapse .nav {
-            padding: 0.35rem 0;
-        }
-        .sidebar-nav .nav-item .collapse .nav-item {
-            margin: 0 0.5rem;
-        }
-        .sidebar-nav .nav-item .collapse .nav-link {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.9rem;
-            border-radius: 6px;
-        }
-        .sidebar-nav .nav-item .collapse .nav-link i {
-            width: 18px;
-            font-size: 0.95rem;
-            opacity: 0.9;
-        }
-        /* Chevron on collapse toggles: rotate when open */
-        .sidebar-nav .nav-link[data-bs-toggle="collapse"] {
-            position: relative;
-        }
-        .sidebar-nav .nav-link[data-bs-toggle="collapse"]::after {
-            content: '';
-            display: inline-block;
-            margin-left: auto;
-            width: 0;
-            height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid currentColor;
-            transition: transform 0.25s ease;
-            vertical-align: middle;
-        }
-        .sidebar-nav .nav-item:has(.collapse.show) .nav-link[data-bs-toggle="collapse"]::after {
-            transform: rotate(180deg);
-        }
-        .sidebar.collapsed .sidebar-nav .nav-link[data-bs-toggle="collapse"]::after {
-            display: none;
-        }
-        
         .sidebar-footer {
             padding: 1rem 1.5rem;
             background: white;
@@ -1110,33 +1030,22 @@ function showFilePreview(fileUrl, fileName) {
             color: var(--primary-color) !important;
         }
         
-        /* Sidebar scrollbar styling - theme-aware */
+        /* Sidebar scrollbar styling */
         .sidebar-nav::-webkit-scrollbar {
             width: 6px;
         }
         
         .sidebar-nav::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
+            background: #f3f4f6;
         }
         
         .sidebar-nav::-webkit-scrollbar-thumb {
-            background: var(--border-color);
+            background: #d1d5db;
             border-radius: 3px;
         }
         
         .sidebar-nav::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-color);
-            opacity: 0.6;
-        }
-        
-        /* Sidebar nav section divider (optional visual grouping) */
-        .sidebar-nav .nav-item.nav-divider {
-            margin: 0.5rem 0.75rem;
-            padding: 0.25rem 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .sidebar-nav .nav-item.nav-divider + .nav-item {
-            margin-top: 0.25rem;
+            background: #9ca3af;
         }
         
         /* User dropdown menu icons - match system theme */
@@ -3060,7 +2969,6 @@ function showFilePreview(fileUrl, fileName) {
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <a href="#main-content" class="skip-to-main">Skip to main content</a>
     {% if request.endpoint != 'login' and request.endpoint != 'register' and request.endpoint != 'maintenance_request' %}
     <!-- Floating Messaging Toggle Button -->
     <button class="messaging-toggle-btn no-print" id="messagingToggleBtn" onclick="toggleMessagingPanel()">
@@ -3459,14 +3367,9 @@ function showFilePreview(fileUrl, fileName) {
     
     <!-- Top Navigation Bar -->
     <nav class="top-navbar no-print">
-        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Open menu">
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
         </button>
-        
-        <!-- Page title / breadcrumb -->
-        <div class="top-navbar-title flex-grow-1 px-3">
-            <h1 class="navbar-page-title">{% block navbar_title %}Marine Service Center{% endblock %}</h1>
-        </div>
         
         <!-- Notification Bell -->
         <div class="dropdown">
@@ -3555,7 +3458,7 @@ function showFilePreview(fileUrl, fileName) {
     {% endif %}
 
     <!-- Main Content -->
-    <main id="main-content" class="flex-grow-1 py-4" tabindex="-1">
+    <main class="flex-grow-1 py-4">
         <div class="container">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -5614,7 +5517,8 @@ function showFilePreview(fileUrl, fileName) {
         
         if (sidebar && savedState === 'true') {
             sidebar.classList.add('collapsed');
-            body.classList.add('sidebar-collapsed');
+            // Don't add body padding class since header always stays visible
+            // body.classList.add('sidebar-collapsed');
             
             if (toggleIcon) {
                 toggleIcon.classList.remove('fa-chevron-left');
@@ -5970,15 +5874,50 @@ function showFilePreview(fileUrl, fileName) {
     setInterval(updateUserActivity, 30000);
     </script>
     
-    <!-- Notification Sound Handler - Manages notifications with sound support -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
-    <script defer src="{{ url_for('static', filename='js/notification-handler.js') }}"></script>
-    
     <!-- Theme System Script -->
     <script src="{{ url_for('static', filename='js/theme-system.js') }}"></script>
     
     <!-- Tab Manager Script - Auto-refresh tabs every 3 seconds -->
     <script src="{{ url_for('static', filename='js/tab-manager.js') }}"></script>
+    
+    <!-- Notification Service - Web Push Notifications with Sound -->
+    <script src="{{ url_for('static', filename='js/notification-service.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification-settings.js') }}"></script>
+    
+    <!-- Enhanced Notification Polling with Web Push Support -->
+    <script>
+        // Enhanced notification loading with web push integration
+        const originalLoadNotifications = loadNotifications;
+        loadNotifications = function() {
+            originalLoadNotifications();
+            
+            // Also trigger the notification service to check for new notifications
+            if (typeof notificationService !== 'undefined') {
+                notificationService.checkForNewNotifications().catch(error => {
+                    console.warn('Error in enhanced notification check:', error);
+                });
+            }
+        };
+        
+        // Start periodic notification checks (every 30 seconds)
+        const notificationCheckInterval = setInterval(() => {
+            if (typeof notificationService !== 'undefined') {
+                notificationService.checkForNewNotifications().catch(error => {
+                    console.warn('Error checking notifications:', error);
+                });
+            }
+        }, 30000);
+        
+        // Request notification permission on first page load if not yet determined
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof notificationService !== 'undefined' && 'Notification' in window) {
+                if (Notification.permission === 'default') {
+                    // Show a subtle hint about notifications
+                    console.log('Notifications not yet enabled. User can enable them in settings.');
+                }
+            }
+        });
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>

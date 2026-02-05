@@ -978,6 +978,35 @@
                         
                         <hr class="my-4">
                         
+                        <h5 class="mb-3"><i class="fas fa-bell me-2"></i> Notification Settings</h5>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="soundNotificationsToggle" checked>
+                            <label class="form-check-label" for="soundNotificationsToggle">
+                                Sound notifications
+                                <small class="d-block text-muted">Play sound when new notifications arrive</small>
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="browserNotificationsToggle" checked>
+                            <label class="form-check-label" for="browserNotificationsToggle">
+                                Browser notifications
+                                <small class="d-block text-muted">Show notifications even when browser tab is not active</small>
+                            </label>
+                        </div>
+                        <div class="mb-3" id="notificationPermissionStatus">
+                            <small class="text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Checking permission status...
+                            </small>
+                        </div>
+                        <button class="btn btn-outline-success btn-sm me-2" id="testNotificationBtn">
+                            <i class="fas fa-bell me-1"></i> Send Test Notification
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" id="requestNotificationPermBtn" style="display: none;">
+                            <i class="fas fa-check-circle me-1"></i> Enable Notifications
+                        </button>
+                        
+                        <hr class="my-4">
+                        
                         <h5 class="mb-3"><i class="fas fa-user-shield me-2"></i> Security Settings</h5>
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="profileVisibility" checked>

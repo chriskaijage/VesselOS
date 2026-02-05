@@ -9818,14 +9818,14 @@ def api_messaging_stats():
 @app.route('/api/notifications')
 @login_required
 def api_notifications():
-    """Get user notifications with sound support for messages."""
+    """Get user notifications."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
         c.execute("""
             SELECT id, title, message, type, action_url, created_at, is_read
             FROM notifications
-            WHERE user_id = ?
+            WHERE user_id = ? OR user_id = 'system'
             ORDER BY created_at DESC
             LIMIT 20
         """, (current_user.id,))
@@ -9834,10 +9834,6 @@ def api_notifications():
         for row in c.fetchall():
             notification = dict(row)
             notification['timestamp'] = notification['created_at']
-            # Ensure message notifications have correct type for sound playback
-            if notification['type'] in ['normal', 'message', 'info']:
-                notification['type'] = 'message'
-            notification['id'] = f"notif_{notification['id']}"  # Ensure unique ID format
             notifications.append(notification)
 
         return jsonify({'success': True, 'notifications': notifications})
@@ -9891,108 +9887,6 @@ def api_notification_read_all():
     finally:
         conn.close()
 
-@app.route('/api/user/notification-preferences', methods=['GET'])
-@login_required
-def api_get_notification_preferences():
-    """Get user notification preferences."""
-    conn = get_db_connection()
-    try:
-        c = conn.cursor()
-        c.execute("""
-            SELECT sound_enabled, notifications_enabled, vibration_enabled, 
-                   notification_type, quiet_hours_start, quiet_hours_end
-            FROM user_settings
-            WHERE user_id = ?
-        """, (current_user.id,))
-        
-        row = c.fetchone()
-        if row:
-            prefs = dict(row)
-        else:
-            # Return default preferences
-            prefs = {
-                'sound_enabled': True,
-                'notifications_enabled': True,
-                'vibration_enabled': True,
-                'notification_type': 'all',
-                'quiet_hours_start': None,
-                'quiet_hours_end': None
-            }
-        
-        return jsonify({'success': True, **prefs})
-    except Exception as e:
-        app.logger.error(f"Error getting notification preferences: {e}")
-        return jsonify({'success': True, 'sound_enabled': True, 'notifications_enabled': True})
-    finally:
-        conn.close()
-
-@app.route('/api/user/notification-preferences', methods=['POST'])
-@login_required
-def api_update_notification_preferences():
-    """Update user notification preferences."""
-    try:
-        data = request.get_json()
-        conn = get_db_connection()
-        c = conn.cursor()
-        
-        # Check if settings exist for this user
-        c.execute("SELECT user_id FROM user_settings WHERE user_id = ?", (current_user.id,))
-        exists = c.fetchone()
-        
-        if exists:
-            # Update existing settings
-            updates = []
-            params = []
-            
-            if 'sound_enabled' in data:
-                updates.append("sound_enabled = ?")
-                params.append(data['sound_enabled'])
-            if 'notifications_enabled' in data:
-                updates.append("notifications_enabled = ?")
-                params.append(data['notifications_enabled'])
-            if 'vibration_enabled' in data:
-                updates.append("vibration_enabled = ?")
-                params.append(data['vibration_enabled'])
-            if 'notification_type' in data:
-                updates.append("notification_type = ?")
-                params.append(data['notification_type'])
-            if 'quiet_hours_start' in data:
-                updates.append("quiet_hours_start = ?")
-                params.append(data['quiet_hours_start'])
-            if 'quiet_hours_end' in data:
-                updates.append("quiet_hours_end = ?")
-                params.append(data['quiet_hours_end'])
-            
-            if updates:
-                params.append(current_user.id)
-                query = f"UPDATE user_settings SET {', '.join(updates)} WHERE user_id = ?"
-                c.execute(query, params)
-        else:
-            # Insert new settings
-            c.execute("""
-                INSERT INTO user_settings 
-                (user_id, sound_enabled, notifications_enabled, vibration_enabled, 
-                 notification_type, quiet_hours_start, quiet_hours_end)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                current_user.id,
-                data.get('sound_enabled', True),
-                data.get('notifications_enabled', True),
-                data.get('vibration_enabled', True),
-                data.get('notification_type', 'all'),
-                data.get('quiet_hours_start'),
-                data.get('quiet_hours_end')
-            ))
-        
-        conn.commit()
-        conn.close()
-        
-        app.logger.info(f"User {current_user.id} updated notification preferences")
-        return jsonify({'success': True, 'message': 'Preferences updated'})
-    except Exception as e:
-        app.logger.error(f"Error updating notification preferences: {e}")
-        return jsonify({'success': False, 'error': str(e)})
-
 @app.route('/api/notification/<int:notification_id>')
 @login_required
 def api_notification_detail(notification_id):
@@ -10034,6 +9928,105 @@ def api_notification_detail(notification_id):
         return jsonify({'success': False, 'error': str(e)})
     finally:
         conn.close()
+
+# ==================== NOTIFICATION PREFERENCES ROUTES ====================
+
+@app.route('/api/user/notification-preferences', methods=['GET'])
+@login_required
+def api_get_notification_preferences():
+    """Get user's notification preferences."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT sound_enabled, browser_notifications, email_notifications
+            FROM notification_preferences
+            WHERE user_id = ?
+        """, (current_user.id,))
+        
+        row = c.fetchone()
+        conn.close()
+        
+        if row:
+            preferences = dict(row)
+        else:
+            # Return default preferences if not set
+            preferences = {
+                'sound_enabled': True,
+                'browser_notifications': True,
+                'email_notifications': True
+            }
+        
+        return jsonify({
+            'success': True,
+            'preferences': preferences
+        })
+    except Exception as e:
+        app.logger.error(f"Error getting notification preferences: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'preferences': {
+                'sound_enabled': True,
+                'browser_notifications': True,
+                'email_notifications': True
+            }
+        })
+
+@app.route('/api/user/notification-preferences', methods=['POST'])
+@login_required
+@csrf_protect
+def api_save_notification_preferences():
+    """Save user's notification preferences."""
+    try:
+        data = request.get_json()
+        
+        sound_enabled = data.get('sound_enabled', True)
+        browser_notifications = data.get('browser_notifications', True)
+        email_notifications = data.get('email_notifications', True)
+        
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Check if preferences already exist
+        c.execute("""
+            SELECT user_id FROM notification_preferences
+            WHERE user_id = ?
+        """, (current_user.id,))
+        
+        exists = c.fetchone() is not None
+        
+        if exists:
+            # Update existing preferences
+            c.execute("""
+                UPDATE notification_preferences
+                SET sound_enabled = ?, browser_notifications = ?, email_notifications = ?
+                WHERE user_id = ?
+            """, (sound_enabled, browser_notifications, email_notifications, current_user.id))
+        else:
+            # Insert new preferences
+            c.execute("""
+                INSERT INTO notification_preferences 
+                (user_id, sound_enabled, browser_notifications, email_notifications)
+                VALUES (?, ?, ?, ?)
+            """, (current_user.id, sound_enabled, browser_notifications, email_notifications))
+        
+        conn.commit()
+        conn.close()
+        
+        app.logger.info(f"Notification preferences saved for user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notification preferences saved successfully'
+        })
+    except Exception as e:
+        app.logger.error(f"Error saving notification preferences: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
 
 # ==================== CHIEF ENGINEER API ROUTES ====================
 
@@ -12417,6 +12410,20 @@ def init_db():
                 action_url TEXT,
                 is_read INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (user_id)
+            )
+        ''')
+
+        # Create notification_preferences table for user notification settings
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS notification_preferences (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL UNIQUE,
+                sound_enabled INTEGER DEFAULT 1,
+                browser_notifications INTEGER DEFAULT 1,
+                email_notifications INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (user_id)
             )
         ''')
