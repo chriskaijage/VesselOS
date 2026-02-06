@@ -3632,6 +3632,13 @@ function showFilePreview(fileUrl, fileName) {
     // Restore last selected tab from localStorage, default to 'inbox'
     let currentTab = localStorage.getItem('messagingCurrentTab') || 'inbox';
     let threadAttachments = [];
+    
+    // Current user info from Flask template
+    const currentUser = {
+        id: '{{ current_user.user_id }}',
+        full_name: '{{ current_user.get_full_name() }}',
+        role: '{{ current_user.role }}'
+    };
 
     // ==================== FLOATING PANEL FUNCTIONS ====================
 
