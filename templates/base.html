@@ -3689,6 +3689,7 @@ function showFilePreview(fileUrl, fileName) {
 
     function switchMessagingTab(tabName) {
         currentTab = tabName;
+        currentConversationId = null;  // Clear any open conversation when switching tabs
         // Save selected tab to localStorage so it persists across page reloads
         localStorage.setItem('messagingCurrentTab', tabName);
         
@@ -3709,13 +3710,8 @@ function showFilePreview(fileUrl, fileName) {
             
             console.log('📑 Loading tab:', tabName);
             
-            // Clear old content from the messaging content area
-            const contentInner = content.querySelector('.messaging-content-inner');
-            if (contentInner) {
-                contentInner.innerHTML = '';
-            } else {
-                content.innerHTML = '';
-            }
+            // Completely clear all old content from the messaging content area
+            content.innerHTML = '';
             
             switch(tabName) {
                 case 'inbox':
