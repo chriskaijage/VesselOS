@@ -3852,14 +3852,19 @@ function showFilePreview(fileUrl, fileName) {
             const icon = message.message_type === 'notification' ? 'bell' :
                         message.message_type === 'announcement' ? 'bullhorn' : 'envelope';
             
+            const senderInitials = message.sender_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            
             html += `
                 <a href="#" class="list-group-item list-group-item-action border-0 ${priorityClass} ${readClass}" 
+                   data-message-id="${message.message_id}"
                    onclick="openMessageDetail('${message.message_id}')">
                     <div class="d-flex align-items-center">
-                        <div class="avatar-small me-3">
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
-                                 style="width: 36px; height: 36px; font-size: 0.8rem; font-weight: bold;">
-                                ${message.sender_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                        <div class="avatar-small me-3 position-relative">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center avatar-placeholder" 
+                                 style="width: 36px; height: 36px; font-size: 0.8rem; font-weight: bold; cursor: pointer;"
+                                 onclick="event.stopPropagation(); showUserProfile('${message.sender_id}')"
+                                 data-user-id="${message.sender_id}">
+                                ${senderInitials}
                             </div>
                         </div>
                         <div class="flex-grow-1">
@@ -3888,6 +3893,55 @@ function showFilePreview(fileUrl, fileName) {
         }
         
         content.innerHTML = html;
+        
+        // Fetch sender profile pictures for inbox messages
+        messages.slice(0, 10).forEach(message => {
+            const senderId = message.sender_id || message.sender;
+            if (!senderId) return;
+            
+            fetch(`/api/user/status/${senderId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
+                .then(statusData => {
+                    if (statusData.success && statusData.user) {
+                        const userStatus = statusData.user;
+                        const messageItem = content.querySelector(`[data-message-id="${message.message_id}"]`);
+                        
+                        if (messageItem) {
+                            const profilePicUrl = userStatus.profile_pic 
+                                ? `/uploads/profile_pics/${userStatus.profile_pic}`
+                                : null;
+                            const avatarDiv = messageItem.querySelector('.avatar-small');
+                            
+                            if (profilePicUrl && avatarDiv) {
+                                // Replace placeholder with actual profile picture
+                                const placeholder = avatarDiv.querySelector('.avatar-placeholder');
+                                if (placeholder) {
+                                    placeholder.style.display = 'none';
+                                }
+                                
+                                const img = document.createElement('img');
+                                img.src = profilePicUrl;
+                                img.alt = message.sender_name;
+                                img.className = 'rounded-circle message-sender-pic';
+                                img.style.cssText = 'width: 36px; height: 36px; object-fit: cover; cursor: pointer;';
+                                img.onclick = (e) => {
+                                    e.stopPropagation();
+                                    showUserProfile(senderId);
+                                };
+                                img.onerror = function() {
+                                    this.remove();
+                                    if (placeholder) placeholder.style.display = 'flex';
+                                };
+                                avatarDiv.insertBefore(img, avatarDiv.firstChild);
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.warn(`Could not load profile picture for sender ${senderId}:`, error.message));
+        });
     }
 
     function loadComposeTab(content) {
@@ -4082,9 +4136,10 @@ function showFilePreview(fileUrl, fileName) {
                    onclick="openMessageThread('${thread.other_party_id}', '${partyName.replace(/'/g, "\\'")}')">
                     <div class="d-flex align-items-center">
                         <div class="avatar-small me-3 position-relative">
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center avatar-placeholder" 
                                  style="width: 40px; height: 40px; font-size: 0.9rem; font-weight: bold; cursor: pointer;"
-                                 onclick="event.stopPropagation(); showUserProfile('${thread.other_party_id}')">
+                                 onclick="event.stopPropagation(); showUserProfile('${thread.other_party_id}')"
+                                 data-user-id="${thread.other_party_id}">
                                 ${initials}
                             </div>
                             ${unreadCount > 0 ? `
@@ -4109,14 +4164,23 @@ function showFilePreview(fileUrl, fileName) {
         html += '</div>';
         content.innerHTML = html;
         
-        // Fetch profile pictures and online status for each thread
+        // Fetch profile pictures and online status for each thread with improved reliability
         threads.forEach(thread => {
-            fetch(`/api/user/status/${thread.other_party_id}`)
-                .then(response => response.json())
+            const threadId = thread.other_party_id;
+            
+            // Fetch user status and profile data
+            fetch(`/api/user/status/${threadId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: Failed to fetch user status`);
+                    }
+                    return response.json();
+                })
                 .then(statusData => {
-                    if (statusData.success) {
+                    if (statusData.success && statusData.user) {
                         const userStatus = statusData.user;
-                        const threadItem = content.querySelector(`[data-thread-id="${thread.other_party_id}"]`);
+                        const threadItem = content.querySelector(`[data-thread-id="${threadId}"]`);
+                        
                         if (threadItem) {
                             const profilePicUrl = userStatus.profile_pic 
                                 ? `/uploads/profile_pics/${userStatus.profile_pic}`
@@ -4124,42 +4188,90 @@ function showFilePreview(fileUrl, fileName) {
                             const avatarDiv = threadItem.querySelector('.avatar-small');
                             const unreadCount = thread.unread_count || 0;
                             
-                            if (profilePicUrl && avatarDiv) {
-                                // Replace initials with profile picture
-                                avatarDiv.innerHTML = `
-                                    <img src="${profilePicUrl}" alt="${thread.other_party_name}" 
-                                         class="rounded-circle" 
-                                         style="width: 40px; height: 40px; object-fit: cover; cursor: pointer;"
-                                         onclick="event.stopPropagation(); showUserProfile('${thread.other_party_id}')">
-                                    ${unreadCount > 0 ? `
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                            ${unreadCount}
-                                        </span>
-                                    ` : ''}
-                                    ${userStatus.is_online ? `<span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle" style="width: 12px; height: 12px;"></span>` : ''}
+                            // Build avatar HTML
+                            let avatarHtml = '';
+                            
+                            if (profilePicUrl) {
+                                // Use profile picture
+                                avatarHtml = `
+                                    <img src="${profilePicUrl}" 
+                                         alt="${thread.other_party_name}" 
+                                         class="rounded-circle thread-user-pic" 
+                                         style="width: 40px; height: 40px; object-fit: cover; cursor: pointer; display: block;"
+                                         onclick="event.stopPropagation(); showUserProfile('${threadId}')"
+                                         onerror="this.style.display='none'; document.querySelector('[data-thread-id=\\'${threadId}\\'] .avatar-placeholder').style.display='flex';">
                                 `;
-                            } else if (avatarDiv && userStatus.is_online) {
-                                // Just add online indicator if no profile pic
-                                const badge = avatarDiv.querySelector('.position-absolute:last-child');
-                                if (!badge || !badge.classList.contains('bg-success')) {
-                                    const indicator = document.createElement('span');
-                                    indicator.className = 'position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle';
-                                    indicator.style.cssText = 'width: 12px; height: 12px;';
-                                    avatarDiv.appendChild(indicator);
+                            } else {
+                                // Keep initials visible if no profile pic
+                                avatarHtml = '';
+                            }
+                            
+                            // Add online status indicator
+                            if (userStatus.is_online) {
+                                avatarHtml += `<span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle" style="width: 12px; height: 12px; box-shadow: 0 0 4px rgba(76, 175, 80, 0.6);"></span>`;
+                            }
+                            
+                            // Update unread badge if needed
+                            if (unreadCount > 0) {
+                                avatarHtml += `
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        ${unreadCount}
+                                    </span>
+                                `;
+                            }
+                            
+                            // Update avatar div
+                            if (profilePicUrl && avatarDiv) {
+                                // Replace placeholder with picture
+                                const placeholder = avatarDiv.querySelector('.avatar-placeholder');
+                                if (placeholder) {
+                                    placeholder.style.display = 'none';
+                                }
+                                
+                                // Insert image before status indicators
+                                const existingImg = avatarDiv.querySelector('.thread-user-pic');
+                                if (!existingImg) {
+                                    const img = document.createElement('img');
+                                    img.src = profilePicUrl;
+                                    img.alt = thread.other_party_name;
+                                    img.className = 'rounded-circle thread-user-pic';
+                                    img.style.cssText = 'width: 40px; height: 40px; object-fit: cover; cursor: pointer; position: absolute; top: 0; left: 0; z-index: 1;';
+                                    img.onclick = (e) => {
+                                        e.stopPropagation();
+                                        showUserProfile(threadId);
+                                    };
+                                    img.onerror = function() {
+                                        this.remove();
+                                        placeholder.style.display = 'flex';
+                                    };
+                                    avatarDiv.insertBefore(img, avatarDiv.firstChild);
                                 }
                             }
                             
-                            // Update status display
+                            // Add online indicator if needed
+                            if (userStatus.is_online && !avatarDiv.querySelector('.bg-success')) {
+                                const indicator = document.createElement('span');
+                                indicator.className = 'position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle';
+                                indicator.style.cssText = 'width: 12px; height: 12px; box-shadow: 0 0 4px rgba(76, 175, 80, 0.6);';
+                                avatarDiv.appendChild(indicator);
+                            }
+                            
+                            // Update status display with online/offline info
                             const statusDiv = threadItem.querySelector('.thread-status');
                             if (statusDiv) {
-                                statusDiv.innerHTML = userStatus.is_online 
-                                    ? '<small class="text-success">● Online</small>' 
-                                    : `<small class="text-muted">Last seen ${userStatus.last_seen_time}</small>`;
+                                if (userStatus.is_online) {
+                                    statusDiv.innerHTML = '<small class="text-success"><i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>Online Now</small>';
+                                } else {
+                                    statusDiv.innerHTML = `<small class="text-muted"><i class="fas fa-clock me-1"></i>Last seen ${userStatus.last_seen_time}</small>`;
+                                }
                             }
                         }
                     }
                 })
-                .catch(error => console.error('Error fetching user status:', error));
+                .catch(error => {
+                    console.warn(`⚠️ Could not fetch status for user ${threadId}:`, error.message);
+                    // Keep the fallback initials visible on error
+                });
         });
     }
 
