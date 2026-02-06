@@ -4273,6 +4273,9 @@ function loadUnreadCount() {
 function showSendMessageModal() {
     const modal = document.getElementById('sendMessageModal');
     if (modal) {
+        // Save that compose was opened (for main messaging panel)
+        localStorage.setItem('messagingCurrentTab', 'compose');
+        
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
         
@@ -4292,6 +4295,9 @@ function showSendMessageModal() {
 function showInbox() {
     const modal = document.getElementById('inboxModal');
     if (modal) {
+        // Save that inbox was opened (for main messaging panel)
+        localStorage.setItem('messagingCurrentTab', 'inbox');
+        
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
         

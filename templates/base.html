@@ -3628,7 +3628,8 @@ function showFilePreview(fileUrl, fileName) {
     let userSearchTimeout = null;
     let messageAttachments = [];
     let currentConversationId = null;
-    let currentTab = 'inbox';
+    // Restore last selected tab from localStorage, default to 'inbox'
+    let currentTab = localStorage.getItem('messagingCurrentTab') || 'inbox';
     let threadAttachments = [];
 
     // ==================== FLOATING PANEL FUNCTIONS ====================
@@ -3665,6 +3666,8 @@ function showFilePreview(fileUrl, fileName) {
 
     function switchMessagingTab(tabName) {
         currentTab = tabName;
+        // Save selected tab to localStorage so it persists across page reloads
+        localStorage.setItem('messagingCurrentTab', tabName);
         
         // Update tab buttons - remove active from all tabs
         document.querySelectorAll('.messaging-tab').forEach(tab => {
