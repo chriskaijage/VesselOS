@@ -4418,6 +4418,125 @@ function showFilePreview(fileUrl, fileName) {
         modal.addEventListener('hidden.bs.modal', () => modal.remove());
     }
 
+    // Update thread messages without flickering
+    function updateThreadMessages(messages) {
+        const threadDiv = document.getElementById('messageThread');
+        if (!threadDiv) {
+            console.warn('Message thread container not found');
+            return;
+        }
+        
+        // Check if there are new messages
+        const existingMessages = document.querySelectorAll('[data-message-id]').length;
+        const newMessagesCount = messages.length;
+        
+        if (newMessagesCount > existingMessages) {
+            console.log(`📬 Found ${newMessagesCount - existingMessages} new messages`);
+            
+            // Get the last message ID that was already shown
+            const lastShownMessage = document.querySelector('[data-message-id]:last-of-type');
+            const lastMessageId = lastShownMessage ? lastShownMessage.dataset.messageId : null;
+            
+            // Find index of last shown message
+            let insertIndex = 0;
+            for (let i = 0; i < messages.length; i++) {
+                if (messages[i].message_id === lastMessageId) {
+                    insertIndex = i + 1;
+                    break;
+                }
+            }
+            
+            // Add only new messages to the thread (smooth append, no flicker)
+            for (let i = insertIndex; i < messages.length; i++) {
+                const msg = messages[i];
+                const bubbleClass = msg.direction === 'sent' ? 'sent' : 'received';
+                const messageText = msg.message || msg.reply_text || '';
+                const canDelete = msg.direction === 'sent';
+                
+                let messageHtml = `
+                    <div class="message-bubble ${bubbleClass}" data-message-id="${msg.message_id}">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                            <div style="flex: 1;">
+                                ${messageText ? `<div style="word-break: break-word;">${messageText}</div>` : ''}
+                                ${msg.attachments && msg.attachments.length > 0 ? `
+                                    <div class="message-attachments mt-2">
+                                        ${msg.attachments.map((att, attIdx) => {
+                                            const downloadUrl = `/api/messaging/download-attachment/${msg.message_id}/${att.index}`;
+                                            const attachmentPreview = att.type === 'image' ? '📷 Image' : att.type === 'video' ? '🎥 Video' : `📎 ${att.filename}`;
+                                            return renderAttachment(att, downloadUrl, msg.message_id, attachmentPreview);
+                                        }).join('')}
+                                    </div>
+                                ` : ''}
+                                <div class="message-time">${formatDateTime(msg.created_at)}</div>
+                            </div>
+                        </div>
+                        <div class="message-actions">
+                            <button class="message-action-btn" onclick="replyToMessage('${msg.message_id}', '${messageText.replace(/'/g, "\\'").substring(0, 50)}', '${msg.message_id}')" title="Reply">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                            ${canDelete ? `<button class="message-action-btn" onclick="editMessage('${msg.message_id}', '${messageText.replace(/'/g, "\\'")}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>` : ''}
+                            ${canDelete ? `<button class="message-action-btn" onclick="deleteMessage('${msg.message_id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // Insert new message into DOM
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = messageHtml;
+                threadDiv.appendChild(tempDiv.firstElementChild);
+                console.log(`✅ Added new message: ${msg.message_id}`);
+                
+                // Handle replies if any
+                if (msg.replies && msg.replies.length > 0) {
+                    msg.replies.forEach(reply => {
+                        const replyBubbleClass = reply.sender_id === currentUser.id ? 'sent' : 'received';
+                        const canDeleteReply = reply.sender_id === currentUser.id;
+                        
+                        let replyHtml = `
+                            <div class="message-bubble ${replyBubbleClass}" data-reply-id="${reply.reply_id}">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                                    <div style="flex: 1;">
+                                        ${reply.reply_text ? `<div style="word-break: break-word;">${reply.reply_text}</div>` : ''}
+                                        ${reply.attachments && reply.attachments.length > 0 ? `
+                                            <div class="message-attachments mt-2">
+                                                ${reply.attachments.map(att => {
+                                                    const downloadUrl = `/api/messaging/download-reply-attachment/${msg.message_id}/${reply.reply_id}`;
+                                                    return renderAttachment(att, downloadUrl, msg.message_id);
+                                                }).join('')}
+                                            </div>
+                                        ` : ''}
+                                        <div class="message-time">${formatDateTime(reply.created_at)}</div>
+                                    </div>
+                                </div>
+                                <div class="message-actions">
+                                    ${canDeleteReply ? `<button class="message-action-btn" onclick="deleteReply('${msg.message_id}', '${reply.reply_id}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        const replyDiv = document.createElement('div');
+                        replyDiv.innerHTML = replyHtml;
+                        threadDiv.appendChild(replyDiv.firstElementChild);
+                    });
+                }
+            }
+            
+            // Scroll to bottom to show new messages
+            setTimeout(() => {
+                threadDiv.scrollTop = threadDiv.scrollHeight;
+                console.log('📍 Scrolled to bottom');
+            }, 50);
+        } else {
+            console.log('ℹ️ No new messages to add');
+        }
+    }
+
     function renderMessageThread(content, messages, userName) {
         const displayName = userName || 'Unknown';
         const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -4779,10 +4898,22 @@ function showFilePreview(fileUrl, fileName) {
             if (data.success) {
                 showAlert('success', 'Reply sent!');
                 
-                // Refresh thread quickly to show server confirmation
+                // Fetch new messages without full refresh (avoids flickering)
                 setTimeout(() => {
-                    console.log('🔄 Syncing thread...');
-                    openMessageThread(currentConversationId, 'User');
+                    console.log('🔄 Fetching updated messages...');
+                    fetch(`/api/messaging/thread/${currentConversationId}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                            return response.json();
+                        })
+                        .then(threadData => {
+                            if (threadData.success && threadData.messages) {
+                                console.log(`✅ Updated thread with ${threadData.messages.length} messages`);
+                                // Smoothly update messages without clearing the entire view
+                                updateThreadMessages(threadData.messages);
+                            }
+                        })
+                        .catch(error => console.log('Soft refresh check (non-critical):', error.message));
                 }, 200);
             } else {
                 console.error('Send failed:', data.error);
