@@ -68,7 +68,7 @@ except ImportError:
 # =====================================================================
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'marine-service-secure-key-2026-v2')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'vesselOS-secure-key-2026-v2')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['ALLOWED_EXTENSIONS'] = {
     'png', 'jpg', 'jpeg', 'gif', 'pdf',

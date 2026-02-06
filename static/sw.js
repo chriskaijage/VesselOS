@@ -3,7 +3,7 @@
  * Handles background notifications even when the app is not in focus
  */
 
-const CACHE_NAME = 'marine-service-v1';
+const CACHE_NAME = 'vesselOS-v1';
 const urlsToCache = [
     '/',
     '/static/images/logo.png'
