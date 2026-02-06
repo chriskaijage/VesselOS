@@ -11,3 +11,4 @@ flask-limiter==3.5.1
 gunicorn==21.2.0
 twilio==9.0.0
 flask-compress==1.14.0
+pywebpush==1.14.0

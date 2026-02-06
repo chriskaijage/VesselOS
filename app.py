@@ -947,6 +947,141 @@ def send_notification_email(user_email, user_name, title, message, action_url="#
     
     return send_email(user_email, f"[SHIP] {title}", html_body, plain_text)
 
+def send_web_push(user_id, title, body, action_url="#", tag="default"):
+    """
+    Send Web Push notification to all subscribed devices of a user.
+    
+    Sends Web Push notifications to all active push subscriptions of a user.
+    This allows notifications to be delivered even when the user is not
+    currently using the web app.
+    
+    Args:
+        user_id (str): ID of the user to send notification to
+        title (str): Notification title
+        body (str): Notification body/message
+        action_url (str, optional): URL to open when notification is clicked
+        tag (str, optional): Tag for grouping similar notifications
+    
+    Returns:
+        int: Number of successful push sends
+    """
+    try:
+        # Import webpush library if available
+        try:
+            from pywebpush import webpush, WebPushException
+        except ImportError:
+            app.logger.warning("pywebpush not installed. Web Push notifications disabled.")
+            return 0
+        
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            # Get all active subscriptions for this user
+            c.execute("""
+                SELECT id, endpoint, auth_key, p256dh_key
+                FROM push_subscriptions
+                WHERE user_id = ? AND is_active = 1
+            """, (user_id,))
+            
+            subscriptions = c.fetchall()
+            
+            if not subscriptions:
+                app.logger.debug(f"No push subscriptions found for user {user_id}")
+                return 0
+            
+            # Prepare notification data
+            notification_data = {
+                'title': title,
+                'body': body,
+                'icon': '/static/images/logo.png',
+                'badge': '/static/images/logo.png',
+                'tag': tag,
+                'data': {
+                    'url': action_url
+                }
+            }
+            
+            import json
+            notification_json = json.dumps(notification_data)
+            
+            # VAPID keys (these should be generated once and stored in environment)
+            # For development, we'll use None (not recommended for production)
+            vapid_private_key = os.environ.get('VAPID_PRIVATE_KEY')
+            vapid_claims = None
+            
+            if vapid_private_key:
+                vapid_claims = {
+                    'sub': 'mailto:noreply@vesselOS.com'
+                }
+            
+            sent_count = 0
+            failed_count = 0
+            
+            # Send push to each subscription
+            for sub in subscriptions:
+                try:
+                    subscription_info = {
+                        'endpoint': sub['endpoint'],
+                        'keys': {
+                            'auth': sub['auth_key'],
+                            'p256dh': sub['p256dh_key']
+                        }
+                    }
+                    
+                    webpush(
+                        subscription_info,
+                        notification_json,
+                        vapid_private_key=vapid_private_key,
+                        vapid_claims=vapid_claims,
+                        timeout=10
+                    )
+                    
+                    # Update last_used_at timestamp
+                    c.execute("""
+                        UPDATE push_subscriptions
+                        SET last_used_at = ?
+                        WHERE id = ?
+                    """, (datetime.now(), sub['id']))
+                    
+                    sent_count += 1
+                    app.logger.debug(f"Push sent successfully to subscription {sub['id']}")
+                
+                except WebPushException as e:
+                    # Handle push exceptions (endpoint expired, invalid, etc.)
+                    if e.response and e.response.status_code in [401, 404, 410]:
+                        # Subscription is no longer valid, mark as inactive
+                        c.execute("""
+                            UPDATE push_subscriptions
+                            SET is_active = 0
+                            WHERE id = ?
+                        """, (sub['id'],))
+                        app.logger.debug(f"Marked subscription {sub['id']} as inactive due to {e.response.status_code}")
+                    else:
+                        failed_count += 1
+                        app.logger.warning(f"Failed to send push to subscription {sub['id']}: {e}")
+                
+                except Exception as e:
+                    failed_count += 1
+                    app.logger.warning(f"Error sending push notification: {e}")
+            
+            conn.commit()
+            
+            if sent_count > 0:
+                app.logger.info(f"Web push notifications sent to {sent_count} devices for user {user_id}")
+            
+            return sent_count
+        
+        except Exception as e:
+            app.logger.error(f"Error getting push subscriptions: {e}")
+            return 0
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        app.logger.error(f"Error in send_web_push: {e}")
+        return 0
+
 # ==================== MAINTENANCE REQUEST WORKFLOW HELPERS ====================
 
 def assess_severity(description, maintenance_type, priority="medium"):
@@ -6775,12 +6910,25 @@ def api_messaging_quick_send():
                     pass
                 try:
                     if recipient_id:
+                        notification_title = f"New Message: {subject[:50]}"
+                        notification_body = f"From {current_user.get_full_name()}"
+                        
+                        # Create in-app notification
                         create_notification(
                             recipient_id,
-                            f"New Message: {subject[:50]}",
-                            f"From {current_user.get_full_name()}",
+                            notification_title,
+                            notification_body,
                             priority,
                             '/messaging-center'
+                        )
+                        
+                        # Send Web Push notification to all subscribed devices
+                        send_web_push(
+                            recipient_id,
+                            notification_title,
+                            notification_body,
+                            '/messaging-center',
+                            'new-message'
                         )
                 except:
                     pass
@@ -10073,6 +10221,114 @@ def api_save_notification_preferences():
             'success': False,
             'error': str(e)
         }), 400
+
+# ==================== PUSH NOTIFICATION SUBSCRIPTIONS ====================
+
+@app.route('/api/push/subscribe', methods=['POST'])
+@login_required
+def api_push_subscribe():
+    """Subscribe device to Web Push notifications."""
+    try:
+        data = request.get_json()
+        
+        # Extract subscription details from service worker registration
+        subscription = data.get('subscription', {})
+        endpoint = subscription.get('endpoint')
+        
+        if not endpoint:
+            return jsonify({'success': False, 'error': 'Invalid subscription'}), 400
+        
+        # Extract keys from subscription
+        keys = subscription.get('keys', {})
+        auth_key = keys.get('auth')
+        p256dh_key = keys.get('p256dh')
+        user_agent = request.headers.get('User-Agent', '')
+        
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            # Check if subscription already exists
+            c.execute("""
+                SELECT id FROM push_subscriptions 
+                WHERE endpoint = ? AND user_id = ?
+            """, (endpoint, current_user.id))
+            
+            existing = c.fetchone()
+            
+            if existing:
+                # Update existing subscription
+                c.execute("""
+                    UPDATE push_subscriptions
+                    SET auth_key = ?, p256dh_key = ?, user_agent = ?, 
+                        is_active = 1, last_used_at = ?
+                    WHERE id = ?
+                """, (auth_key, p256dh_key, user_agent, datetime.now(), existing['id']))
+            else:
+                # Create new subscription
+                c.execute("""
+                    INSERT INTO push_subscriptions 
+                    (user_id, endpoint, auth_key, p256dh_key, user_agent)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (current_user.id, endpoint, auth_key, p256dh_key, user_agent))
+            
+            conn.commit()
+            
+            app.logger.info(f"Push subscription saved for user {current_user.id}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Push subscription registered successfully'
+            })
+        
+        except Exception as e:
+            conn.rollback()
+            app.logger.error(f"Error saving push subscription: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        app.logger.error(f"Error in push subscribe: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/push/unsubscribe', methods=['POST'])
+@login_required
+def api_push_unsubscribe():
+    """Unsubscribe device from Web Push notifications."""
+    try:
+        data = request.get_json()
+        endpoint = data.get('endpoint')
+        
+        if not endpoint:
+            return jsonify({'success': False, 'error': 'Endpoint required'}), 400
+        
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            c.execute("""
+                UPDATE push_subscriptions
+                SET is_active = 0
+                WHERE endpoint = ? AND user_id = ?
+            """, (endpoint, current_user.id))
+            
+            conn.commit()
+            
+            app.logger.info(f"Push subscription deactivated for user {current_user.id}")
+            
+            return jsonify({'success': True, 'message': 'Unsubscribed from push notifications'})
+        
+        except Exception as e:
+            conn.rollback()
+            app.logger.error(f"Error unsubscribing from push: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        app.logger.error(f"Error in push unsubscribe: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 400
 
 # ==================== CHIEF ENGINEER API ROUTES ====================
 
@@ -13398,13 +13654,34 @@ def init_db():
                 notification_status TEXT DEFAULT 'sent',
                 expiry_date DATE,
                 FOREIGN KEY (crew_id) REFERENCES crew_members (crew_id)
-            )
         ''')
         
         # Create indexes for certificate_alerts
         c.execute("CREATE INDEX IF NOT EXISTS idx_cert_alert_crew_id ON certificate_alerts (crew_id)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_cert_alert_type ON certificate_alerts (alert_type)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_cert_alert_sent_at ON certificate_alerts (alert_sent_at)")
+        
+        # ==================== PUSH NOTIFICATION SUBSCRIPTIONS ====================
+        
+        # Create push_subscriptions table for storing device subscriptions for Web Push
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                endpoint TEXT NOT NULL UNIQUE,
+                auth_key TEXT NOT NULL,
+                p256dh_key TEXT NOT NULL,
+                user_agent TEXT,
+                is_active INTEGER DEFAULT 1,
+                subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_used_at TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (user_id)
+            )
+        ''')
+        
+        # Create index for push_subscriptions
+        c.execute("CREATE INDEX IF NOT EXISTS idx_push_user_id ON push_subscriptions (user_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_push_is_active ON push_subscriptions (is_active)")
         
         # Create crew_training_plans table for generating training recommendations
         c.execute('''

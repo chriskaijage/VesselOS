@@ -37,6 +37,8 @@ class NotificationService {
                     this.requestPermission();
                 } else if (Notification.permission === 'granted') {
                     console.log('Notifications already enabled');
+                    // Subscribe to push notifications if permission granted
+                    this.subscribeToPushNotifications();
                 }
             }
 
@@ -44,6 +46,101 @@ class NotificationService {
             await this.loadUserPreferences();
         } catch (error) {
             console.error('Failed to initialize notification service:', error);
+        }
+    }
+
+    /**
+     * Subscribe to Web Push notifications
+     * Stores subscription in backend so server can send push notifications
+     */
+    async subscribeToPushNotifications() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn('Push notifications not supported');
+            return false;
+        }
+
+        try {
+            // Get the service worker registration
+            const registration = await navigator.serviceWorker.ready;
+            
+            // Check if already subscribed
+            let subscription = await registration.pushManager.getSubscription();
+            
+            if (!subscription) {
+                // Subscribe to push notifications
+                // Note: For production, you need VAPID keys configured on the server
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: this.urlBase64ToUint8Array(
+                        'BOGzytjM6u30cJ6qKP9XvqWHXiQb1Ja_B9PKrT20hZNLnqR1TnNzF5DwXLVpb_J5xJMDMmQO5cTCLPrwJMHwNEA'
+                    ) // Public VAPID key (dummy for now)
+                });
+                
+                console.log('✅ Subscribed to push notifications');
+            }
+            
+            // Send subscription to backend
+            if (subscription) {
+                await this.sendSubscriptionToBackend(subscription);
+            }
+            
+            return true;
+        } catch (error) {
+            console.warn('Failed to subscribe to push notifications:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Send push subscription to backend for storage
+     */
+    async sendSubscriptionToBackend(subscription) {
+        try {
+            const response = await fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    subscription: subscription.toJSON()
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log('✅ Push subscription saved on server');
+                    return true;
+                }
+            }
+            console.warn('Failed to save push subscription on server');
+            return false;
+        } catch (error) {
+            console.warn('Error sending subscription to backend:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Convert URL-safe Base64 string to Uint8Array for VAPID key
+     */
+    urlBase64ToUint8Array(base64String) {
+        try {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        } catch (error) {
+            console.warn('Error converting VAPID key:', error);
+            return null;
         }
     }
 
@@ -59,6 +156,7 @@ class NotificationService {
 
         if (Notification.permission === 'granted') {
             console.log('Notification permission already granted');
+            this.subscribeToPushNotifications();
             return true;
         }
 
@@ -73,6 +171,9 @@ class NotificationService {
                 console.log('Notification permission granted');
                 this.browserNotificationsEnabled = true;
                 localStorage.setItem('browserNotificationsEnabled', 'true');
+                
+                // Subscribe to Web Push notifications after permission granted
+                this.subscribeToPushNotifications();
                 
                 // Show a test notification
                 this.showTestNotification();
