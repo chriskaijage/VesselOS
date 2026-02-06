@@ -3810,18 +3810,34 @@ function showFilePreview(fileUrl, fileName) {
         // Initial check
         setTimeout(function() {
             ensureMessagingContentStructure();
+            // CRITICAL: Clear all stale messaging content on page load
+            clearMessagingContent();
             moveQuickReplyToFooter();
-            // Restore the correct tab content on page load
+            // Restore the correct tab content on page load if panel is open
             initializeMessagingTab();
         }, 100);
     });
 
+    function clearMessagingContent() {
+        const content = document.getElementById('messagingContent');
+        if (content) {
+            content.innerHTML = '';
+            console.log('🗑️ Cleared all messaging content on page load');
+        }
+    }
+
     function initializeMessagingTab() {
         const panel = document.getElementById('messagingPanel');
+        console.log('📊 Initialize: currentTab =', currentTab, ', panel active =', panel ? panel.classList.contains('active') : 'N/A');
+        
+        // Always update the active tab button to match the saved tab
+        updateActiveTabButton();
+        
         if (panel && panel.classList.contains('active')) {
             console.log('📑 Initializing messaging tab on page load:', currentTab);
-            updateActiveTabButton();
             loadMessagingTab(currentTab);
+        } else {
+            console.log('ℹ️ Messaging panel not open on page load. Correct tab button will be highlighted when opened.');
         }
     }
 
