@@ -24,7 +24,7 @@ class NotificationService {
             // Register service worker for background notifications
             if ('serviceWorker' in navigator) {
                 this.serviceWorkerRegistration = await navigator.serviceWorker.register('/static/sw.js', {
-                    scope: '/'
+                    scope: '/static/'
                 }).catch(error => {
                     console.warn('Service Worker registration failed:', error);
                     // Service worker is optional for the notification system to work

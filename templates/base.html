@@ -3737,7 +3737,7 @@ function showFilePreview(fileUrl, fileName) {
             contentInner = document.createElement('div');
             contentInner.className = 'messaging-content-inner';
             // Move all direct children of content (except footer) into contentInner
-            while (content.firstChild && !content.firstChild.classList.contains('messaging-footer')) {
+            while (content.firstChild && content.firstChild.classList && !content.firstChild.classList.contains('messaging-footer')) {
                 contentInner.appendChild(content.firstChild);
             }
             content.insertBefore(contentInner, content.firstChild);
@@ -3745,7 +3745,8 @@ function showFilePreview(fileUrl, fileName) {
         
         // Move any direct children (except messaging-content-inner and messaging-footer) into contentInner
         Array.from(content.children).forEach(child => {
-            if (!child.classList.contains('messaging-content-inner') && 
+            if (child.classList && 
+                !child.classList.contains('messaging-content-inner') && 
                 !child.classList.contains('messaging-footer') &&
                 !child.classList.contains('quick-reply-area')) {
                 contentInner.appendChild(child);
