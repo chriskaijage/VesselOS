@@ -135,7 +135,7 @@ class NotificationSettingsUI {
             // Show browser notification
             await notificationService.showBrowserNotification({
                 title: 'Test Notification',
-                body: 'This is a test notification from the Marine Service System',
+                body: 'This is a test notification from VesselOS',
                 type: 'success'
             });
 

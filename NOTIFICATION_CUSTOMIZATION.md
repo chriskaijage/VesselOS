@@ -151,7 +151,7 @@ from email.mime.text import MIMEText
 def send_notification_email(user_email, title, message):
     """Send email notification to user."""
     msg = MIMEText(f"<h3>{title}</h3><p>{message}</p>", 'html')
-    msg['Subject'] = f"[Marine Service] {title}"
+    msg['Subject'] = f"[VesselOS] {title}"
     msg['From'] = os.environ.get('MAIL_FROM')
     msg['To'] = user_email
     

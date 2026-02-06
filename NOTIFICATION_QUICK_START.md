@@ -2,7 +2,7 @@
 
 ## What Was Implemented
 
-Your Marine Service System now has **full web push notifications with sound**, just like WhatsApp Web. When a new notification arrives, users will:
+VesselOS now has **full web push notifications with sound**, just like WhatsApp Web. When a new notification arrives, users will:
 
 1. ✅ See a **browser notification** (desktop/mobile alert)
 2. ✅ Hear a **sound notification** 

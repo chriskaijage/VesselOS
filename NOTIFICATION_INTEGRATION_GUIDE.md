@@ -245,7 +245,7 @@ Desktop Notification appears:
     async function sendTestNotification() {
         await notificationService.showBrowserNotification({
             title: 'Test Notification',
-            body: 'This is a test from Marine Service System',
+            body: 'This is a test from VesselOS',
             type: 'success'
         });
         await notificationService.playSound();

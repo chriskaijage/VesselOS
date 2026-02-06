@@ -2,7 +2,7 @@
 
 ## What You Have
 
-Your Marine Service System now has **complete web push notifications**, just like WhatsApp Web.
+VesselOS now has **complete web push notifications**, just like WhatsApp Web.
 
 ## In 30 Seconds
 

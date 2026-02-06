@@ -3,7 +3,7 @@ REM Quick Deployment Setup Script for Windows
 REM Usage: setup_production.bat
 
 echo.
-echo 🚀 Marine Service Center - Production Setup
+echo 🚀 VesselOS - Production Setup
 echo ===========================================
 echo.
 

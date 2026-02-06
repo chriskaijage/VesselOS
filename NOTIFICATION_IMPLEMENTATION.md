@@ -305,7 +305,7 @@ See NOTIFICATION_CUSTOMIZATION.md for examples.
 
 ## Summary
 
-Your Marine Service System now has **production-ready web push notifications** with:
+VesselOS now has **production-ready web push notifications** with:
 - ✅ Browser notifications (desktop alerts)
 - ✅ Sound notifications (audio feedback)
 - ✅ User preferences (customizable settings)

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Quick Deployment Setup Script for Marine Service Center
+# Quick Deployment Setup Script for VesselOS
 # Usage: bash setup_production.sh
 
 set -e
 
-echo "🚀 Marine Service Center - Production Setup"
+echo "🚀 VesselOS - Production Setup"
 echo "==========================================="
 
 # Check Python version

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Port Engineer Dashboard - Marine Service Center{% endblock %}
+{% block title %}Port Engineer Dashboard - VesselOS{% endblock %}
 
 {% block extra_css %}
 <script>
@@ -1424,7 +1424,7 @@ window.approveUser = function(userId, approve) {
             // Send notification to user via messaging system
             if (approve) {
                 window.sendUserMessage(userId, 'Account Approved', 
-                    'Your account has been approved by the port engineer. You can now log in to the Marine Service Center system.\n\nPlease use your registered credentials to access the system.', 'normal');
+                    'Your account has been approved by the port engineer. You can now log in to the VesselOS system.\n\nPlease use your registered credentials to access the system.', 'normal');
             } else {
                 window.sendUserMessage(userId, 'Account Rejected', 
                     'Your account registration has been rejected by the port engineer. Please contact the system administrator for more details regarding this decision.', 'normal');
@@ -1672,8 +1672,8 @@ function createQualityOfficer() {
             
             // Send welcome message if email option was checked
             if (data.officer_id && data.send_welcome_email) {
-                sendUserMessage(data.officer_id, 'Welcome to Marine Service Center', 
-                    `Welcome ${data.first_name} ${data.last_name}!\n\nYou have been registered as a Quality Officer in the Marine Service Center system.\n\nYour login credentials:\nEmail: ${data.email}\nTemporary Password: ${data.temp_password}\n\nPlease log in and change your password immediately.`, 'normal');
+                sendUserMessage(data.officer_id, 'Welcome to VesselOS', 
+                    `Welcome ${data.first_name} ${data.last_name}!\n\nYou have been registered as a Quality Officer in the VesselOS system.\n\nYour login credentials:\nEmail: ${data.email}\nTemporary Password: ${data.temp_password}\n\nPlease log in and change your password immediately.`, 'normal');
             }
             
             // Reset form

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Marine Service Center Expert System.
+VesselOS - Maritime Management Platform.
 
 A comprehensive web application for managing ship maintenance, reporting,
 and quality assurance with role-based access control and real-time collaboration.
@@ -903,7 +903,7 @@ def send_notification_email(user_email, user_name, title, message, action_url="#
             <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                 <!-- Header -->
                 <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #007acc; padding-bottom: 20px;">
-                    <h2 style="color: #333; margin: 0;">Marine Service Center</h2>
+                    <h2 style="color: #333; margin: 0;">VesselOS</h2>
                     <p style="color: #666; margin: 5px 0 0 0;">International Maritime Standards System</p>
                 </div>
                 
@@ -927,7 +927,7 @@ def send_notification_email(user_email, user_name, title, message, action_url="#
                 
                 <!-- Footer -->
                 <div style="border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                    <p style="margin: 5px 0;">© 2026 Marine Service Center. All rights reserved.</p>
+                    <p style="margin: 5px 0;">© 2026 VesselOS. All rights reserved.</p>
                     <p style="margin: 5px 0;">This is an automated notification. Please do not reply to this email.</p>
                 </div>
             </div>
@@ -937,11 +937,11 @@ def send_notification_email(user_email, user_name, title, message, action_url="#
     
     # Generate plain text version for email clients without HTML support
     plain_text = (
-        f"Marine Service Center - {title}\n"
+        f"VesselOS - {title}\n"
         f"{'-' * 40}\n\n"
         f"{message}\n\n"
         f"For more information and to take action, visit:\n{action_url}\n\n"
-        f"© 2026 Marine Service Center\n"
+        f"© 2026 VesselOS\n"
         f"This is an automated notification. Please do not reply."
     )
     
@@ -3944,7 +3944,7 @@ def generate_pdf_report(report_data):
         # Footer
         story.append(Spacer(1, 0.3*inch))
         footer_style = ParagraphStyle('FooterStyle', parent=styles['Normal'], fontSize=8, textColor=colors.grey, alignment=1)
-        story.append(Paragraph("<i>Marine Service Center - Confidential Report</i>", footer_style))
+        story.append(Paragraph("<i>VesselOS - Confidential Report</i>", footer_style))
         
         doc.build(story)
         buffer.seek(0)
@@ -5170,7 +5170,7 @@ def api_2fa_setup():
             secret = generate_2fa_secret()
             
             # Generate QR code URL (otpauth:// format)
-            issuer = 'Marine Service Center'
+            issuer = 'VesselOS'
             account_name = f"{current_user.email}"
             qr_url = f"otpauth://totp/{issuer}:{account_name}?secret={secret}&issuer={issuer}"
             
@@ -5628,7 +5628,7 @@ Average SQI Score: {avg_sqi}
 Member Since: {user_dict.get('created_at', 'N/A')[:10] if user_dict.get('created_at') else 'N/A'}
 Last Login: {user_dict.get('last_login', 'Never')}
 
-This report was generated from the Marine Service Center system.
+This report was generated from the VesselOS platform.
             """
             
             log_activity('profile_report_generated', 'User generated profile report')
@@ -9361,7 +9361,7 @@ def api_manager_create_quality_officer():
             # Create welcome notification
             create_notification(
                 user_id,
-                'Welcome to Marine Service Center',
+                'Welcome to VesselOS',
                 f'Your DMPO HQ account has been created. Access expires on {end_date_str}.',
                 'success',
                 '/login'
@@ -15745,7 +15745,7 @@ if __name__ == '__main__':
     init_db()
     
     print("\n" + "="*70)
-    print("[SHIP] MARINE SERVICE CENTER - INTERNATIONAL STANDARD")
+    print("[SHIP] VESSELOSMARITIME MANAGEMENT PLATFORM - READY")
     print("="*70)
     print("[OK] System Initialized")
     print("[DATABASE] Database: SQLite with dynamic schema management")

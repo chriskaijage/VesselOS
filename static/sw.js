@@ -1,5 +1,5 @@
 /**
- * Service Worker for Marine Service System
+ * Service Worker for VesselOS
  * Handles background notifications even when the app is not in focus
  */
 
@@ -40,7 +40,7 @@ self.addEventListener('push', (event) => {
     console.log('Push notification received:', event);
     
     let notificationData = {
-        title: 'Marine Service System',
+        title: 'VesselOS',
         body: 'You have a new notification',
         icon: '/static/images/logo.png',
         badge: '/static/images/logo.png',

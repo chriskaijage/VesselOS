@@ -93,7 +93,7 @@ class NotificationService {
      */
     showTestNotification() {
         if (Notification.permission === 'granted') {
-            new Notification('Marine Service System', {
+            new Notification('VesselOS', {
                 title: 'Notifications Enabled',
                 body: 'You will now receive notifications for important updates',
                 icon: '/static/images/logo.png',
