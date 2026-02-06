@@ -7281,6 +7281,52 @@ def api_messaging_mark_all_read():
         app.logger.error(f"Database connection error in mark_all_read: {e}")
         return jsonify({'success': False, 'error': 'Database error'}), 500
 
+@app.route('/api/messaging/mark-thread-read/<other_party_id>', methods=['POST'])
+@login_required
+def api_messaging_mark_thread_read(other_party_id):
+    """
+    Mark all messages from a specific user in a thread as read.
+    
+    Args:
+        other_party_id (str): The ID of the other party in the thread
+        
+    Returns:
+        JSON response with:
+            - success (bool): Operation status
+            - marked (int): Number of messages marked as read
+            - error (str): Error description if failed
+    """
+    try:
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+
+            # Mark all unread messages from this user as read for current user
+            cursor.execute("""
+                UPDATE messaging_system
+                SET is_read = 1, read_at = ?
+                WHERE sender_id = ? 
+                AND recipient_type = 'specific_user' 
+                AND recipient_id = ?
+                AND message_type = 'message'
+                AND is_read = 0
+            """, (datetime.now(), other_party_id, current_user.id))
+
+            marked_count = cursor.rowcount
+            conn.commit()
+            return jsonify({'success': True, 'marked': marked_count}), 200
+
+        except Exception as e:
+            conn.rollback()
+            app.logger.error(f"Error marking thread messages as read: {e}")
+            return jsonify({'success': False, 'error': 'Failed to mark messages as read'}), 500
+        finally:
+            conn.close()
+
+    except Exception as e:
+        app.logger.error(f"Database connection error in mark_thread_read: {e}")
+        return jsonify({'success': False, 'error': 'Database error'}), 500
+
 @app.route('/api/messaging/message/<message_id>')
 @login_required
 def api_messaging_message(message_id):

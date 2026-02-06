@@ -4293,6 +4293,29 @@ function showFilePreview(fileUrl, fileName) {
         `;
         
         console.log(`📬 Fetching thread for user: ${otherPartyId}`);
+        
+        // Mark thread as read and remove unread badge
+        fetch(`/api/messaging/mark-thread-read/${otherPartyId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`✅ Marked ${data.marked} messages as read`);
+                // Remove unread badge from thread in threads list
+                const threadItem = document.querySelector(`[data-thread-id="${otherPartyId}"]`);
+                if (threadItem) {
+                    const badge = threadItem.querySelector('.badge.bg-danger');
+                    if (badge) {
+                        badge.remove();
+                        console.log(`🗑️ Removed unread badge for thread ${otherPartyId}`);
+                    }
+                }
+            }
+        })
+        .catch(error => console.log('Note: Could not mark thread as read:', error.message));
+        
+        // Load and display the thread messages
         fetch(`/api/messaging/thread/${otherPartyId}`)
             .then(response => {
                 console.log(`Response status: ${response.status}, ok: ${response.ok}`);
