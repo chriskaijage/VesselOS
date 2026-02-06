@@ -4422,8 +4422,23 @@ function showFilePreview(fileUrl, fileName) {
         const displayName = userName || 'Unknown';
         const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         
-        // Build initial HTML without header
+        // Build conversation header with profile info
         let html = `
+            <div class="conversation-header-top" id="conversationHeader" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-bottom: 1px solid #dee2e6; border-radius: 0 0 12px 12px; margin-bottom: 12px;">
+                <div class="avatar-medium position-relative" style="flex-shrink: 0;">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center avatar-placeholder-header" 
+                         style="width: 44px; height: 44px; font-size: 1rem; font-weight: bold; cursor: pointer;"
+                         onclick="showUserProfile('${currentConversationId}')"
+                         data-user-id="${currentConversationId}">
+                        ${initials}
+                    </div>
+                    <span class="online-status-header position-absolute bottom-0 end-0 p-1 rounded-circle" style="width: 12px; height: 12px; background: #ccc; border: 2px solid white; display: none;"></span>
+                </div>
+                <div class="conversation-info flex-grow-1" style="min-width: 0;">
+                    <h6 class="mb-0" style="cursor: pointer; font-weight: 600;" onclick="showUserProfile('${currentConversationId}')">${displayName}</h6>
+                    <small class="status-text text-muted" style="display: block;">Loading status...</small>
+                </div>
+            </div>
             <div class="message-conversation" id="messageThread">
         `;
         
@@ -4552,13 +4567,77 @@ function showFilePreview(fileUrl, fileName) {
         
         content.innerHTML = html;
         
-        // Update thread contact phone and name in reply area
+        // Fetch and display user status and profile picture in conversation header
         fetch(`/api/user/status/${currentConversationId}`)
-            .then(response => response.json())
-            .then(statusData => {
-                // Status check completed (no longer updating removed elements)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
             })
-            .catch(error => console.error('Error fetching user status:', error));
+            .then(statusData => {
+                console.log(`📊 Thread header status for ${currentConversationId}:`, statusData);
+                
+                if (statusData.success && statusData.user) {
+                    const userStatus = statusData.user;
+                    const header = document.getElementById('conversationHeader');
+                    
+                    if (header) {
+                        const profilePicUrl = userStatus.profile_pic 
+                            ? `/uploads/profile_pics/${userStatus.profile_pic}`
+                            : null;
+                        const placeholderAvatar = header.querySelector('.avatar-placeholder-header');
+                        const statusText = header.querySelector('.status-text');
+                        const onlineIndicator = header.querySelector('.online-status-header');
+                        
+                        // Add profile picture if available
+                        if (profilePicUrl && placeholderAvatar) {
+                            const img = document.createElement('img');
+                            img.src = profilePicUrl;
+                            img.alt = displayName;
+                            img.className = 'rounded-circle thread-header-pic';
+                            img.style.cssText = 'width: 44px; height: 44px; object-fit: cover; cursor: pointer; position: absolute; top: 0; left: 0; z-index: 1;';
+                            img.onclick = (e) => {
+                                e.stopPropagation();
+                                showUserProfile(currentConversationId);
+                            };
+                            img.onerror = function() {
+                                console.warn(`Failed to load header image for ${currentConversationId}`);
+                                this.remove();
+                            };
+                            img.onload = function() {
+                                console.log(`✅ Header image loaded for ${currentConversationId}`);
+                                placeholderAvatar.style.display = 'none';
+                            };
+                            placeholderAvatar.parentElement.insertBefore(img, placeholderAvatar);
+                        }
+                        
+                        // Update online status indicator and text
+                        if (onlineIndicator) {
+                            if (userStatus.is_online) {
+                                onlineIndicator.style.background = '#28a745';
+                                onlineIndicator.style.display = 'block';
+                                onlineIndicator.title = 'Online';
+                                console.log(`🟢 User is online`);
+                            } else {
+                                onlineIndicator.style.display = 'none';
+                            }
+                        }
+                        
+                        // Update status text
+                        if (statusText) {
+                            if (userStatus.is_online) {
+                                statusText.innerHTML = '<i class="fas fa-circle me-1" style="font-size: 0.5rem; color: #28a745;"></i>Online';
+                                statusText.className = 'status-text text-success';
+                            } else {
+                                statusText.innerHTML = `<i class="fas fa-clock me-1"></i>Last seen ${userStatus.last_seen_time}`;
+                                statusText.className = 'status-text text-muted';
+                            }
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error(`❌ Error fetching status for thread header:`, error);
+            });
         
         // Scroll to bottom of conversation
         const threadDiv = document.getElementById('messageThread');
