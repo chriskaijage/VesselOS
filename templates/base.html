@@ -3656,6 +3656,8 @@ function showFilePreview(fileUrl, fileName) {
             
             if (panel.classList.contains('active')) {
                 console.log('📨 Panel opened, loading tab:', currentTab);
+                // Update active tab button before loading
+                updateActiveTabButton();
                 loadMessagingTab(currentTab);
             } else {
                 console.log('📭 Panel closed');
@@ -3665,21 +3667,26 @@ function showFilePreview(fileUrl, fileName) {
         }
     }
 
+    function updateActiveTabButton() {
+        // Remove active from all tabs
+        document.querySelectorAll('.messaging-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Add active to current tab
+        const targetTab = document.querySelector(`.messaging-tab[onclick*="'${currentTab}'"]`);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
+    }
+
     function switchMessagingTab(tabName) {
         currentTab = tabName;
         // Save selected tab to localStorage so it persists across page reloads
         localStorage.setItem('messagingCurrentTab', tabName);
         
-        // Update tab buttons - remove active from all tabs
-        document.querySelectorAll('.messaging-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        // Add active to the tab being switched to
-        const targetTab = document.querySelector(`.messaging-tab[onclick*="'${tabName}'"]`);
-        if (targetTab) {
-            targetTab.classList.add('active');
-        }
+        // Update active tab button
+        updateActiveTabButton();
         
         loadMessagingTab(tabName);
     }
