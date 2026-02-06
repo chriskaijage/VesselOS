@@ -3709,6 +3709,14 @@ function showFilePreview(fileUrl, fileName) {
             
             console.log('📑 Loading tab:', tabName);
             
+            // Clear old content from the messaging content area
+            const contentInner = content.querySelector('.messaging-content-inner');
+            if (contentInner) {
+                contentInner.innerHTML = '';
+            } else {
+                content.innerHTML = '';
+            }
+            
             switch(tabName) {
                 case 'inbox':
                     loadInboxTab(content);
@@ -3807,8 +3815,19 @@ function showFilePreview(fileUrl, fileName) {
         setTimeout(function() {
             ensureMessagingContentStructure();
             moveQuickReplyToFooter();
+            // Restore the correct tab content on page load
+            initializeMessagingTab();
         }, 100);
     });
+
+    function initializeMessagingTab() {
+        const panel = document.getElementById('messagingPanel');
+        if (panel && panel.classList.contains('active')) {
+            console.log('📑 Initializing messaging tab on page load:', currentTab);
+            updateActiveTabButton();
+            loadMessagingTab(currentTab);
+        }
+    }
 
     function loadInboxTab(content) {
         content.innerHTML = `
