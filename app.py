@@ -13655,6 +13655,7 @@ def init_db():
                 notification_status TEXT DEFAULT 'sent',
                 expiry_date DATE,
                 FOREIGN KEY (crew_id) REFERENCES crew_members (crew_id)
+            )
         ''')
         
         # Create indexes for certificate_alerts
