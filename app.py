@@ -12444,18 +12444,19 @@ def ensure_port_engineer_account(c, conn):
         
         if user:
             user_id = user['user_id']
-            # Update account to ensure it's active and approved
+            # Update account to ensure it's active and approved and has correct password
+            correct_password = generate_password_hash('Admin@2025')
             c.execute('''
                 UPDATE users 
-                SET is_active = 1, is_approved = 1, role = 'port_engineer'
+                SET is_active = 1, is_approved = 1, role = 'port_engineer', password = ?
                 WHERE email = 'port_engineer@marine.com'
-            ''')
+            ''', (correct_password,))
             conn.commit()
             print(f"[OK] Port engineer account updated: {user_id}")
         else:
             # Create new account
             pe_id = 'PE001'
-            hashed_password = generate_password_hash('Engineer@2026')
+            hashed_password = generate_password_hash('Admin@2025')
             c.execute('''
                 INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, phone, department, location, is_approved, is_active)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
