@@ -12445,7 +12445,7 @@ def ensure_port_engineer_account(c, conn):
         if user:
             user_id = user['user_id']
             # Update account to ensure it's active and approved and has correct password
-            correct_password = generate_password_hash('Admin@2025')
+            correct_password = generate_password_hash('Engineer@2026')
             c.execute('''
                 UPDATE users 
                 SET is_active = 1, is_approved = 1, role = 'port_engineer', password = ?
@@ -12456,7 +12456,7 @@ def ensure_port_engineer_account(c, conn):
         else:
             # Create new account
             pe_id = 'PE001'
-            hashed_password = generate_password_hash('Admin@2025')
+            hashed_password = generate_password_hash('Engineer@2026')
             c.execute('''
                 INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, phone, department, location, is_approved, is_active)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -13789,7 +13789,7 @@ def init_db():
         print("="*70)
         print("\n[ACCOUNT] Demo Account 1 - Port Engineer (Admin):")
         print("   Email: port_engineer@marine.com")
-        print("   Password: Admin@2025")
+        print("   Password: Engineer@2026")
         print("   Role: Full system access")
         print("\n[ACCOUNT] Demo Account 2 - DMPO HQ:")
         print("   Email: dmpo@marine.com")

@@ -48,7 +48,7 @@ c.execute('''
 
 # Add demo accounts with CORRECT passwords
 accounts = [
-    ('PE001', 'port_engineer@marine.com', 'Admin@2025', 'John', 'Smith', 'Port Engineer', 'port_engineer'),
+    ('PE001', 'port_engineer@marine.com', 'Engineer@2026', 'John', 'Smith', 'Port Engineer', 'port_engineer'),
     ('QO001', 'dmpo@marine.com', 'Quality@2026', 'DMPO', 'HQ', 'DMPO HQ', 'quality_officer'),
     ('HM001', 'harbour_master@marine.com', 'Harbour@2026', 'Robert', 'Wilson', 'Harbour Master', 'harbour_master'),
 ]
@@ -69,7 +69,7 @@ conn.close()
 
 print("[OK] Demo accounts created with correct passwords:")
 print("   1. Email: port_engineer@marine.com")
-print("      Password: Admin@2025")
+print("      Password: Engineer@2026")
 print("      Role: Port Engineer (Admin)")
 print()
 print("   2. Email: dmpo@marine.com")

@@ -43,7 +43,7 @@ try:
         # Try login
         response = client.post('/login', data={
             'email': 'port_engineer@marine.com',
-            'password': 'Admin@2025'
+            'password': 'Engineer@2026'
         }, follow_redirects=True)
         
         print(f"[INFO] Response status code: {response.status_code}")
