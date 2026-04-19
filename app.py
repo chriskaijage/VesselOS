@@ -10341,52 +10341,52 @@ def api_chief_engineer_dashboard_data():
     try:
         c = conn.cursor()
         
-        # Total requests sent by this chief engineer
+        # Total requests sent by this chief engineer (check both submitted_by and requested_by for backward compatibility)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ?
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
+        """, (current_user.id, current_user.id, current_user.email))
         total_requests = c.fetchone()['count']
         
         # Pending captain approval (requests waiting for captain approval)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status IN ('submitted', 'pending_captain')
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain')
+        """, (current_user.id, current_user.id, current_user.email))
         pending_approval = c.fetchone()['count']
         
         # In progress
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'in_progress'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'in_progress'
+        """, (current_user.id, current_user.id, current_user.email))
         in_progress = c.fetchone()['count']
         
         # Completed
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'completed'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'completed'
+        """, (current_user.id, current_user.id, current_user.email))
         completed = c.fetchone()['count']
         
         # Approved
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'approved'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'approved'
+        """, (current_user.id, current_user.id, current_user.email))
         approved = c.fetchone()['count']
 
         # Rejected
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'rejected'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'rejected'
+        """, (current_user.id, current_user.id, current_user.email))
         rejected = c.fetchone()['count']
         
         return jsonify({
@@ -10418,10 +10418,10 @@ def api_chief_engineer_my_requests():
             SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
                    status, created_at, requested_by, submitted_by
             FROM maintenance_requests
-            WHERE submitted_by = ?
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
             ORDER BY created_at DESC
             LIMIT 50
-        """, (current_user.id,))
+        """, (current_user.id, current_user.id, current_user.email))
         
         requests = []
         for row in c.fetchall():
@@ -10507,52 +10507,52 @@ def api_captain_dashboard_data():
         # Get vessel name from user profile or use a default
         vessel_name = current_user.get_full_name()  # This might need to be stored in user profile
         
-        # Total requests sent by this captain
+        # Total requests sent by this captain (check both submitted_by and requested_by for backward compatibility)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ?
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
+        """, (current_user.id, current_user.id, current_user.email))
         total_requests = c.fetchone()['count']
         
         # Pending approval (requests awaiting review)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status IN ('submitted', 'pending_captain')
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain')
+        """, (current_user.id, current_user.id, current_user.email))
         pending_approval = c.fetchone()['count']
         
         # Approved (submitted to port)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'approved'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'approved'
+        """, (current_user.id, current_user.id, current_user.email))
         approved = c.fetchone()['count']
         
         # In progress
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'in_progress'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'in_progress'
+        """, (current_user.id, current_user.id, current_user.email))
         in_progress = c.fetchone()['count']
         
         # Completed
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'completed'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'completed'
+        """, (current_user.id, current_user.id, current_user.email))
         completed = c.fetchone()['count']
 
         # Rejected
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE submitted_by = ? AND status = 'rejected'
-        """, (current_user.id,))
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'rejected'
+        """, (current_user.id, current_user.id, current_user.email))
         rejected = c.fetchone()['count']
         
         return jsonify({
@@ -12324,7 +12324,7 @@ def api_create_maintenance_request():
                         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 request_id, ship_name, request_type, request_type, priority, criticality, description,
-                location, 'TBD', 'To be assessed', requested_by_email or requester_id,
+                location, 'TBD', 'To be assessed', requester_id or requested_by_email,
                 initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now(),
                 part_number, part_name, part_category, quantity, manufacturer,
                 requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
@@ -12482,13 +12482,12 @@ def ensure_port_engineer_account(c, conn):
         
         if user:
             user_id = user['user_id']
-            # Update account to ensure it's active and approved and has correct password
-            correct_password = generate_password_hash('Engineer@2026')
+            # Update account to ensure it's active and approved
             c.execute('''
                 UPDATE users 
-                SET is_active = 1, is_approved = 1, role = 'port_engineer', password = ?
+                SET is_active = 1, is_approved = 1, role = 'port_engineer'
                 WHERE email = 'port_engineer@marine.com'
-            ''', (correct_password,))
+            ''')
             conn.commit()
             print(f"[OK] Port engineer account updated: {user_id}")
         else:
@@ -13704,7 +13703,6 @@ def init_db():
                 notification_status TEXT DEFAULT 'sent',
                 expiry_date DATE,
                 FOREIGN KEY (crew_id) REFERENCES crew_members (crew_id)
-            )
         ''')
         
         # Create indexes for certificate_alerts
@@ -13838,7 +13836,7 @@ def init_db():
         print("="*70)
         print("\n[ACCOUNT] Demo Account 1 - Port Engineer (Admin):")
         print("   Email: port_engineer@marine.com")
-        print("   Password: Engineer@2026")
+        print("   Password: Admin@2025")
         print("   Role: Full system access")
         print("\n[ACCOUNT] Demo Account 2 - DMPO HQ:")
         print("   Email: dmpo@marine.com")
