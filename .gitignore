@@ -4,6 +4,7 @@ myenv/
 env/
 *.egg-info/
 __pycache__/
+_Pycache_/
 *.pyc
 .Python
 
@@ -48,10 +49,3 @@ htmlcov/
 temp/
 tmp/
 *.tmp
-
-# Mac
-.DS_Store
-*.app
-
-# Windows
-desktop.ini
