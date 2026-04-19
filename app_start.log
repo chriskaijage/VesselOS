@@ -1,0 +1,16 @@
+﻿python :   File "C:\Users\USER\Downloads\marine_service
+_system-20260117T120137Z-1-001\marine_service_system\ap
+p.py", line 9919
+At line:1 char:34
++ $env:PYTHONIOENCODING = 'utf-8'; python app.py 2>&1 
+| Out-File -Encod ...
++                                  ~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  File "C 
+   :\User....py", line 9919:String) [], RemoteExcepti  
+  on
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    ''')            print("[OK] Created 
+service_evaluations table with correct structure")
+                    ^^^^^
+SyntaxError: invalid syntax
