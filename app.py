@@ -11172,20 +11172,71 @@ def api_declare_emergency():
 @app.route('/api/emergency-contact-services', methods=['POST'])
 @login_required
 def api_emergency_contact_services():
-    """Contact emergency services."""
+    """Contact emergency services and notify port engineers."""
     try:
         data = request.get_json()
-        emergency_id = data.get('emergency_id', 'current')
+        emergency_id = data.get('emergency_id')
+        services_contacted = data.get('services_contacted', [])
+        notes = data.get('notes', '')
         
-        # Log the activity
-        log_activity('emergency_services_contacted', f'Contacted emergency services for {emergency_id}')
+        if not emergency_id:
+            return jsonify({'success': False, 'error': 'Emergency ID is required'})
         
-        # In a real system, this would send notifications/emails to emergency contacts
-        return jsonify({
-            'success': True,
-            'message': 'Emergency services contacted. All relevant personnel have been notified.'
-        })
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            current_time = datetime.now()
+            
+            # Log the activity
+            c.execute("""
+                INSERT INTO emergency_activity_log
+                (emergency_id, user_id, action_type, action_description, created_at)
+                VALUES (?, ?, 'services_contacted', ?, ?)
+            """, (emergency_id, current_user.id, f'Contacted services: {", ".join(services_contacted)}', current_time))
+            
+            # Get emergency details
+            c.execute("""
+                SELECT ship_name, emergency_type FROM emergency_requests WHERE emergency_id = ?
+            """, (emergency_id,))
+            emergency = c.fetchone()
+            
+            if not emergency:
+                return jsonify({'success': False, 'error': 'Emergency not found'})
+            
+            # Notify all port engineers
+            c.execute("SELECT user_id FROM users WHERE role = 'port_engineer' AND is_active = 1")
+            port_engineers = c.fetchall()
+            
+            for engineer in port_engineers:
+                notification_message = f'Emergency services contacted for {emergency["ship_name"]}'
+                if services_contacted:
+                    notification_message += f'\nServices: {", ".join(services_contacted)}'
+                if notes:
+                    notification_message += f'\nNotes: {notes}'
+                    
+                create_notification(
+                    engineer['user_id'],
+                    'Emergency Services Contacted',
+                    notification_message,
+                    'urgent',
+                    f'/emergency-requests'
+                )
+            
+            conn.commit()
+            log_activity('emergency_services_contacted', f'Contacted emergency services for {emergency_id}')
+            
+            return jsonify({
+                'success': True,
+                'message': f'Emergency services contacted. {len(port_engineers)} port engineer(s) notified.'
+            })
+        except Exception as e:
+            conn.rollback()
+            app.logger.error(f"Error contacting emergency services: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': 'Database error'})
+        finally:
+            conn.close()
     except Exception as e:
+        app.logger.error(f"Error in emergency contact services: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/emergency-activate-team', methods=['POST'])
@@ -14402,28 +14453,40 @@ def api_maintenance_request_progress(request_id):
 @login_required
 @role_required(['port_engineer'])
 def api_pending_maintenance_approvals():
-    """Get maintenance requests pending approval (Manager only)."""
+    """Get maintenance requests pending approval (Port Engineer only)."""
     try:
         conn = get_db_connection()
         try:
             c = conn.cursor()
             
+            # Updated query to properly handle both submitted_by (authenticated users) 
+            # and requested_by (external users) fields
             c.execute("""
                 SELECT 
                     mr.request_id,
                     mr.ship_name,
                     mr.maintenance_type,
+                    mr.request_type,
                     mr.priority,
+                    mr.criticality,
+                    mr.severity,
                     mr.description,
                     mr.location,
-                    mr.requested_by,
                     mr.created_at,
-                    u.first_name || ' ' || u.last_name as requester_name,
-                    u.email as requester_email
+                    mr.submitted_by,
+                    mr.requested_by,
+                    COALESCE(u.first_name || ' ' || u.last_name, mr.requested_by_name) as requester_name,
+                    COALESCE(u.email, mr.requested_by_email) as requester_email,
+                    mr.requested_by_phone as requester_phone,
+                    mr.part_number,
+                    mr.part_name,
+                    mr.quantity,
+                    mr.status
                 FROM maintenance_requests mr
-                LEFT JOIN users u ON mr.requested_by = u.user_id
-                WHERE (mr.approved IS NULL OR mr.approved = 0)
-                AND mr.status != 'rejected'
+                LEFT JOIN users u ON mr.submitted_by = u.user_id
+                WHERE mr.status IN ('submitted', 'pending')
+                AND (mr.approved IS NULL OR mr.approved = 0)
+                AND mr.rejection_reason IS NULL
                 ORDER BY 
                     CASE mr.priority
                         WHEN 'critical' THEN 1
@@ -14432,17 +14495,23 @@ def api_pending_maintenance_approvals():
                         WHEN 'low' THEN 4
                         ELSE 5
                     END,
-                    mr.created_at ASC
-                LIMIT 50
+                    CASE mr.severity
+                        WHEN 'CRITICAL' THEN 1
+                        WHEN 'MAJOR' THEN 2
+                        WHEN 'MINOR' THEN 3
+                        ELSE 4
+                    END,
+                    mr.created_at DESC
+                LIMIT 100
             """)
             
             requests = []
             for row in c.fetchall():
                 requests.append(dict(row))
             
-            return jsonify({'success': True, 'requests': requests})
+            return jsonify({'success': True, 'requests': requests, 'count': len(requests)})
         except Exception as e:
-            app.logger.error(f"Error getting pending approvals: {e}")
+            app.logger.error(f"Error getting pending approvals: {e}", exc_info=True)
             return jsonify({'success': False, 'error': str(e)})
         finally:
             conn.close()
