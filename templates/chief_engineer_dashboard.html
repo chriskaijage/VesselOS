@@ -75,6 +75,24 @@
             </div>
         </div>
     </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-info">
+            <div class="card-body text-center">
+                <div class="metric-value" id="approved">--</div>
+                <div class="metric-label">Approved</div>
+                <small class="text-muted">Port approved</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-danger">
+            <div class="card-body text-center">
+                <div class="metric-value" id="rejected">--</div>
+                <div class="metric-label">Rejected</div>
+                <small class="text-muted">Rejected requests</small>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row">
@@ -243,6 +261,8 @@ function loadChiefEngineerData() {
                 document.getElementById('pendingApproval').textContent = data.data.pending_approval || 0;
                 document.getElementById('inProgress').textContent = data.data.in_progress || 0;
                 document.getElementById('completed').textContent = data.data.completed || 0;
+                document.getElementById('approved').textContent = data.data.approved || 0;
+                document.getElementById('rejected').textContent = data.data.rejected || 0;
                 
                 // Load requests
                 loadMyRequests();
@@ -518,6 +538,8 @@ function loadSampleData() {
     document.getElementById('pendingApproval').textContent = '3';
     document.getElementById('inProgress').textContent = '5';
     document.getElementById('completed').textContent = '4';
+    document.getElementById('approved').textContent = '2';
+    document.getElementById('rejected').textContent = '1';
     loadSampleRequests();
 }
 

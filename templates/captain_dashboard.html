@@ -35,6 +35,15 @@
 <!-- Captain Stats -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-primary">
+            <div class="card-body text-center">
+                <div class="metric-value" id="totalRequests">--</div>
+                <div class="metric-label">Total Requests</div>
+                <small class="text-muted">All sent requests</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
         <div class="card metric-card border-start border-5 border-warning">
             <div class="card-body text-center">
                 <div class="metric-value" id="pendingApproval">--</div>
@@ -67,6 +76,15 @@
                 <div class="metric-value" id="completed">--</div>
                 <div class="metric-label">Completed</div>
                 <small class="text-muted">Resolved requests</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card border-start border-5 border-danger">
+            <div class="card-body text-center">
+                <div class="metric-value" id="rejected">--</div>
+                <div class="metric-label">Rejected</div>
+                <small class="text-muted">Rejected requests</small>
             </div>
         </div>
     </div>
@@ -239,10 +257,12 @@ function loadCaptainData() {
                 captainData = data.data;
                 
                 // Update stats
+                document.getElementById('totalRequests').textContent = data.data.total_requests || 0;
                 document.getElementById('pendingApproval').textContent = data.data.pending_approval || 0;
                 document.getElementById('approved').textContent = data.data.approved || 0;
                 document.getElementById('inProgress').textContent = data.data.in_progress || 0;
                 document.getElementById('completed').textContent = data.data.completed || 0;
+                document.getElementById('rejected').textContent = data.data.rejected || 0;
                 
                 // Load requests
                 loadPendingApproval();
@@ -583,10 +603,12 @@ function reviewPendingRequests() {
 }
 
 function loadSampleData() {
+    document.getElementById('totalRequests').textContent = '28';
     document.getElementById('pendingApproval').textContent = '3';
     document.getElementById('approved').textContent = '8';
     document.getElementById('inProgress').textContent = '5';
     document.getElementById('completed').textContent = '12';
+    document.getElementById('rejected').textContent = '2';
     loadSamplePendingRequests();
     loadSampleVesselRequests();
 }

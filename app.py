@@ -10341,37 +10341,53 @@ def api_chief_engineer_dashboard_data():
     try:
         c = conn.cursor()
         
-        # Total requests by this chief engineer
+        # Total requests sent by this chief engineer
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE requested_by = ?
-        """, (current_user.email,))
+            WHERE submitted_by = ?
+        """, (current_user.id,))
         total_requests = c.fetchone()['count']
         
-        # Pending captain approval
+        # Pending captain approval (requests waiting for captain approval)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE requested_by = ? AND status = 'pending_captain'
-        """, (current_user.email,))
+            WHERE submitted_by = ? AND status IN ('submitted', 'pending_captain')
+        """, (current_user.id,))
         pending_approval = c.fetchone()['count']
         
         # In progress
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE requested_by = ? AND status = 'in_progress'
-        """, (current_user.email,))
+            WHERE submitted_by = ? AND status = 'in_progress'
+        """, (current_user.id,))
         in_progress = c.fetchone()['count']
         
         # Completed
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE requested_by = ? AND status = 'completed'
-        """, (current_user.email,))
+            WHERE submitted_by = ? AND status = 'completed'
+        """, (current_user.id,))
         completed = c.fetchone()['count']
+        
+        # Approved
+        c.execute("""
+            SELECT COUNT(*) as count
+            FROM maintenance_requests
+            WHERE submitted_by = ? AND status = 'approved'
+        """, (current_user.id,))
+        approved = c.fetchone()['count']
+
+        # Rejected
+        c.execute("""
+            SELECT COUNT(*) as count
+            FROM maintenance_requests
+            WHERE submitted_by = ? AND status = 'rejected'
+        """, (current_user.id,))
+        rejected = c.fetchone()['count']
         
         return jsonify({
             'success': True,
@@ -10379,7 +10395,9 @@ def api_chief_engineer_dashboard_data():
                 'total_requests': total_requests,
                 'pending_approval': pending_approval,
                 'in_progress': in_progress,
-                'completed': completed
+                'completed': completed,
+                'approved': approved,
+                'rejected': rejected
             }
         })
     except Exception as e:
@@ -10398,12 +10416,12 @@ def api_chief_engineer_my_requests():
         c = conn.cursor()
         c.execute("""
             SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                   status, created_at, requested_by
+                   status, created_at, requested_by, submitted_by
             FROM maintenance_requests
-            WHERE requested_by = ?
+            WHERE submitted_by = ?
             ORDER BY created_at DESC
             LIMIT 50
-        """, (current_user.email,))
+        """, (current_user.id,))
         
         requests = []
         for row in c.fetchall():
@@ -10489,45 +10507,63 @@ def api_captain_dashboard_data():
         # Get vessel name from user profile or use a default
         vessel_name = current_user.get_full_name()  # This might need to be stored in user profile
         
-        # Pending approval (requests from chief engineer awaiting captain approval)
+        # Total requests sent by this captain
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE status = 'pending_captain'
-        """)
+            WHERE submitted_by = ?
+        """, (current_user.id,))
+        total_requests = c.fetchone()['count']
+        
+        # Pending approval (requests awaiting review)
+        c.execute("""
+            SELECT COUNT(*) as count
+            FROM maintenance_requests
+            WHERE submitted_by = ? AND status IN ('submitted', 'pending_captain')
+        """, (current_user.id,))
         pending_approval = c.fetchone()['count']
         
         # Approved (submitted to port)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE status = 'approved' OR status = 'pending'
-        """)
+            WHERE submitted_by = ? AND status = 'approved'
+        """, (current_user.id,))
         approved = c.fetchone()['count']
         
         # In progress
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE status = 'in_progress'
-        """)
+            WHERE submitted_by = ? AND status = 'in_progress'
+        """, (current_user.id,))
         in_progress = c.fetchone()['count']
         
         # Completed
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE status = 'completed'
-        """)
+            WHERE submitted_by = ? AND status = 'completed'
+        """, (current_user.id,))
         completed = c.fetchone()['count']
+
+        # Rejected
+        c.execute("""
+            SELECT COUNT(*) as count
+            FROM maintenance_requests
+            WHERE submitted_by = ? AND status = 'rejected'
+        """, (current_user.id,))
+        rejected = c.fetchone()['count']
         
         return jsonify({
             'success': True,
             'data': {
+                'total_requests': total_requests,
                 'pending_approval': pending_approval,
                 'approved': approved,
                 'in_progress': in_progress,
-                'completed': completed
+                'completed': completed,
+                'rejected': rejected
             }
         })
     except Exception as e:
@@ -12267,9 +12303,11 @@ def api_create_maintenance_request():
             # Determine initial status and requester ID
             initial_status = 'submitted'
             requester_id = None
+            submitted_by_id = None
             
             if current_user.is_authenticated:
                 requester_id = current_user.id
+                submitted_by_id = current_user.id  # Track who submitted it
                 if current_user.role in ['chief_engineer', 'captain']:
                     initial_status = 'submitted'
 
@@ -12281,16 +12319,16 @@ def api_create_maintenance_request():
                  status, severity, assessment_details, workflow_status, created_at, updated_at,
                  part_number, part_name, part_category, quantity, manufacturer,
                  requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
-                 imo_number, vessel_type, company, eta)
+                 imo_number, vessel_type, company, eta, submitted_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 request_id, ship_name, request_type, request_type, priority, criticality, description,
                 location, 'TBD', 'To be assessed', requested_by_email or requester_id,
                 initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now(),
                 part_number, part_name, part_category, quantity, manufacturer,
                 requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
-                imo_number, vessel_type, company, eta
+                imo_number, vessel_type, company, eta, submitted_by_id
             ))
 
             # Log workflow action for audit trail
@@ -13020,6 +13058,17 @@ def init_db():
             c.execute("ALTER TABLE maintenance_requests ADD COLUMN eta TEXT")
         except sqlite3.OperationalError:
             pass
+
+        # Add submitted_by column to track who submitted the request (chief engineer, captain, etc.)
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD COLUMN submitted_by TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            c.execute("ALTER TABLE maintenance_requests ADD FOREIGN KEY (submitted_by) REFERENCES users (user_id)")
+        except sqlite3.OperationalError:
+            pass  # Foreign key might not be supported or already exists
 
         # Create maintenance_workflow_log table for tracking all actions
         c.execute('''
