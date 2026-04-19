@@ -9193,7 +9193,7 @@ def api_analytics_messaging():
 
 @app.route('/emergency-requests')
 @login_required
-@role_required(['port_engineer', 'harbour_master', 'quality_officer'])
+@role_required(['port_engineer', 'harbour_master', 'quality_officer', 'captain', 'chief_engineer'])
 def emergency_requests():
     return render_template('emergency_requests.html')
 
@@ -10864,7 +10864,7 @@ def api_dashboard_data():
 
 @app.route('/api/emergency-requests')
 @login_required
-@role_required(['port_engineer', 'harbour_master', 'quality_officer'])
+@role_required(['port_engineer', 'harbour_master', 'quality_officer', 'captain', 'chief_engineer'])
 def api_emergency_requests():
     """
     Retrieve emergency requests with optional status filtering.
@@ -10872,6 +10872,9 @@ def api_emergency_requests():
     Fetches active or filtered emergency requests containing critical
     information for incident response. Supports filtering by status
     (pending, active, resolved, all).
+    
+    For captain and chief_engineer, shows only emergencies they submitted.
+    For port_engineer, harbour_master, quality_officer, shows all emergencies.
     
     Query Parameters:
         - status (str, optional): Filter by status. Default: 'pending'
@@ -10902,6 +10905,7 @@ def api_emergency_requests():
     Status Codes:
         - 200: Emergencies retrieved successfully
         - 401: Not authenticated
+        - 403: Access denied
         - 500: Database error
     """
     conn = get_db_connection()
@@ -10911,25 +10915,50 @@ def api_emergency_requests():
         # Get status filter from query parameter (default to pending)
         status_filter = request.args.get('status', 'pending')
         
+        # Check if user is captain or chief_engineer
+        is_crew = current_user.role in ['captain', 'chief_engineer']
+        
         if status_filter == 'all':
-            # Retrieve all emergency requests
-            cursor.execute("""
-                SELECT emergency_id, ship_name, emergency_type, severity_level,
-                       status, created_at, reported_by, location_name, latitude, longitude,
-                       description, immediate_actions, resources_required, authorized_by, authorized_at
-                FROM emergency_requests
-                ORDER BY created_at DESC
-            """)
+            if is_crew:
+                # For crew, show only their own emergencies
+                cursor.execute("""
+                    SELECT emergency_id, ship_name, emergency_type, severity_level,
+                           status, created_at, reported_by, location_name, latitude, longitude,
+                           description, immediate_actions, resources_required, authorized_by, authorized_at
+                    FROM emergency_requests
+                    WHERE reported_by = ?
+                    ORDER BY created_at DESC
+                """, (current_user.id,))
+            else:
+                # For management, show all emergencies
+                cursor.execute("""
+                    SELECT emergency_id, ship_name, emergency_type, severity_level,
+                           status, created_at, reported_by, location_name, latitude, longitude,
+                           description, immediate_actions, resources_required, authorized_by, authorized_at
+                    FROM emergency_requests
+                    ORDER BY created_at DESC
+                """)
         else:
-            # Retrieve emergency requests filtered by status
-            cursor.execute("""
-                SELECT emergency_id, ship_name, emergency_type, severity_level,
-                       status, created_at, reported_by, location_name, latitude, longitude,
-                       description, immediate_actions, resources_required, authorized_by, authorized_at
-                FROM emergency_requests
-                WHERE status = ?
-                ORDER BY created_at DESC
-            """, (status_filter,))
+            if is_crew:
+                # For crew, show only their own emergencies with status filter
+                cursor.execute("""
+                    SELECT emergency_id, ship_name, emergency_type, severity_level,
+                           status, created_at, reported_by, location_name, latitude, longitude,
+                           description, immediate_actions, resources_required, authorized_by, authorized_at
+                    FROM emergency_requests
+                    WHERE reported_by = ? AND status = ?
+                    ORDER BY created_at DESC
+                """, (current_user.id, status_filter))
+            else:
+                # For management, show all emergencies with status filter
+                cursor.execute("""
+                    SELECT emergency_id, ship_name, emergency_type, severity_level,
+                           status, created_at, reported_by, location_name, latitude, longitude,
+                           description, immediate_actions, resources_required, authorized_by, authorized_at
+                    FROM emergency_requests
+                    WHERE status = ?
+                    ORDER BY created_at DESC
+                """, (status_filter,))
 
         emergencies = []
         for row in cursor.fetchall():
@@ -14292,6 +14321,82 @@ def api_reject_maintenance_request(request_id):
             conn.close()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/maintenance-requests/<request_id>/progress')
+@login_required
+def api_maintenance_request_progress(request_id):
+    """Get progress/status of a maintenance request for the submitter to track."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        
+        # Get request details
+        c.execute("""
+            SELECT request_id, ship_name, maintenance_type, priority, status, 
+                   requested_by, submitted_by, assigned_to, created_at, updated_at,
+                   approved, approved_by, approved_at, completed_at, rejection_reason,
+                   severity, notes
+            FROM maintenance_requests
+            WHERE request_id = ?
+        """, (request_id,))
+        
+        request_data = c.fetchone()
+        if not request_data:
+            return jsonify({'success': False, 'error': 'Request not found'}), 404
+        
+        request_dict = dict(request_data)
+        
+        # Check if user is authorized to view this request
+        # Allow if they're the submitter, or if they're port_engineer/harbour_master
+        is_submitter = (request_dict['submitted_by'] == current_user.id or 
+                       request_dict['requested_by'] == current_user.email)
+        is_manager = current_user.role in ['port_engineer', 'harbour_master', 'quality_officer']
+        
+        if not (is_submitter or is_manager):
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+        
+        # Get workflow history
+        c.execute("""
+            SELECT action, actor_id, details, created_at
+            FROM maintenance_workflow_log
+            WHERE request_id = ?
+            ORDER BY created_at DESC
+        """, (request_id,))
+        
+        workflow = [dict(row) for row in c.fetchall()]
+        
+        # Format progress response
+        progress_stages = {
+            'submitted': {'stage': 1, 'label': 'Submitted', 'timestamp': request_dict['created_at'], 'completed': True},
+            'pending': {'stage': 2, 'label': 'Pending Review', 'timestamp': request_dict['created_at'], 'completed': request_dict['approved'] is not None},
+            'approved': {'stage': 3, 'label': 'Approved', 'timestamp': request_dict['approved_at'], 'completed': request_dict['approved'] == 1},
+            'in_progress': {'stage': 4, 'label': 'In Progress', 'timestamp': None, 'completed': request_dict['status'] == 'in_progress'},
+            'completed': {'stage': 5, 'label': 'Completed', 'timestamp': request_dict['completed_at'], 'completed': request_dict['status'] == 'completed'},
+        }
+        
+        # Determine which stages are completed
+        current_stage = progress_stages[request_dict['status']]['stage'] if request_dict['status'] in progress_stages else 1
+        
+        return jsonify({
+            'success': True,
+            'request': request_dict,
+            'progress_stages': progress_stages,
+            'current_stage': current_stage,
+            'workflow_history': workflow,
+            'status_summary': {
+                'status': request_dict['status'],
+                'priority': request_dict['priority'],
+                'severity': request_dict['severity'],
+                'approved': request_dict['approved'] == 1,
+                'assigned_to': request_dict['assigned_to'],
+                'last_updated': request_dict['updated_at']
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"Error getting maintenance request progress: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
 
 @app.route('/api/maintenance-requests/pending-approval')
 @login_required
