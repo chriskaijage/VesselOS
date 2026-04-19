@@ -10,6 +10,10 @@ services:
         value: 3.11.5
       - key: PERSISTENT_VOLUME
         value: /var/data
+      - key: SECRET_KEY
+        value: vesselOS-production-key-2026-secure
+      - key: FLASK_ENV
+        value: production
     
     # Persistent disk: database + uploads (messages, attachments, profiles, documents, etc.)
     # Data survives deploys; previous files and conversations are retained.
