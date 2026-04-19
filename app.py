@@ -12703,42 +12703,7 @@ def init_db():
             )
         ''')
 
-        # Check if the table exists and has required columns
-        c.execute("PRAGMA table_info(service_evaluations)")
-        columns = [col[1] for col in c.fetchall()]
-
-        if not columns:  # Table doesn't exist or is empty
-            # Recreate with correct structure
-            c.execute("DROP TABLE IF EXISTS service_evaluations")
-            c.execute('''
-                CREATE TABLE service_evaluations (
-                    id TEXT PRIMARY KEY,
-                    evaluator_id TEXT NOT NULL,
-                    vessel_id TEXT,
-                    sqi_score REAL,
-                    evaluation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    notes TEXT,
-                    status TEXT DEFAULT 'completed',
-                    FOREIGN KEY (evaluator_id) REFERENCES users (user_id)
-                )
-            ''')
-            print("[OK] Created service_evaluations table with correct structure")
-        elif 'evaluator_id' not in columns:
-            # Drop and recreate if structure is wrong
-            c.execute("DROP TABLE IF EXISTS service_evaluations")
-            c.execute('''
-                CREATE TABLE service_evaluations (
-                    id TEXT PRIMARY KEY,
-                    evaluator_id TEXT NOT NULL,
-                    vessel_id TEXT,
-                    sqi_score REAL,
-                    evaluation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    notes TEXT,
-                    status TEXT DEFAULT 'completed',
-                    FOREIGN KEY (evaluator_id) REFERENCES users (user_id)
-                )
-            ''')
-            print("[OK] Recreated service_evaluations table with correct structure")
+        # service_evaluations table is already created above with IF NOT EXISTS
         
         # Create notifications table
         c.execute('''
