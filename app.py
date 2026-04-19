@@ -13836,7 +13836,7 @@ def init_db():
         print("="*70)
         print("\n[ACCOUNT] Demo Account 1 - Port Engineer (Admin):")
         print("   Email: port_engineer@marine.com")
-        print("   Password: Admin@2025")
+        print("   Password: Engineer@2026")
         print("   Role: Full system access")
         print("\n[ACCOUNT] Demo Account 2 - DMPO HQ:")
         print("   Email: dmpo@marine.com")
