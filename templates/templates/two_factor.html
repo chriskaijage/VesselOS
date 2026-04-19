@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Two-Factor Authentication{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, var(--primary-purple, #667eea), var(--secondary-purple, #764ba2));">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Two-Factor Authentication
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Enter the 6-digit code from your authenticator app to complete sign in.
+                </p>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Authentication Code</label>
+                        <input type="text" class="form-control text-center" id="code" name="code" maxlength="6"
+                               placeholder="123456" autocomplete="one-time-code" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i> Verify & Continue
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

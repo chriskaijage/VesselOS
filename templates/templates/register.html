@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Register - VesselOS{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2 px-sm-0">
+    <div class="row justify-content-center py-2 py-sm-3">
+        <div class="col-12 col-sm-11 col-md-10 col-lg-8 col-xl-7">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-2 py-sm-3">
+                    <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
+                        <i class="fas fa-user-plus"></i>
+                        <div>
+                            <h5 class="mb-0">Create New Account</h5>
+                            <p class="mb-0 small">Join the VesselOS System</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-2">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }} me-2"></i>
+                                        <div>{{ message }}</div>
+                                    </div>
+                                    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('register') }}" onsubmit="return validateForm()">
+                        <!-- Personal Information -->
+                        <div class="card mb-2">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 small"><i class="fas fa-user me-1"></i> Personal Info</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-12 col-sm-6">
+                                        <div class="mb-1">
+                                            <label class="form-label small mb-1">First Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control form-control-sm" name="first_name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <div class="mb-1">
+                                            <label class="form-label small mb-1">Last Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control form-control-sm" name="last_name" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-1">
+                                    <label class="form-label small mb-1">Email Address <span class="text-danger">*</span></label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                        <input type="email" class="form-control" name="email" required>
+                                    </div>
+                                    <small class="form-text text-muted">This will be your login username</small>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                                <input type="password" class="form-control" id="password" name="password" required 
+                                                       minlength="8" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}">
+                                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            <small class="form-text text-muted">Minimum 8 characters with uppercase, lowercase, and number</small>
+                                            
+                                            <!-- Password Strength Indicator -->
+                                            <div class="mt-2" id="passwordStrength" style="display: none;">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <small class="form-label mb-0">Password Strength:</small>
+                                                    <small id="strengthText" class="badge bg-secondary">—</small>
+                                                </div>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="progress-bar" id="strengthBar" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirm_password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Password Match Indicator -->
+                                            <div class="mt-2" id="passwordMatchDiv" style="display: none;">
+                                                <small id="passwordMatchText" class="d-flex align-items-center">
+                                                    <i class="fas fa-circle me-2" style="font-size: 8px;"></i>
+                                                    <span>Passwords match</span>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Phone Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                        <input type="tel" class="form-control" name="phone" 
+                                               pattern="[0-9+\-\s()]{10,}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Professional Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i> Professional Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Rank/Position *</label>
+                                    <input type="text" class="form-control" name="rank" required 
+                                           placeholder="e.g., Senior Engineer, DMPO HQ">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Department</label>
+                                            <input type="text" class="form-control" name="department" 
+                                                   placeholder="e.g., Maintenance, Quality Assurance">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Location</label>
+                                            <input type="text" class="form-control" name="location" 
+                                                   placeholder="e.g., Port Singapore, HQ London">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Role *</label>
+                                    <select class="form-select" name="role" required onchange="toggleSurveyDays()">
+                                        <option value="">Select Role</option>
+                                        <option value="chief_engineer">Chief Engineer</option>
+                                        <option value="captain">Captain</option>
+                                        <option value="harbour_master">Harbour Master</option>
+                                        <option value="quality_officer">DMPO HQ</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3" id="surveyDaysSection" style="display: none;">
+                                    <label class="form-label">Survey Period (Days) *</label>
+                                    <input type="number" class="form-control" name="survey_days" min="1" max="365" value="90">
+                                    <small class="form-text text-muted">For how long will you conduct quality surveys?</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
+                        <div class="alert alert-info">
+                            <div class="d-flex">
+                                <i class="fas fa-info-circle me-3 fa-2x"></i>
+                                <div>
+                                    <strong>Note:</strong> All new accounts require approval from the port engineer. 
+                                    You will be notified via email once your account is approved.<br>
+                                    <small>By registering, you agree to our Terms of Service and Privacy Policy.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check-circle me-2"></i> Register Account
+                            </button>
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i> Back to Login
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Role Information -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tools fa-3x text-warning mb-3"></i>
+                            <h5>Harbour Master</h5>
+                            <p class="small">Manage maintenance requests, inventory, and service evaluations</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clipboard-check fa-3x text-success mb-3"></i>
+                            <h5>DMPO HQ</h5>
+                            <p class="small">Conduct service quality evaluations and performance monitoring</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSurveyDays() {
+    const roleSelect = document.querySelector('select[name="role"]');
+    const surveySection = document.getElementById('surveyDaysSection');
+    
+    if (roleSelect.value === 'quality_officer') {
+        surveySection.style.display = 'block';
+    } else {
+        surveySection.style.display = 'none';
+    }
+}
+
+// Toggle password visibility
+document.querySelectorAll('.toggle-password').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        const icon = this.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+});
+
+// Password strength indicator
+const passwordInput = document.getElementById('password');
+const confirmPasswordInput = document.getElementById('confirm_password');
+
+passwordInput.addEventListener('input', function(e) {
+    const password = e.target.value;
+    const strengthDiv = document.getElementById('passwordStrength');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    
+    if (password.length === 0) {
+        strengthDiv.style.display = 'none';
+        return;
+    }
+    
+    strengthDiv.style.display = 'block';
+    
+    let score = 0;
+    if (password.length >= 8) score += 20;
+    if (password.length >= 12) score += 10;
+    if (/[A-Z]/.test(password)) score += 20;
+    if (/[a-z]/.test(password)) score += 20;
+    if (/\d/.test(password)) score += 15;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 15;
+    
+    strengthBar.style.width = score + '%';
+    
+    if (score < 40) {
+        strengthBar.className = 'progress-bar bg-danger';
+        strengthText.className = 'badge bg-danger';
+        strengthText.textContent = 'Weak';
+    } else if (score < 60) {
+        strengthBar.className = 'progress-bar bg-warning';
+        strengthText.className = 'badge bg-warning';
+        strengthText.textContent = 'Fair';
+    } else if (score < 80) {
+        strengthBar.className = 'progress-bar bg-info';
+        strengthText.className = 'badge bg-info';
+        strengthText.textContent = 'Good';
+    } else {
+        strengthBar.className = 'progress-bar bg-success';
+        strengthText.className = 'badge bg-success';
+        strengthText.textContent = 'Strong';
+    }
+    
+    // Check password match
+    checkPasswordMatch();
+});
+
+// Password match validation
+confirmPasswordInput.addEventListener('input', function() {
+    checkPasswordMatch();
+});
+
+function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const matchDiv = document.getElementById('passwordMatchDiv');
+    const matchText = document.getElementById('passwordMatchText');
+    
+    if (confirmPassword.length === 0) {
+        matchDiv.style.display = 'none';
+        return;
+    }
+    
+    matchDiv.style.display = 'block';
+    
+    if (password === confirmPassword) {
+        matchText.className = 'd-flex align-items-center text-success';
+        matchText.innerHTML = '<i class="fas fa-check-circle me-2"></i><span>Passwords match</span>';
+    } else {
+        matchText.className = 'd-flex align-items-center text-danger';
+        matchText.innerHTML = '<i class="fas fa-times-circle me-2"></i><span>Passwords do not match</span>';
+    }
+}
+
+function validateForm() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    // Password strength validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+        alert('Password must contain uppercase, lowercase letters and numbers!');
+        return false;
+    }
+    
+    return true;
+}
+</script>
+{% endblock %}
