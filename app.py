@@ -10445,11 +10445,11 @@ def api_chief_engineer_pending_approval():
         c = conn.cursor()
         c.execute("""
             SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                   status, created_at, requested_by
+                   status, created_at, requested_by, submitted_by, severity
             FROM maintenance_requests
-            WHERE requested_by = ? AND status = 'pending_captain'
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain', 'pending')
             ORDER BY created_at DESC
-        """, (current_user.email,))
+        """, (current_user.id, current_user.id, current_user.email))
         
         requests = []
         for row in c.fetchall():
@@ -10474,10 +10474,10 @@ def api_chief_engineer_recent_activity():
         c.execute("""
             SELECT request_id, ship_name, status, updated_at
             FROM maintenance_requests
-            WHERE requested_by = ?
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
             ORDER BY updated_at DESC
             LIMIT 10
-        """, (current_user.email,))
+        """, (current_user.id, current_user.id, current_user.email))
         
         activities = []
         for row in c.fetchall():
@@ -10582,9 +10582,9 @@ def api_captain_pending_approval():
         c = conn.cursor()
         c.execute("""
             SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                   status, created_at, requested_by, description
+                   status, created_at, requested_by, submitted_by, description
             FROM maintenance_requests
-            WHERE status = 'pending_captain'
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain', 'pending')
             ORDER BY 
                 CASE criticality
                     WHEN 'emergency' THEN 1
@@ -10594,7 +10594,7 @@ def api_captain_pending_approval():
                     ELSE 5
                 END,
                 created_at DESC
-        """)
+        """, (current_user.id, current_user.id, current_user.email))
         
         requests = []
         for row in c.fetchall():
@@ -12105,15 +12105,15 @@ def api_get_maintenance_requests():
                 LIMIT 50
             """)
         else:
-            # For other users, show only their requests
+            # For other users, show only their requests (check both submitted_by and requested_by)
             c.execute("""
                 SELECT request_id, ship_name, maintenance_type, priority,
                        status, created_at, requested_by
                 FROM maintenance_requests
-                WHERE requested_by = ?
+                WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
                 ORDER BY created_at DESC
                 LIMIT 50
-            """, (current_user.email,))
+            """, (current_user.id, current_user.id, current_user.email))
 
         requests = []
         for row in c.fetchall():
@@ -12142,44 +12142,45 @@ def api_maintenance_requests():
         
         # Filter based on user role
         if current_user.role == 'chief_engineer':
-            # Chief Engineer sees only their own requests
+            # Chief Engineer sees only their own requests (check both submitted_by and requested_by)
             if status_filter:
                 c.execute("""
                     SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                           status, created_at, requested_by
+                           status, created_at, requested_by, submitted_by
                     FROM maintenance_requests
-                    WHERE requested_by = ? AND status = ?
+                    WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = ?
                     ORDER BY created_at DESC
                     LIMIT 50
-                """, (current_user.email, status_filter))
+                """, (current_user.id, current_user.id, current_user.email, status_filter))
             else:
                 c.execute("""
                     SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                           status, created_at, requested_by
+                           status, created_at, requested_by, submitted_by
                     FROM maintenance_requests
-                    WHERE requested_by = ?
+                    WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
                     ORDER BY created_at DESC
                     LIMIT 50
-                """, (current_user.email,))
+                """, (current_user.id, current_user.id, current_user.email))
         elif current_user.role == 'captain':
-            # Captain sees all requests (read-only view)
+            # Captain sees only their own requests (check both submitted_by and requested_by)
             if status_filter:
                 c.execute("""
                     SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                           status, created_at, requested_by
+                           status, created_at, requested_by, submitted_by
                     FROM maintenance_requests
-                    WHERE status = ?
+                    WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = ?
                     ORDER BY created_at DESC
                     LIMIT 50
-                """, (status_filter,))
+                """, (current_user.id, current_user.id, current_user.email, status_filter))
             else:
                 c.execute("""
                     SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                           status, created_at, requested_by
+                           status, created_at, requested_by, submitted_by
                     FROM maintenance_requests
+                    WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
                     ORDER BY created_at DESC
                     LIMIT 50
-                """)
+                """, (current_user.id, current_user.id, current_user.email))
         elif current_user.role in ['harbour_master', 'port_engineer']:
             # Harbour Master and Port Engineer see pending requests by default
             if status_filter == 'all':
@@ -13141,11 +13142,13 @@ def init_db():
         # Add submitted_by column to track who submitted the request (chief engineer, captain, etc.)
         try:
             c.execute("ALTER TABLE maintenance_requests ADD COLUMN submitted_by TEXT")
+            conn.commit()
         except sqlite3.OperationalError:
             pass
 
         try:
             c.execute("ALTER TABLE maintenance_requests ADD FOREIGN KEY (submitted_by) REFERENCES users (user_id)")
+            conn.commit()
         except sqlite3.OperationalError:
             pass  # Foreign key might not be supported or already exists
 
