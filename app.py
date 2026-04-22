@@ -3123,10 +3123,11 @@ def api_procurement_upload_parts():
             
             # Send notification
             c.execute("SELECT requested_by FROM procurement_requests WHERE request_id = ?", (request_id,))
-            requester_result = c.fetchone()
-            if requester_result:
+            requester_row = c.fetchone()
+            if requester_row:
+                requester_result = dict(requester_row)
                 create_notification(
-                    requester_result['requested_by'],
+                    requester_result.get('requested_by'),
                     'Parts Received',
                     f'{quantity_received} units received for {proc_dict.get("part_number")} (Request {request_id})',
                     'success',
@@ -3607,9 +3608,10 @@ def api_download_report(report_id):
         try:
             c = conn.cursor()
             c.execute("SELECT report_data FROM reports WHERE report_id = ?", (report_id,))
-            result = c.fetchone()
-            if result:
-                report_data = json.loads(result['report_data'])
+            result_row = c.fetchone()
+            if result_row:
+                result = dict(result_row)
+                report_data = json.loads(result.get('report_data', '{}'))
         except:
             pass
         finally:
@@ -3952,7 +3954,8 @@ def generate_financial_report(date_filter=""):
             FROM inventory
             WHERE 1=1 {date_filter}
         """)
-        inventory_value = c.fetchone()['total_inventory_value'] or 0
+        inv_row = c.fetchone()
+        inventory_value = dict(inv_row).get('total_inventory_value', 0) if inv_row else 0
         
         # Get maintenance costs (estimated)
         c.execute("""
@@ -4779,21 +4782,24 @@ def api_profile_stats():
             c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='service_evaluations'")
             if c.fetchone():
                 c.execute("SELECT COUNT(*) as count FROM service_evaluations WHERE evaluator_id = ?", (current_user.id,))
-                eval_result = c.fetchone()
-                total_evaluations = eval_result['count'] if eval_result else 0
+                eval_row = c.fetchone()
+                eval_result = dict(eval_row) if eval_row else {}
+                total_evaluations = eval_result.get('count', 0) if eval_result else 0
 
                 # Get average SQI
                 c.execute("SELECT AVG(sqi_score) as avg_sqi FROM service_evaluations WHERE evaluator_id = ?", (current_user.id,))
-                avg_sqi_result = c.fetchone()
-                avg_sqi_value = avg_sqi_result['avg_sqi'] if avg_sqi_result else None
+                avg_sqi_row = c.fetchone()
+                avg_sqi_result = dict(avg_sqi_row) if avg_sqi_row else {}
+                avg_sqi_value = avg_sqi_result.get('avg_sqi') if avg_sqi_result else None
                 avg_sqi = round(avg_sqi_value, 2) if avg_sqi_value else 0
         except sqlite3.Error as e:
             app.logger.warning(f"Could not fetch evaluation stats: {e}")
 
         # Get activity days
         c.execute("SELECT COUNT(DISTINCT DATE(timestamp)) as days FROM activity_logs WHERE user_id = ?", (current_user.id,))
-        activity_days_result = c.fetchone()
-        activity_days = activity_days_result['days'] if activity_days_result else 0
+        activity_days_row = c.fetchone()
+        activity_days_result = dict(activity_days_row) if activity_days_row else {}
+        activity_days = activity_days_result.get('days', 0) if activity_days_result else 0
 
         return jsonify({
             'success': True,
@@ -5593,12 +5599,14 @@ def api_print_profile_data():
                 if c.fetchone():
                     # Table exists, get evaluation stats
                     c.execute("SELECT COUNT(*) as count FROM service_evaluations WHERE evaluator_id = ?", (current_user.id,))
-                    total_evaluations_result = c.fetchone()
-                    total_evaluations = total_evaluations_result['count'] if total_evaluations_result else 0
+                    total_eval_row = c.fetchone()
+                    total_evaluations_result = dict(total_eval_row) if total_eval_row else {}
+                    total_evaluations = total_evaluations_result.get('count', 0) if total_evaluations_result else 0
 
                     c.execute("SELECT AVG(sqi_score) as avg_sqi FROM service_evaluations WHERE evaluator_id = ?", (current_user.id,))
-                    avg_sqi_result = c.fetchone()
-                    avg_sqi = round(avg_sqi_result['avg_sqi'], 2) if avg_sqi_result and avg_sqi_result['avg_sqi'] else 0
+                    avg_sqi_row = c.fetchone()
+                    avg_sqi_result = dict(avg_sqi_row) if avg_sqi_row else {}
+                    avg_sqi = round(avg_sqi_result.get('avg_sqi', 0), 2) if avg_sqi_result and avg_sqi_result.get('avg_sqi') else 0
             except sqlite3.Error as e:
                 app.logger.warning(f"Could not fetch evaluation stats: {e}")
                 # Continue with default values
@@ -5713,13 +5721,15 @@ def api_generate_profile_report():
             
             # Get documents count
             c.execute("SELECT COUNT(*) as count FROM user_documents WHERE user_id = ?", (current_user.id,))
-            doc_result = c.fetchone()
-            documents_count = doc_result['count'] if doc_result else 0
+            doc_row = c.fetchone()
+            doc_result = dict(doc_row) if doc_row else {}
+            documents_count = doc_result.get('count', 0) if doc_result else 0
             
             # Get activity count
             c.execute("SELECT COUNT(*) as count FROM activity_logs WHERE user_id = ?", (current_user.id,))
-            activity_result = c.fetchone()
-            activity_count = activity_result['count'] if activity_result else 0
+            activity_row = c.fetchone()
+            activity_result = dict(activity_row) if activity_row else {}
+            activity_count = activity_result.get('count', 0) if activity_result else 0
             
             # Get evaluation stats if table exists
             total_evaluations = 0
@@ -5728,12 +5738,14 @@ def api_generate_profile_report():
                 c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='service_evaluations'")
                 if c.fetchone():
                     c.execute("SELECT COUNT(*) as count FROM service_evaluations WHERE evaluator_id = ?", (current_user.id,))
-                    eval_result = c.fetchone()
-                    total_evaluations = eval_result['count'] if eval_result else 0
+                    eval_row = c.fetchone()
+                    eval_result = dict(eval_row) if eval_row else {}
+                    total_evaluations = eval_result.get('count', 0) if eval_result else 0
                     
                     c.execute("SELECT AVG(sqi_score) as avg_sqi FROM service_evaluations WHERE evaluator_id = ?", (current_user.id,))
-                    sqi_result = c.fetchone()
-                    avg_sqi = round(sqi_result['avg_sqi'], 2) if sqi_result and sqi_result['avg_sqi'] else 0
+                    sqi_row = c.fetchone()
+                    sqi_result = dict(sqi_row) if sqi_row else {}
+                    avg_sqi = round(sqi_result.get('avg_sqi', 0), 2) if sqi_result and sqi_result.get('avg_sqi') else 0
             except:
                 pass
             
@@ -9381,8 +9393,9 @@ def api_manager_quality_officers():
             # Get evaluation count
             c.execute("SELECT COUNT(*) as count FROM service_evaluations WHERE evaluator_id = ?",
                      (officer['user_id'],))
-            eval_result = c.fetchone()
-            evaluations_count = eval_result['count'] if eval_result else 0
+            eval_row = c.fetchone()
+            eval_result = dict(eval_row) if eval_row else {}
+            evaluations_count = eval_result.get('count', 0) if eval_result else 0
 
             officer['days_remaining'] = days_remaining
             officer['evaluations_count'] = evaluations_count
@@ -11198,24 +11211,28 @@ def api_emergency_contact_services():
             c.execute("""
                 SELECT ship_name, emergency_type FROM emergency_requests WHERE emergency_id = ?
             """, (emergency_id,))
-            emergency = c.fetchone()
+            emergency_row = c.fetchone()
             
-            if not emergency:
+            if not emergency_row:
                 return jsonify({'success': False, 'error': 'Emergency not found'})
+            
+            # Convert Row to dict
+            emergency = dict(emergency_row) if emergency_row else {}
             
             # Notify all port engineers
             c.execute("SELECT user_id FROM users WHERE role = 'port_engineer' AND is_active = 1")
             port_engineers = c.fetchall()
             
-            for engineer in port_engineers:
-                notification_message = f'Emergency services contacted for {emergency["ship_name"]}'
+            for engineer_row in port_engineers:
+                engineer = dict(engineer_row)  # Convert Row to dict
+                notification_message = f'Emergency services contacted for {emergency.get("ship_name", "Unknown")}'
                 if services_contacted:
                     notification_message += f'\nServices: {", ".join(services_contacted)}'
                 if notes:
                     notification_message += f'\nNotes: {notes}'
                     
                 create_notification(
-                    engineer['user_id'],
+                    engineer.get('user_id'),
                     'Emergency Services Contacted',
                     notification_message,
                     'urgent',
@@ -11255,9 +11272,10 @@ def api_emergency_activate_team():
             c.execute("SELECT user_id FROM users WHERE role IN ('port_engineer', 'harbour_master') AND is_active = 1")
             team_members = c.fetchall()
             
-            for member in team_members:
+            for member_row in team_members:
+                member = dict(member_row)  # Convert Row to dict
                 create_notification(
-                    member['user_id'],
+                    member.get('user_id'),
                     'Emergency Response Team Activated',
                     f'Emergency response team has been activated for emergency {emergency_id}',
                     'urgent',
