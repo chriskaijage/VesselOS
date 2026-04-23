@@ -8800,6 +8800,171 @@ def add_vessel():
             except (ValueError, TypeError):
                 dry_dock_interval = None
             
+            # Convert REAL/FLOAT fields - SECTION 1 dimensions
+            try:
+                gross_tonnage = float(gross_tonnage) if gross_tonnage else None
+            except (ValueError, TypeError):
+                gross_tonnage = None
+            
+            try:
+                net_tonnage = float(net_tonnage) if net_tonnage else None
+            except (ValueError, TypeError):
+                net_tonnage = None
+            
+            try:
+                deadweight_tonnage = float(deadweight_tonnage) if deadweight_tonnage else None
+            except (ValueError, TypeError):
+                deadweight_tonnage = None
+            
+            try:
+                length_overall = float(length_overall) if length_overall else None
+            except (ValueError, TypeError):
+                length_overall = None
+            
+            try:
+                length_between_perpendiculars = float(length_between_perpendiculars) if length_between_perpendiculars else None
+            except (ValueError, TypeError):
+                length_between_perpendiculars = None
+            
+            try:
+                breadth = float(breadth) if breadth else None
+            except (ValueError, TypeError):
+                breadth = None
+            
+            try:
+                depth = float(depth) if depth else None
+            except (ValueError, TypeError):
+                depth = None
+            
+            try:
+                summer_draft = float(summer_draft) if summer_draft else None
+            except (ValueError, TypeError):
+                summer_draft = None
+            
+            # Convert numeric fields - SECTION 3 propulsion
+            try:
+                main_engine_power = float(main_engine_power) if main_engine_power else None
+            except (ValueError, TypeError):
+                main_engine_power = None
+            
+            try:
+                number_of_engines = int(number_of_engines) if number_of_engines else None
+            except (ValueError, TypeError):
+                number_of_engines = None
+            
+            try:
+                bollard_pull = float(bollard_pull) if bollard_pull else None
+            except (ValueError, TypeError):
+                bollard_pull = None
+            
+            try:
+                generator_power = float(generator_power) if generator_power else None
+            except (ValueError, TypeError):
+                generator_power = None
+            
+            # Convert numeric fields - SECTION 4 performance
+            try:
+                maximum_speed = float(maximum_speed) if maximum_speed else None
+            except (ValueError, TypeError):
+                maximum_speed = None
+            
+            try:
+                service_speed = float(service_speed) if service_speed else None
+            except (ValueError, TypeError):
+                service_speed = None
+            
+            try:
+                fuel_consumption_service = float(fuel_consumption_service) if fuel_consumption_service else None
+            except (ValueError, TypeError):
+                fuel_consumption_service = None
+            
+            try:
+                fuel_consumption_eco = float(fuel_consumption_eco) if fuel_consumption_eco else None
+            except (ValueError, TypeError):
+                fuel_consumption_eco = None
+            
+            try:
+                auxiliary_consumption = float(auxiliary_consumption) if auxiliary_consumption else None
+            except (ValueError, TypeError):
+                auxiliary_consumption = None
+            
+            try:
+                sfoc = float(sfoc) if sfoc else None
+            except (ValueError, TypeError):
+                sfoc = None
+            
+            try:
+                shaft_power = float(shaft_power) if shaft_power else None
+            except (ValueError, TypeError):
+                shaft_power = None
+            
+            try:
+                propulsion_efficiency = float(propulsion_efficiency) if propulsion_efficiency else None
+            except (ValueError, TypeError):
+                propulsion_efficiency = None
+            
+            try:
+                average_fuel_consumption = float(average_fuel_consumption) if average_fuel_consumption else None
+            except (ValueError, TypeError):
+                average_fuel_consumption = None
+            
+            try:
+                fuel_consumption_per_ton_mile = float(fuel_consumption_per_ton_mile) if fuel_consumption_per_ton_mile else None
+            except (ValueError, TypeError):
+                fuel_consumption_per_ton_mile = None
+            
+            # Convert numeric fields - SECTION 5 energy efficiency
+            try:
+                eedi_value = float(eedi_value) if eedi_value else None
+            except (ValueError, TypeError):
+                eedi_value = None
+            
+            try:
+                required_eedi = float(required_eedi) if required_eedi else None
+            except (ValueError, TypeError):
+                required_eedi = None
+            
+            try:
+                co2_emissions = float(co2_emissions) if co2_emissions else None
+            except (ValueError, TypeError):
+                co2_emissions = None
+            
+            try:
+                energy_efficiency_index = float(energy_efficiency_index) if energy_efficiency_index else None
+            except (ValueError, TypeError):
+                energy_efficiency_index = None
+            
+            try:
+                carbon_intensity_indicator = float(carbon_intensity_indicator) if carbon_intensity_indicator else None
+            except (ValueError, TypeError):
+                carbon_intensity_indicator = None
+            
+            try:
+                eedi_baseline_percentage = float(eedi_baseline_percentage) if eedi_baseline_percentage else None
+            except (ValueError, TypeError):
+                eedi_baseline_percentage = None
+            
+            # Convert baseline performance fields
+            try:
+                baseline_speed = float(baseline_speed) if baseline_speed else None
+            except (ValueError, TypeError):
+                baseline_speed = None
+            
+            try:
+                baseline_fuel_consumption = float(baseline_fuel_consumption) if baseline_fuel_consumption else None
+            except (ValueError, TypeError):
+                baseline_fuel_consumption = None
+            
+            try:
+                baseline_co2_emissions = float(baseline_co2_emissions) if baseline_co2_emissions else None
+            except (ValueError, TypeError):
+                baseline_co2_emissions = None
+            
+            try:
+                baseline_load_factor = float(baseline_load_factor) if baseline_load_factor else None
+            except (ValueError, TypeError):
+                baseline_load_factor = None
+            
             # Validate required fields
             if not all([vessel_name, imo_number, vessel_type, flag_state]):
                 flash('Please fill in all required fields.', 'danger')
