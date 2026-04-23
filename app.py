@@ -12302,7 +12302,6 @@ def api_maintenance_requests():
 # ==================== MAINTENANCE REQUEST ========================
 
 @app.route('/api/maintenance-requests', methods=['POST'])
-@login_required
 def api_create_maintenance_request():
     """
     Create a new maintenance/repair request for vessel equipment.

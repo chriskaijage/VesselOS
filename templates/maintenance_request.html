@@ -469,7 +469,13 @@ function initializeMaintenanceFormListener() {
         })
         .catch(error => {
             console.error('Error submitting maintenance request:', error);
-            alert('Error submitting request: ' + error.message);
+            const errorMsg = 'Error submitting request: ' + error.message;
+            alert(errorMsg);
+            // Also show error in a persistent way
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger mt-4';
+            errorDiv.innerHTML = `<h4>Error Submitting Request</h4><p>${errorMsg}</p><p>Please check the browser console (F12) for more details or contact support.</p>`;
+            maintenanceForm.parentNode.insertBefore(errorDiv, maintenanceForm);
         })
         .finally(() => {
             // Restore button
