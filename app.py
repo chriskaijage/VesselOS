@@ -8975,44 +8975,8 @@ def add_vessel():
                 conn = get_db_connection()
                 c = conn.cursor()
 
-                # Ensure vessels table has all required optional columns for legacy databases.
-                vessel_missing_columns = [
-                    ("engine_type", "TEXT"),
-                    ("number_of_engines", "INTEGER"),
-                    ("propeller_type", "TEXT"),
-                    ("boiler", "TEXT"),
-                    ("fuel_consumption_service", "REAL"),
-                    ("fuel_consumption_eco", "REAL"),
-                    ("auxiliary_consumption", "REAL"),
-                    ("sfoc", "REAL"),
-                    ("shaft_power", "REAL"),
-                    ("propulsion_efficiency", "REAL"),
-                    ("eedi_value", "REAL"),
-                    ("required_eedi", "REAL"),
-                    ("eedi_compliance", "TEXT"),
-                    ("cii_rating", "TEXT"),
-                    ("co2_emissions", "REAL"),
-                    ("sox_compliance", "TEXT"),
-                    ("energy_saving_devices", "TEXT"),
-                    ("trading_area", "TEXT"),
-                    ("maximum_sea_state", "TEXT"),
-                    ("temperature_limits", "TEXT"),
-                    ("ballast_treatment", "TEXT"),
-                    ("port_of_registry", "TEXT"),
-                    ("hull_material", "TEXT"),
-                    ("class_society", "TEXT"),
-                    ("class_notation", "TEXT"),
-                    ("summer_draft", "REAL"),
-                    ("technical_manager", "TEXT"),
-                    ("ism_manager", "TEXT"),
-                    ("pi_club", "TEXT"),
-                ]
-                for col_name, col_type in vessel_missing_columns:
-                    try:
-                        c.execute(f"ALTER TABLE vessels ADD COLUMN {col_name} {col_type}")
-                    except sqlite3.OperationalError:
-                        # Column already exists on up-to-date databases.
-                        pass
+                # Ensure legacy databases have all optional vessel columns.
+                ensure_vessels_optional_columns(c)
                 
                 # Use shipyard_location mapping
                 shipyard_location = place_of_build
@@ -12932,6 +12896,51 @@ def ensure_port_engineer_account(c, conn):
         import traceback
         traceback.print_exc()
 
+
+VESSEL_OPTIONAL_COLUMNS = [
+    ("engine_type", "TEXT"),
+    ("number_of_engines", "INTEGER"),
+    ("propeller_type", "TEXT"),
+    ("boiler", "TEXT"),
+    ("fuel_consumption_service", "REAL"),
+    ("fuel_consumption_eco", "REAL"),
+    ("auxiliary_consumption", "REAL"),
+    ("sfoc", "REAL"),
+    ("shaft_power", "REAL"),
+    ("propulsion_efficiency", "REAL"),
+    ("eedi_value", "REAL"),
+    ("required_eedi", "REAL"),
+    ("eedi_compliance", "TEXT"),
+    ("cii_rating", "TEXT"),
+    ("co2_emissions", "REAL"),
+    ("sox_compliance", "TEXT"),
+    ("energy_saving_devices", "TEXT"),
+    ("trading_area", "TEXT"),
+    ("maximum_sea_state", "TEXT"),
+    ("temperature_limits", "TEXT"),
+    ("ballast_treatment", "TEXT"),
+    ("port_of_registry", "TEXT"),
+    ("place_of_build", "TEXT"),
+    ("hull_material", "TEXT"),
+    ("class_society", "TEXT"),
+    ("class_notation", "TEXT"),
+    ("summer_draft", "REAL"),
+    ("technical_manager", "TEXT"),
+    ("ism_manager", "TEXT"),
+    ("pi_club", "TEXT"),
+]
+
+
+def ensure_vessels_optional_columns(cursor):
+    """Apply non-destructive vessel schema migrations for legacy databases."""
+    for col_name, col_type in VESSEL_OPTIONAL_COLUMNS:
+        try:
+            cursor.execute(f"ALTER TABLE vessels ADD COLUMN {col_name} {col_type}")
+        except sqlite3.OperationalError:
+            # Column already exists on newer databases.
+            pass
+
+
 def init_db():
     """
     Initialize database schema while preserving existing data.
@@ -14034,44 +14043,7 @@ def init_db():
         c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_status ON vessels (status)")
         
         # Add missing columns to vessels table for form fields
-        missing_columns = [
-            ("engine_type", "TEXT"),
-            ("number_of_engines", "INTEGER"),
-            ("propeller_type", "TEXT"),
-            ("boiler", "TEXT"),
-            ("fuel_consumption_service", "REAL"),
-            ("fuel_consumption_eco", "REAL"),
-            ("auxiliary_consumption", "REAL"),
-            ("sfoc", "REAL"),
-            ("shaft_power", "REAL"),
-            ("propulsion_efficiency", "REAL"),
-            ("eedi_value", "REAL"),
-            ("required_eedi", "REAL"),
-            ("eedi_compliance", "TEXT"),
-            ("cii_rating", "TEXT"),
-            ("co2_emissions", "REAL"),
-            ("sox_compliance", "TEXT"),
-            ("energy_saving_devices", "TEXT"),
-            ("trading_area", "TEXT"),
-            ("maximum_sea_state", "TEXT"),
-            ("temperature_limits", "TEXT"),
-            ("ballast_treatment", "TEXT"),
-            ("port_of_registry", "TEXT"),
-            ("place_of_build", "TEXT"),
-            ("hull_material", "TEXT"),
-            ("class_society", "TEXT"),
-            ("class_notation", "TEXT"),
-            ("summer_draft", "REAL"),
-            ("technical_manager", "TEXT"),
-            ("ism_manager", "TEXT"),
-            ("pi_club", "TEXT"),
-        ]
-        
-        for col_name, col_type in missing_columns:
-            try:
-                c.execute(f"ALTER TABLE vessels ADD COLUMN {col_name} {col_type}")
-            except sqlite3.OperationalError:
-                pass  # Column already exists
+        ensure_vessels_optional_columns(c)
         
         # Create vessel_performance_monitoring table for performance data
         c.execute('''
