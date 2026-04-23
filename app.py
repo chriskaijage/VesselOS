@@ -4235,6 +4235,8 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
+    demo_emails = {account["email"] for account in DEMO_ACCOUNTS}
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
@@ -4245,6 +4247,11 @@ def login():
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
             user_data = cursor.fetchone()
+            if not user_data and email in demo_emails:
+                # Self-heal demo accounts after DB resets and retry immediately.
+                ensure_demo_accounts(cursor, conn)
+                cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+                user_data = cursor.fetchone()
         finally:
             conn.close()
 
@@ -4261,6 +4268,20 @@ def login():
             return render_template('login.html')
         
         # Verify password hash
+        if not check_password_hash(user_dict['password'], password):
+            if email in demo_emails:
+                # Repair demo credentials then retry check once.
+                conn = get_db_connection()
+                try:
+                    cursor = conn.cursor()
+                    ensure_demo_accounts(cursor, conn)
+                    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+                    refreshed_user = cursor.fetchone()
+                    if refreshed_user:
+                        user_dict = dict(refreshed_user)
+                finally:
+                    conn.close()
+
         if not check_password_hash(user_dict['password'], password):
             flash('Invalid email or password.', 'danger')
             return render_template('login.html')
@@ -12897,6 +12918,88 @@ def ensure_port_engineer_account(c, conn):
         traceback.print_exc()
 
 
+DEMO_ACCOUNTS = [
+    {
+        "user_id": "PE001",
+        "email": "port_engineer@marine.com",
+        "password": "Engineer@2026",
+        "first_name": "John",
+        "last_name": "Smith",
+        "rank": "Port Engineer",
+        "role": "port_engineer",
+        "survey_end_date": None,
+    },
+    {
+        "user_id": "QO001",
+        "email": "dmpo@marine.com",
+        "password": "Quality@2026",
+        "first_name": "DMPO",
+        "last_name": "HQ",
+        "rank": "DMPO HQ",
+        "role": "quality_officer",
+        "survey_end_date": (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d'),
+    },
+    {
+        "user_id": "HM001",
+        "email": "harbour_master@marine.com",
+        "password": "Harbour@2026",
+        "first_name": "Robert",
+        "last_name": "Wilson",
+        "rank": "Harbour Master",
+        "role": "harbour_master",
+        "survey_end_date": None,
+    },
+]
+
+
+def ensure_demo_accounts(c, conn):
+    """Create/update demo accounts so they are always login-ready."""
+    for account in DEMO_ACCOUNTS:
+        hashed_password = generate_password_hash(account["password"])
+        c.execute("SELECT user_id FROM users WHERE email = ?", (account["email"],))
+        existing = c.fetchone()
+        if existing:
+            c.execute(
+                """
+                UPDATE users
+                SET password = ?, first_name = ?, last_name = ?, rank = ?, role = ?,
+                    is_active = 1, is_approved = 1, survey_end_date = ?
+                WHERE email = ?
+                """,
+                (
+                    hashed_password,
+                    account["first_name"],
+                    account["last_name"],
+                    account["rank"],
+                    account["role"],
+                    account["survey_end_date"],
+                    account["email"],
+                ),
+            )
+        else:
+            c.execute(
+                """
+                INSERT INTO users
+                (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    account["user_id"],
+                    account["email"],
+                    hashed_password,
+                    account["first_name"],
+                    account["last_name"],
+                    account["rank"],
+                    account["role"],
+                    account["survey_end_date"],
+                    1,
+                    1,
+                ),
+            )
+
+    conn.commit()
+
+
 VESSEL_OPTIONAL_COLUMNS = [
     ("engine_type", "TEXT"),
     ("number_of_engines", "INTEGER"),
@@ -14193,29 +14296,8 @@ def init_db():
         ensure_port_engineer_account(c, conn)
         
         # Always update demo accounts to correct credentials and status
-        # DMPO HQ
-        qo_email = 'dmpo@marine.com'
-        qo_password = generate_password_hash('Quality@2026')
-        end_date = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
-        c.execute("SELECT user_id FROM users WHERE email = ?", (qo_email,))
-        qo_user = c.fetchone()
-        if qo_user:
-            c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1, survey_end_date = ? WHERE email = ?", (qo_password, end_date, qo_email))
-        else:
-            c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, survey_end_date, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('QO001', qo_email, qo_password, 'DMPO', 'HQ', 'DMPO HQ', 'quality_officer', end_date, 1, 1))
-        conn.commit()
+        ensure_demo_accounts(c, conn)
         print("[OK] DMPO HQ ensured: dmpo@marine.com / Quality@2026")
-        
-        # Always update Harbour Master
-        hm_email = 'harbour_master@marine.com'
-        hm_password = generate_password_hash('Harbour@2026')
-        c.execute("SELECT user_id FROM users WHERE email = ?", (hm_email,))
-        hm_user = c.fetchone()
-        if hm_user:
-            c.execute("UPDATE users SET password = ?, is_active = 1, is_approved = 1 WHERE email = ?", (hm_password, hm_email))
-        else:
-            c.execute('''INSERT INTO users (user_id, email, password, first_name, last_name, rank, role, is_approved, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', ('HM001', hm_email, hm_password, 'Robert', 'Wilson', 'Harbour Master', 'harbour_master', 1, 1))
-        conn.commit()
         print("[OK] Harbour Master ensured: harbour_master@marine.com / Harbour@2026")
         
         # Create a sample emergency request
