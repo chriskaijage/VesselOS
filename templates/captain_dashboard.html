@@ -438,12 +438,16 @@ function updateVesselRequestsTable(requests) {
             const statusBadge = req.status === 'completed' ? 'success' :
                               req.status === 'in_progress' ? 'primary' :
                               req.status === 'approved' ? 'info' :
-                              req.status === 'pending_captain' ? 'warning' : 'secondary';
-            
+                              req.status === 'pending_captain' ? 'warning' :
+                              req.status === 'submitted' ? 'secondary' :
+                              req.status === 'rejected' ? 'danger' : 'secondary';
+
             const statusText = req.status === 'completed' ? 'Completed' :
                              req.status === 'in_progress' ? 'In Progress' :
                              req.status === 'approved' ? 'Approved' :
-                             req.status === 'pending_captain' ? 'Pending Approval' : 'Pending';
+                             req.status === 'pending_captain' ? 'Awaiting Captain Review' :
+                             req.status === 'submitted' ? 'Submitted to Port Engineer' :
+                             req.status === 'rejected' ? 'Rejected' : 'Pending';
             
             html += `
                 <tr>

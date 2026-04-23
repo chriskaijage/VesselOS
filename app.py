@@ -9501,8 +9501,12 @@ def api_manager_dashboard_data():
         emergency_requests_result = c.fetchone()
         emergency_requests = emergency_requests_result['count'] if emergency_requests_result else 0
 
-        # Pending maintenance requests (all pending)
-        c.execute("SELECT COUNT(*) as count FROM maintenance_requests WHERE status = 'pending'")
+        # Pending maintenance requests requiring manager attention
+        c.execute("""
+            SELECT COUNT(*) as count
+            FROM maintenance_requests
+            WHERE status IN ('submitted', 'pending', 'pending_captain')
+        """)
         pending_requests_result = c.fetchone()
         pending_requests = pending_requests_result['count'] if pending_requests_result else 0
         
@@ -10084,16 +10088,24 @@ def api_manager_pending_maintenance():
     try:
         c = conn.cursor()
         c.execute("""
-            SELECT request_id, ship_name, maintenance_type, priority, status, requested_by, 
-                   created_at, description
+            SELECT request_id, ship_name, maintenance_type, priority, status, requested_by,
+                   requested_by_name, requested_by_email, created_at, description
             FROM maintenance_requests
-            WHERE status IN ('pending', 'approved')
-            ORDER BY created_at DESC
-            LIMIT 10
+            WHERE status IN ('submitted', 'pending', 'pending_captain')
+            ORDER BY
+                CASE priority
+                    WHEN 'critical' THEN 1
+                    WHEN 'high' THEN 2
+                    WHEN 'medium' THEN 3
+                    WHEN 'low' THEN 4
+                    ELSE 5
+                END,
+                created_at DESC
+            LIMIT 25
         """)
-        
+
         requests = [dict(row) for row in c.fetchall()]
-        return jsonify({'success': True, 'data': requests})
+        return jsonify({'success': True, 'data': requests, 'requests': requests})
     except Exception as e:
         app.logger.error(f"Error getting pending maintenance: {e}")
         return jsonify({'success': False, 'error': str(e)})
@@ -10798,12 +10810,17 @@ def api_captain_dashboard_data():
         total_row = c.fetchone()
         total_requests = dict(total_row).get('count', 0) if total_row else 0
         
-        # Pending approval (requests awaiting review)
+        # Pending approval (requests awaiting captain review)
         c.execute("""
             SELECT COUNT(*) as count
-            FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain')
-        """, (current_user.id, current_user.id, current_user.email))
+            FROM maintenance_requests mr
+            LEFT JOIN users u ON mr.submitted_by = u.user_id
+            WHERE mr.status IN ('submitted', 'pending_captain')
+              AND (
+                    u.role = 'chief_engineer'
+                    OR (mr.submitted_by IS NULL AND mr.requested_by IS NOT NULL)
+                  )
+        """)
         pend_row = c.fetchone()
         pending_approval = dict(pend_row).get('count', 0) if pend_row else 0
         
@@ -10869,32 +10886,32 @@ def api_captain_pending_approval():
     try:
         c = conn.cursor()
         c.execute("""
-            SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                   status, created_at, requested_by, submitted_by, description
-            FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain', 'pending')
-            ORDER BY 
-                CASE criticality
+            SELECT mr.request_id, mr.ship_name, mr.maintenance_type, mr.request_type, mr.priority, mr.criticality,
+                   mr.status, mr.created_at, mr.requested_by, mr.submitted_by, mr.description,
+                   COALESCE(u.first_name || ' ' || u.last_name, mr.requested_by_name) AS requested_by_name
+            FROM maintenance_requests mr
+            LEFT JOIN users u ON mr.submitted_by = u.user_id
+            WHERE mr.status IN ('submitted', 'pending_captain')
+              AND (
+                    u.role = 'chief_engineer'
+                    OR (mr.submitted_by IS NULL AND mr.requested_by IS NOT NULL)
+                  )
+            ORDER BY
+                CASE mr.criticality
                     WHEN 'emergency' THEN 1
                     WHEN 'urgent' THEN 2
                     WHEN 'high' THEN 3
                     WHEN 'medium' THEN 4
                     ELSE 5
                 END,
-                created_at DESC
-        """, (current_user.id, current_user.id, current_user.email))
+                mr.created_at DESC
+        """)
         
         requests = []
         for row in c.fetchall():
             request_data = dict(row)
-            # Get requester name
-            if request_data['requested_by']:
-                c.execute("SELECT first_name, last_name FROM users WHERE email = ?", (request_data['requested_by'],))
-                user = c.fetchone()
-                if user:
-                    request_data['requested_by_name'] = f"{user['first_name']} {user['last_name']}"
-                else:
-                    request_data['requested_by_name'] = 'Chief Engineer'
+            if not request_data.get('requested_by_name'):
+                request_data['requested_by_name'] = 'Chief Engineer'
             requests.append(request_data)
         
         return jsonify({'success': True, 'requests': requests})
@@ -12701,8 +12718,15 @@ def api_create_maintenance_request():
             if current_user.is_authenticated:
                 requester_id = current_user.id
                 submitted_by_id = current_user.id  # Track who submitted it
-                if current_user.role in ['chief_engineer', 'captain']:
+                if current_user.role == 'chief_engineer':
+                    # Chief engineer requests await captain review first.
+                    initial_status = 'pending_captain'
+                elif current_user.role == 'captain':
+                    # Captain submissions go directly to port engineer workflow.
                     initial_status = 'submitted'
+            else:
+                # External/unauthenticated submissions bypass captain approval.
+                initial_status = 'pending'
                 
             app.logger.info(f"After auth check - requester_id: {requester_id}, submitted_by_id: {submitted_by_id}, initial_status: {initial_status}")
 
@@ -12720,7 +12744,7 @@ def api_create_maintenance_request():
             """, (
                 request_id, ship_name, maintenance_type, request_type, priority, criticality, description,
                 location, 'TBD', 'To be assessed', requester_id or requested_by_email,
-                initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now(),
+                initial_status, severity, assessment_details, initial_status, datetime.now(), datetime.now(),
                 part_number, part_name, part_category, quantity, manufacturer,
                 requested_by_name, requested_by_email, requested_by_phone, emergency_contact,
                 imo_number, vessel_type, company, eta, submitted_by_id
@@ -12728,7 +12752,7 @@ def api_create_maintenance_request():
 
             # Log workflow action for audit trail
             log_workflow_action(
-                request_id, 'submitted', requester_id,
+                request_id, initial_status, requester_id,
                 f'Maintenance request for {ship_name}. Auto-assessed: {severity}'
             )
 
@@ -14913,7 +14937,7 @@ def api_pending_maintenance_approvals():
                     mr.status
                 FROM maintenance_requests mr
                 LEFT JOIN users u ON mr.submitted_by = u.user_id
-                WHERE mr.status IN ('submitted', 'pending')
+                WHERE mr.status IN ('submitted', 'pending', 'pending_captain')
                 AND (mr.approved IS NULL OR mr.approved = 0)
                 AND mr.rejection_reason IS NULL
                 ORDER BY 

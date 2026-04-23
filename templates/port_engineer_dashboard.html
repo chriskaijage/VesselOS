@@ -672,25 +672,13 @@ function setupAutoRefresh() {
             .catch(error => console.error('Users refresh error:', error));
     }, 30000);
     
-    // Auto-refresh maintenance requests every 30 seconds (reduced from 5s)
-    refreshIntervals.maintenance = setInterval(() => {
-        fetch('/api/manager/pending-maintenance')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    updateMaintenanceTable(data.requests);
-                }
-            })
-            .catch(error => console.error('Maintenance refresh error:', error));
-    }, 30000);
-    
     // Auto-refresh pending maintenance every 30 seconds (reduced from 5s)
     refreshIntervals.maintenance = setInterval(() => {
         fetch('/api/manager/pending-maintenance')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    updatePendingMaintenanceTable(data.requests);
+                    updatePendingMaintenanceTable(data.requests || data.data || []);
                 }
             })
             .catch(error => console.error('Maintenance refresh error:', error));
