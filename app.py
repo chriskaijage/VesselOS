@@ -8975,8 +8975,8 @@ def add_vessel():
                 conn = get_db_connection()
                 c = conn.cursor()
 
-                # Ensure legacy databases have all optional vessel columns.
-                ensure_vessels_optional_columns(c)
+                # Ensure vessel schema exists/migrated on this connection before insert.
+                ensure_vessels_schema(c)
                 
                 # Use shipyard_location mapping
                 shipyard_location = place_of_build
@@ -12941,6 +12941,78 @@ def ensure_vessels_optional_columns(cursor):
             pass
 
 
+def ensure_vessels_schema(cursor):
+    """Ensure vessels table, indexes, and optional migrated columns exist."""
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS vessels (
+            vessel_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vessel_name TEXT NOT NULL,
+            imo_number TEXT UNIQUE NOT NULL,
+            mmsi_number TEXT,
+            call_sign TEXT,
+            vessel_type TEXT NOT NULL,
+            flag_state TEXT NOT NULL,
+            year_built INTEGER,
+            builder TEXT,
+            shipyard_location TEXT,
+            gross_tonnage REAL,
+            net_tonnage REAL,
+            deadweight_tonnage REAL,
+            length_overall REAL,
+            length_between_perpendiculars REAL,
+            breadth REAL,
+            depth REAL,
+            owner_name TEXT,
+            owner_address TEXT,
+            owner_phone TEXT,
+            owner_email TEXT,
+            manager_name TEXT,
+            manager_address TEXT,
+            manager_phone TEXT,
+            manager_email TEXT,
+            operator_name TEXT,
+            operator_phone TEXT,
+            operator_email TEXT,
+            insurer_name TEXT,
+            insurer_policy_number TEXT,
+            main_engine_model TEXT,
+            main_engine_power REAL,
+            main_engine_rpm INTEGER,
+            fuel_type TEXT,
+            auxiliary_engines INTEGER,
+            generator_power REAL,
+            propulsion_type TEXT,
+            bollard_pull REAL,
+            maximum_speed REAL,
+            service_speed REAL,
+            average_fuel_consumption REAL,
+            fuel_consumption_per_ton_mile REAL,
+            energy_efficiency_index REAL,
+            carbon_intensity_indicator REAL,
+            sox_emissions_compliant TEXT,
+            nox_tier TEXT,
+            eedi_baseline_percentage REAL,
+            ballast_water_treatment TEXT,
+            trading_area_restriction TEXT,
+            ice_class TEXT,
+            dry_dock_interval INTEGER,
+            next_dry_dock_date TEXT,
+            last_dry_dock_date TEXT,
+            monitoring_system TEXT,
+            performance_reporting_compliant TEXT,
+            remarks TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_vessel_name ON vessels (vessel_name)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_vessel_imo ON vessels (imo_number)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_vessel_type ON vessels (vessel_type)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_vessel_status ON vessels (status)")
+    ensure_vessels_optional_columns(cursor)
+
+
 def init_db():
     """
     Initialize database schema while preserving existing data.
@@ -13971,79 +14043,8 @@ def init_db():
         
         # ==================== VESSEL MANAGEMENT TABLES ====================
         
-        # Create vessels table for managing ship information
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS vessels (
-                vessel_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                vessel_name TEXT NOT NULL,
-                imo_number TEXT UNIQUE NOT NULL,
-                mmsi_number TEXT,
-                call_sign TEXT,
-                vessel_type TEXT NOT NULL,
-                flag_state TEXT NOT NULL,
-                year_built INTEGER,
-                builder TEXT,
-                shipyard_location TEXT,
-                gross_tonnage REAL,
-                net_tonnage REAL,
-                deadweight_tonnage REAL,
-                length_overall REAL,
-                length_between_perpendiculars REAL,
-                breadth REAL,
-                depth REAL,
-                owner_name TEXT,
-                owner_address TEXT,
-                owner_phone TEXT,
-                owner_email TEXT,
-                manager_name TEXT,
-                manager_address TEXT,
-                manager_phone TEXT,
-                manager_email TEXT,
-                operator_name TEXT,
-                operator_phone TEXT,
-                operator_email TEXT,
-                insurer_name TEXT,
-                insurer_policy_number TEXT,
-                main_engine_model TEXT,
-                main_engine_power REAL,
-                main_engine_rpm INTEGER,
-                fuel_type TEXT,
-                auxiliary_engines INTEGER,
-                generator_power REAL,
-                propulsion_type TEXT,
-                bollard_pull REAL,
-                maximum_speed REAL,
-                service_speed REAL,
-                average_fuel_consumption REAL,
-                fuel_consumption_per_ton_mile REAL,
-                energy_efficiency_index REAL,
-                carbon_intensity_indicator REAL,
-                sox_emissions_compliant TEXT,
-                nox_tier TEXT,
-                eedi_baseline_percentage REAL,
-                ballast_water_treatment TEXT,
-                trading_area_restriction TEXT,
-                ice_class TEXT,
-                dry_dock_interval INTEGER,
-                next_dry_dock_date TEXT,
-                last_dry_dock_date TEXT,
-                monitoring_system TEXT,
-                performance_reporting_compliant TEXT,
-                remarks TEXT,
-                status TEXT DEFAULT 'active',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Create indexes for vessels table
-        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_name ON vessels (vessel_name)")
-        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_imo ON vessels (imo_number)")
-        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_type ON vessels (vessel_type)")
-        c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_status ON vessels (status)")
-        
-        # Add missing columns to vessels table for form fields
-        ensure_vessels_optional_columns(c)
+        # Create and migrate vessels schema for both new and legacy databases.
+        ensure_vessels_schema(c)
         
         # Create vessel_performance_monitoring table for performance data
         c.execute('''
