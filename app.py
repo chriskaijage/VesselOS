@@ -12634,6 +12634,16 @@ def api_create_maintenance_request():
         # Generate unique request ID
         request_id = generate_id('MRQ')
 
+        # Map request_type from form to standardized maintenance types
+        # Form sends: maintenance, part, repair, inspection
+        request_type_map = {
+            'maintenance': 'Maintenance Service',
+            'part': 'Part Replacement',
+            'repair': 'Emergency Repair',
+            'inspection': 'Technical Inspection'
+        }
+        maintenance_type = request_type_map.get(request_type, request_type)
+
         # Map criticality to priority
         priority_map = {
             'emergency': 'critical',
@@ -12645,7 +12655,7 @@ def api_create_maintenance_request():
         priority = priority_map.get(criticality, 'medium')
 
         # Automatically assess severity based on description and type
-        severity, assessment_details = assess_severity(description, request_type, priority)
+        severity, assessment_details = assess_severity(description, maintenance_type, priority)
 
         conn = get_db_connection()
         try:
@@ -12678,7 +12688,7 @@ def api_create_maintenance_request():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                request_id, ship_name, request_type, request_type, priority, criticality, description,
+                request_id, ship_name, maintenance_type, request_type, priority, criticality, description,
                 location, 'TBD', 'To be assessed', requester_id or requested_by_email,
                 initial_status, severity, assessment_details, 'submitted', datetime.now(), datetime.now(),
                 part_number, part_name, part_category, quantity, manufacturer,
@@ -16532,6 +16542,79 @@ def api_generate_training_plans():
     except Exception as e:
         app.logger.error(f"Error generating training plans: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+# ==================== MAINTENANCE CLEANUP ROUTES ====================
+
+@app.route('/api/maintenance-cleanup', methods=['POST'])
+@login_required
+@role_required(['harbour_master'])
+def api_maintenance_cleanup():
+    """
+    Admin endpoint to clean up test and demo maintenance requests.
+    
+    Removes all maintenance requests marked as test/demo to clean up
+    the database. Use with caution as this is permanent deletion.
+    
+    Returns:
+        JSON response with number of deleted requests
+    """
+    try:
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            
+            # Find test requests using fuzzy matching
+            test_keywords = ['test', 'demo', 'sample', 'example', 'debug', 'temporary']
+            
+            deleted_count = 0
+            request_ids_to_delete = []
+            
+            # Query to find test requests
+            c.execute("""
+                SELECT request_id, ship_name, description, created_at
+                FROM maintenance_requests
+                ORDER BY created_at DESC
+            """)
+            
+            requests = c.fetchall()
+            
+            for req in requests:
+                request_id, ship_name, description, created_at = req
+                combined_text = f"{ship_name} {description}".lower()
+                
+                # Check if any test keywords are in the request
+                if any(keyword in combined_text for keyword in test_keywords):
+                    request_ids_to_delete.append(request_id)
+                    app.logger.info(f"Marking test request for deletion: {request_id} - {ship_name}")
+            
+            # Delete test requests and related data
+            for request_id in request_ids_to_delete:
+                # Delete workflow logs
+                c.execute("DELETE FROM maintenance_workflow_log WHERE request_id = ?", (request_id,))
+                
+                # Delete attachments
+                c.execute("DELETE FROM maintenance_request_attachments WHERE request_id = ?", (request_id,))
+                
+                # Delete the request
+                c.execute("DELETE FROM maintenance_requests WHERE request_id = ?", (request_id,))
+                deleted_count += 1
+                app.logger.info(f"Deleted test maintenance request: {request_id}")
+            
+            conn.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Cleaned up {deleted_count} test maintenance requests',
+                'deleted_count': deleted_count,
+                'deleted_requests': request_ids_to_delete
+            }), 200
+            
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        app.logger.error(f"Error in maintenance cleanup: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== ERROR HANDLERS ====================
 
