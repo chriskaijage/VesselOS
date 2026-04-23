@@ -8674,80 +8674,109 @@ def add_vessel():
     """
     try:
         if request.method == 'POST':
-            # Extract all vessel information from form
-            vessel_name = request.form.get('vessel_name')
-            imo_number = request.form.get('imo_number')
-            mmsi_number = request.form.get('mmsi_number')
-            call_sign = request.form.get('call_sign')
-            vessel_type = request.form.get('vessel_type')
-            flag_state = request.form.get('flag_state')
+            # SECTION 1: General Vessel Information
+            vessel_name = request.form.get('vessel_name', '').strip()
+            imo_number = request.form.get('imo_number', '').strip()
+            mmsi_number = request.form.get('mmsi_number', '').strip()
+            call_sign = request.form.get('call_sign', '').strip()
+            vessel_type = request.form.get('vessel_type', '').strip()
+            flag_state = request.form.get('flag_state', '').strip()
+            port_of_registry = request.form.get('port_of_registry', '').strip()
             year_built = request.form.get('year_built')
-            builder = request.form.get('builder')
-            shipyard_location = request.form.get('place_of_build')
+            builder = request.form.get('builder', '').strip()
+            place_of_build = request.form.get('place_of_build', '').strip()
+            hull_material = request.form.get('hull_material', '').strip()
+            class_society = request.form.get('class_society', '').strip()
+            class_notation = request.form.get('class_notation', '').strip()
             gross_tonnage = request.form.get('gross_tonnage')
             net_tonnage = request.form.get('net_tonnage')
             deadweight_tonnage = request.form.get('deadweight')
             length_overall = request.form.get('length_overall')
-            length_between_perpendiculars = request.form.get('length_between_perpendiculars', '')
+            length_between_perpendiculars = request.form.get('length_between_perpendiculars')
             breadth = request.form.get('breadth')
             depth = request.form.get('depth')
+            summer_draft = request.form.get('summer_draft')
             
-            # Ownership & Management
-            owner_name = request.form.get('registered_owner')
-            owner_address = request.form.get('owner_address')
-            owner_phone = request.form.get('owner_phone', '')
-            owner_email = request.form.get('owner_email', '')
-            manager_name = request.form.get('ship_manager')
-            manager_address = request.form.get('manager_address', '')
-            manager_phone = request.form.get('manager_phone', '')
-            manager_email = request.form.get('manager_email', '')
-            operator_name = request.form.get('commercial_operator')
-            operator_phone = request.form.get('operator_phone', '')
-            operator_email = request.form.get('operator_email', '')
-            insurer_name = request.form.get('hull_machinery_insurer')
-            insurer_policy_number = request.form.get('insurer_policy_number', '')
+            # SECTION 2: Ownership & Management
+            owner_name = request.form.get('registered_owner', '').strip()
+            owner_address = request.form.get('owner_address', '').strip()
+            owner_phone = request.form.get('owner_phone', '').strip()
+            owner_email = request.form.get('owner_email', '').strip()
+            manager_name = request.form.get('ship_manager', '').strip()
+            manager_address = request.form.get('manager_address', '').strip()
+            manager_phone = request.form.get('manager_phone', '').strip()
+            manager_email = request.form.get('manager_email', '').strip()
+            technical_manager = request.form.get('technical_manager', '').strip()
+            ism_manager = request.form.get('ism_manager', '').strip()
+            operator_name = request.form.get('commercial_operator', '').strip()
+            operator_phone = request.form.get('operator_phone', '').strip()
+            operator_email = request.form.get('operator_email', '').strip()
+            insurer_name = request.form.get('hull_machinery_insurer', '').strip()
+            insurer_policy_number = request.form.get('insurer_policy_number', '').strip()
+            pi_club = request.form.get('pi_club', '').strip()
             
-            # Propulsion & Machinery
-            main_engine_model = request.form.get('main_engine_make')
+            # SECTION 3: Main Propulsion & Machinery
+            main_engine_model = request.form.get('main_engine_make', '').strip()
+            engine_type = request.form.get('engine_type', '').strip()
             main_engine_power = request.form.get('mcr')
             main_engine_rpm = request.form.get('rated_speed')
-            fuel_type = request.form.get('fuel_type')
-            auxiliary_engines = request.form.get('number_of_engines')
-            generator_power = request.form.get('generator_power', '')
-            propulsion_type = request.form.get('propulsion_type', '')
+            number_of_engines = request.form.get('number_of_engines')
+            propeller_type = request.form.get('propeller_type', '').strip()
+            auxiliary_engines = request.form.get('auxiliary_engines', '').strip()
+            boiler = request.form.get('boiler', '').strip()
+            fuel_type = request.form.get('fuel_type', '').strip()
             bollard_pull = request.form.get('bollard_pull')
+            propulsion_type = request.form.get('propulsion_type', '').strip()
+            generator_power = request.form.get('generator_power')
             
-            # Performance
-            maximum_speed = request.form.get('maximum_speed', '')
+            # SECTION 4: Performance Characteristics
+            maximum_speed = request.form.get('maximum_speed')
             service_speed = request.form.get('service_speed')
-            average_fuel_consumption = request.form.get('average_fuel_consumption', '')
-            fuel_consumption_per_ton_mile = request.form.get('fuel_consumption_per_ton_mile', '')
+            fuel_consumption_service = request.form.get('fuel_consumption_service')
+            fuel_consumption_eco = request.form.get('fuel_consumption_eco')
+            auxiliary_consumption = request.form.get('auxiliary_consumption')
+            sfoc = request.form.get('sfoc')
+            shaft_power = request.form.get('shaft_power')
+            propulsion_efficiency = request.form.get('propulsion_efficiency')
+            average_fuel_consumption = request.form.get('average_fuel_consumption')
+            fuel_consumption_per_ton_mile = request.form.get('fuel_consumption_per_ton_mile')
             
-            # Energy & Emissions
-            energy_efficiency_index = request.form.get('energy_efficiency_index', '')
-            carbon_intensity_indicator = request.form.get('carbon_intensity_indicator', '')
-            sox_emissions_compliant = request.form.get('sox_emissions_compliant', '')
-            nox_tier = request.form.get('nox_tier', '')
-            eedi_baseline_percentage = request.form.get('eedi_baseline_percentage', '')
+            # SECTION 5: Energy Efficiency & Emissions
+            eedi_value = request.form.get('eedi_value')
+            required_eedi = request.form.get('required_eedi')
+            eedi_compliance = request.form.get('eedi_compliance', '').strip()
+            cii_rating = request.form.get('cii_rating', '').strip()
+            co2_emissions = request.form.get('co2_emissions')
+            nox_tier = request.form.get('nox_tier', '').strip()
+            sox_compliance = request.form.get('sox_compliance', '').strip()
+            energy_saving_devices = request.form.get('energy_saving_devices', '').strip()
+            energy_efficiency_index = request.form.get('energy_efficiency_index')
+            carbon_intensity_indicator = request.form.get('carbon_intensity_indicator')
+            sox_emissions_compliant = request.form.get('sox_emissions_compliant', '').strip()
+            eedi_baseline_percentage = request.form.get('eedi_baseline_percentage')
             
-            # Operations
-            ballast_water_treatment = request.form.get('ballast_water_treatment', '')
-            trading_area_restriction = request.form.get('trading_area_restriction', '')
-            ice_class = request.form.get('ice_class', '')
-            dry_dock_interval = request.form.get('dry_dock_interval', '')
-            next_dry_dock_date = request.form.get('next_dry_dock_date', '')
-            last_dry_dock_date = request.form.get('last_dry_dock_date', '')
-            monitoring_system = request.form.get('monitoring_system', '')
-            performance_reporting_compliant = request.form.get('performance_reporting_compliant', '')
+            # SECTION 6: Operational Parameters
+            trading_area = request.form.get('trading_area', '').strip()
+            trading_area_restriction = request.form.get('trading_area_restriction', '').strip()
+            ice_class = request.form.get('ice_class', '').strip()
+            maximum_sea_state = request.form.get('maximum_sea_state', '').strip()
+            temperature_limits = request.form.get('temperature_limits', '').strip()
+            ballast_treatment = request.form.get('ballast_treatment', '').strip()
+            ballast_water_treatment = request.form.get('ballast_water_treatment', '').strip()
+            dry_dock_interval = request.form.get('dry_dock_interval')
+            next_dry_dock_date = request.form.get('next_dry_dock_date', '').strip()
+            last_dry_dock_date = request.form.get('last_dry_dock_date', '').strip()
+            monitoring_system = request.form.get('monitoring_system', '').strip()
+            performance_reporting_compliant = request.form.get('performance_reporting_compliant', '').strip()
             
-            # Remarks
-            remarks = request.form.get('remarks', '')
+            # SECTION 7: Remarks
+            remarks = request.form.get('remarks', '').strip()
             
-            # Initial Performance Baseline (Optional)
-            baseline_speed = request.form.get('baseline_speed', '')
-            baseline_fuel_consumption = request.form.get('baseline_fuel_consumption', '')
-            baseline_co2_emissions = request.form.get('baseline_co2_emissions', '')
-            baseline_load_factor = request.form.get('baseline_load_factor', '')
+            # SECTION 8: Initial Performance Baseline (Optional)
+            baseline_speed = request.form.get('baseline_speed')
+            baseline_fuel_consumption = request.form.get('baseline_fuel_consumption')
+            baseline_co2_emissions = request.form.get('baseline_co2_emissions')
+            baseline_load_factor = request.form.get('baseline_load_factor')
             
             # Convert auxiliary_engines to integer if provided
             try:
@@ -8781,37 +8810,58 @@ def add_vessel():
                 conn = get_db_connection()
                 c = conn.cursor()
                 
+                # Use shipyard_location mapping
+                shipyard_location = place_of_build
+                
                 c.execute("""
                     INSERT INTO vessels 
                     (vessel_name, imo_number, mmsi_number, call_sign, vessel_type, flag_state,
-                     year_built, builder, shipyard_location, gross_tonnage, net_tonnage, 
-                     deadweight_tonnage, length_overall, length_between_perpendiculars, breadth, depth,
+                     port_of_registry, year_built, builder, shipyard_location, hull_material,
+                     class_society, class_notation, gross_tonnage, net_tonnage, 
+                     deadweight_tonnage, length_overall, length_between_perpendiculars, breadth, depth, summer_draft,
                      owner_name, owner_address, owner_phone, owner_email,
                      manager_name, manager_address, manager_phone, manager_email,
+                     technical_manager, ism_manager,
                      operator_name, operator_phone, operator_email,
-                     insurer_name, insurer_policy_number,
-                     main_engine_model, main_engine_power, main_engine_rpm, fuel_type, 
-                     auxiliary_engines, generator_power, propulsion_type, bollard_pull,
-                     maximum_speed, service_speed, average_fuel_consumption, fuel_consumption_per_ton_mile,
-                     energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant, nox_tier,
-                     eedi_baseline_percentage, ballast_water_treatment, trading_area_restriction, ice_class,
+                     insurer_name, insurer_policy_number, pi_club,
+                     main_engine_model, engine_type, main_engine_power, main_engine_rpm, fuel_type,
+                     number_of_engines, propeller_type, auxiliary_engines, boiler,
+                     bollard_pull, propulsion_type, generator_power,
+                     maximum_speed, service_speed, fuel_consumption_service, fuel_consumption_eco,
+                     auxiliary_consumption, sfoc, shaft_power, propulsion_efficiency,
+                     average_fuel_consumption, fuel_consumption_per_ton_mile,
+                     eedi_value, required_eedi, eedi_compliance, cii_rating,
+                     co2_emissions, nox_tier, sox_compliance, energy_saving_devices,
+                     energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant,
+                     eedi_baseline_percentage, trading_area, trading_area_restriction, ice_class,
+                     maximum_sea_state, temperature_limits, ballast_treatment, ballast_water_treatment,
                      dry_dock_interval, next_dry_dock_date, last_dry_dock_date, monitoring_system,
                      performance_reporting_compliant, remarks, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?)
                 """, (vessel_name, imo_number, mmsi_number, call_sign, vessel_type, flag_state,
-                     year_built, builder, shipyard_location, gross_tonnage, net_tonnage,
-                     deadweight_tonnage, length_overall, length_between_perpendiculars, breadth, depth,
+                     port_of_registry, year_built, builder, shipyard_location, hull_material,
+                     class_society, class_notation, gross_tonnage, net_tonnage,
+                     deadweight_tonnage, length_overall, length_between_perpendiculars, breadth, depth, summer_draft,
                      owner_name, owner_address, owner_phone, owner_email,
                      manager_name, manager_address, manager_phone, manager_email,
+                     technical_manager, ism_manager,
                      operator_name, operator_phone, operator_email,
-                     insurer_name, insurer_policy_number,
-                     main_engine_model, main_engine_power, main_engine_rpm, fuel_type,
-                     auxiliary_engines, generator_power, propulsion_type, bollard_pull,
-                     maximum_speed, service_speed, average_fuel_consumption, fuel_consumption_per_ton_mile,
-                     energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant, nox_tier,
-                     eedi_baseline_percentage, ballast_water_treatment, trading_area_restriction, ice_class,
+                     insurer_name, insurer_policy_number, pi_club,
+                     main_engine_model, engine_type, main_engine_power, main_engine_rpm, fuel_type,
+                     number_of_engines, propeller_type, auxiliary_engines, boiler,
+                     bollard_pull, propulsion_type, generator_power,
+                     maximum_speed, service_speed, fuel_consumption_service, fuel_consumption_eco,
+                     auxiliary_consumption, sfoc, shaft_power, propulsion_efficiency,
+                     average_fuel_consumption, fuel_consumption_per_ton_mile,
+                     eedi_value, required_eedi, eedi_compliance, cii_rating,
+                     co2_emissions, nox_tier, sox_compliance, energy_saving_devices,
+                     energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant,
+                     eedi_baseline_percentage, trading_area, trading_area_restriction, ice_class,
+                     maximum_sea_state, temperature_limits, ballast_treatment, ballast_water_treatment,
                      dry_dock_interval, next_dry_dock_date, last_dry_dock_date, monitoring_system,
                      performance_reporting_compliant, remarks, 'active'))
                 
@@ -13762,6 +13812,46 @@ def init_db():
         c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_imo ON vessels (imo_number)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_type ON vessels (vessel_type)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_vessel_status ON vessels (status)")
+        
+        # Add missing columns to vessels table for form fields
+        missing_columns = [
+            ("engine_type", "TEXT"),
+            ("number_of_engines", "INTEGER"),
+            ("propeller_type", "TEXT"),
+            ("boiler", "TEXT"),
+            ("fuel_consumption_service", "REAL"),
+            ("fuel_consumption_eco", "REAL"),
+            ("auxiliary_consumption", "REAL"),
+            ("sfoc", "REAL"),
+            ("shaft_power", "REAL"),
+            ("propulsion_efficiency", "REAL"),
+            ("eedi_value", "REAL"),
+            ("required_eedi", "REAL"),
+            ("eedi_compliance", "TEXT"),
+            ("cii_rating", "TEXT"),
+            ("co2_emissions", "REAL"),
+            ("sox_compliance", "TEXT"),
+            ("energy_saving_devices", "TEXT"),
+            ("trading_area", "TEXT"),
+            ("maximum_sea_state", "TEXT"),
+            ("temperature_limits", "TEXT"),
+            ("ballast_treatment", "TEXT"),
+            ("port_of_registry", "TEXT"),
+            ("place_of_build", "TEXT"),
+            ("hull_material", "TEXT"),
+            ("class_society", "TEXT"),
+            ("class_notation", "TEXT"),
+            ("summer_draft", "REAL"),
+            ("technical_manager", "TEXT"),
+            ("ism_manager", "TEXT"),
+            ("pi_club", "TEXT"),
+        ]
+        
+        for col_name, col_type in missing_columns:
+            try:
+                c.execute(f"ALTER TABLE vessels ADD COLUMN {col_name} {col_type}")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
         
         # Create vessel_performance_monitoring table for performance data
         c.execute('''
