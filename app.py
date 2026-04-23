@@ -8715,6 +8715,7 @@ def add_vessel():
             auxiliary_engines = request.form.get('auxiliary_engines')
             generator_power = request.form.get('generator_power')
             propulsion_type = request.form.get('propulsion_type')
+            bollard_pull = request.form.get('bollard_pull')
             
             # Performance
             maximum_speed = request.form.get('maximum_speed')
@@ -8768,7 +8769,7 @@ def add_vessel():
                      operator_name, operator_phone, operator_email,
                      insurer_name, insurer_policy_number,
                      main_engine_model, main_engine_power, main_engine_rpm, fuel_type, 
-                     auxiliary_engines, generator_power, propulsion_type,
+                     auxiliary_engines, generator_power, propulsion_type, bollard_pull,
                      maximum_speed, service_speed, average_fuel_consumption, fuel_consumption_per_ton_mile,
                      energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant, nox_tier,
                      eedi_baseline_percentage, ballast_water_treatment, trading_area_restriction, ice_class,
@@ -8785,7 +8786,7 @@ def add_vessel():
                      operator_name, operator_phone, operator_email,
                      insurer_name, insurer_policy_number,
                      main_engine_model, main_engine_power, main_engine_rpm, fuel_type,
-                     auxiliary_engines, generator_power, propulsion_type,
+                     auxiliary_engines, generator_power, propulsion_type, bollard_pull,
                      maximum_speed, service_speed, average_fuel_consumption, fuel_consumption_per_ton_mile,
                      energy_efficiency_index, carbon_intensity_indicator, sox_emissions_compliant, nox_tier,
                      eedi_baseline_percentage, ballast_water_treatment, trading_area_restriction, ice_class,
