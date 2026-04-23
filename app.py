@@ -8349,7 +8349,7 @@ def add_crew_member():
                 conn.commit()
                 conn.close()
                 
-                app.logger.info(f"New crew member {first_name} {last_name} added by {current_user.user_id}")
+                app.logger.info(f"New crew member {first_name} {last_name} added by {current_user.id}")
                 flash(f'Crew member {first_name} {last_name} added successfully!', 'success')
                 return redirect(url_for('crew_management'))
             except sqlite3.IntegrityError as e:
@@ -8507,7 +8507,7 @@ def edit_crew_member(crew_id):
                          specialized_certs_json, datetime.now(), crew_id))
                 
                 conn.commit()
-                app.logger.info(f"Crew member {crew_id} updated by {current_user.user_id}")
+                app.logger.info(f"Crew member {crew_id} updated by {current_user.id}")
                 flash(f'Crew member {first_name} {last_name} updated successfully!', 'success')
                 conn.close()
                 return redirect(url_for('crew_management'))
@@ -8577,7 +8577,7 @@ def remove_crew_member(crew_id):
         conn.commit()
         conn.close()
         
-        app.logger.info(f"Crew member {crew_id} ({crew[0]} {crew[1]}) removed by {current_user.user_id}")
+        app.logger.info(f"Crew member {crew_id} ({crew[0]} {crew[1]}) removed by {current_user.id}")
         return jsonify({'status': 'success', 'message': 'Crew member removed successfully'})
     except Exception as e:
         app.logger.error(f"Error removing crew member: {e}", exc_info=True)
@@ -9047,7 +9047,7 @@ def add_vessel():
                 conn.commit()
                 conn.close()
                 
-                app.logger.info(f"New vessel {vessel_name} (IMO: {imo_number}) added by {current_user.user_id}")
+                app.logger.info(f"New vessel {vessel_name} (IMO: {imo_number}) added by {current_user.id}")
                 flash(f'Vessel {vessel_name} added successfully!', 'success')
                 return redirect(url_for('vessel_management'))
             except sqlite3.IntegrityError as e:
@@ -9101,7 +9101,7 @@ def edit_vessel(vessel_id):
                 """, (vessel_name, datetime.now(), vessel_id))
                 
                 conn.commit()
-                app.logger.info(f"Vessel {vessel_id} updated by {current_user.user_id}")
+                app.logger.info(f"Vessel {vessel_id} updated by {current_user.id}")
                 flash(f'Vessel {vessel_name} updated successfully!', 'success')
                 conn.close()
                 return redirect(url_for('vessel_management'))
