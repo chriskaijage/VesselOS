@@ -12417,11 +12417,15 @@ def api_create_maintenance_request():
             requester_id = None
             submitted_by_id = None
             
+            app.logger.info(f"Creating maintenance request - authenticated: {current_user.is_authenticated}, user_id: {current_user.id if current_user.is_authenticated else 'None'}, role: {current_user.role if current_user.is_authenticated else 'None'}")
+            
             if current_user.is_authenticated:
                 requester_id = current_user.id
                 submitted_by_id = current_user.id  # Track who submitted it
                 if current_user.role in ['chief_engineer', 'captain']:
                     initial_status = 'submitted'
+                
+            app.logger.info(f"After auth check - requester_id: {requester_id}, submitted_by_id: {submitted_by_id}, initial_status: {initial_status}")
 
             # Insert maintenance request with all data and severity assessment
             cursor.execute("""
@@ -12461,6 +12465,8 @@ def api_create_maintenance_request():
                 )
 
             conn.commit()
+            
+            app.logger.info(f"Successfully created maintenance request {request_id} with submitted_by: {submitted_by_id}")
 
             # Send notifications based on severity level
             notify_on_severity(request_id, severity)
