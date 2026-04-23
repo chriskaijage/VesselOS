@@ -247,9 +247,9 @@
                         <p class="text-muted mt-3">
                             <i class="fas fa-shield-alt me-1"></i>
                             {% if current_user.is_authenticated and current_user.role == 'chief_engineer' %}
-                            Your request will be sent to the Captain for approval before being submitted to the Harbour Master.
+                            Your request will be submitted directly to the Harbour Master for review.
                             {% elif current_user.is_authenticated and current_user.role == 'captain' %}
-                            As Captain, you can view all vessel requests. Chief Engineers should submit maintenance requests.
+                            Your request will be submitted directly to the Harbour Master for review.
                             {% else %}
                             Your request will be processed immediately. Emergency requests receive priority response.
                             {% endif %}
@@ -265,8 +265,8 @@
                         <p><strong>Next Steps:</strong></p>
                         <ol class="mb-0">
                             {% if current_user.is_authenticated and current_user.role == 'chief_engineer' %}
-                            <li>Your request has been sent to the Captain for approval</li>
-                            <li>Once approved by the Captain, it will be forwarded to the Harbour Master</li>
+                            <li>Your request has been submitted to the Harbour Master</li>
+                            <li>The Harbour Master will review and assign next actions</li>
                             <li>You will receive notifications at each stage of the process</li>
                             <li>Track your request status from your dashboard</li>
                             {% else %}

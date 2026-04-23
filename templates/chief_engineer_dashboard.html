@@ -49,11 +49,11 @@
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card metric-card border-start border-5 border-warning">
+        <div class="card metric-card border-start border-5 border-info">
             <div class="card-body text-center">
-                <div class="metric-value" id="pendingApproval">--</div>
-                <div class="metric-label">Pending Approval</div>
-                <small class="text-muted">Awaiting captain</small>
+                <div class="metric-value" id="inProgress">--</div>
+                <div class="metric-label">In Progress</div>
+                <small class="text-muted">Being processed</small>
             </div>
         </div>
     </div>
@@ -140,18 +140,6 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Pending Captain Approval -->
-        <div class="card mt-4 border-warning" id="pendingApprovalSection" style="display: none;">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="fas fa-user-check me-2"></i> Requests Awaiting Captain Approval</h5>
-            </div>
-            <div class="card-body">
-                <div id="pendingApprovalList">
-                    <!-- Pending requests will appear here -->
-                </div>
-            </div>
-        </div>
     </div>
     
     <!-- Right Column -->
@@ -202,7 +190,7 @@
                     </li>
                     <li class="mb-2">
                         <i class="fas fa-check-circle text-success me-2"></i>
-                        <small>All requests require captain approval</small>
+                        <small>All requests are submitted directly to Harbour Master</small>
                     </li>
                 </ul>
             </div>
@@ -266,7 +254,6 @@ function loadChiefEngineerData() {
                 
                 // Load requests
                 loadMyRequests();
-                loadPendingApproval();
                 loadRecentActivity();
                 
                 // Setup auto-refresh on first load
@@ -295,18 +282,6 @@ function setupChiefAutoRefresh() {
                 }
             })
             .catch(error => console.error('Requests refresh error:', error));
-    }, 5000);
-    
-    // Auto-refresh pending approvals every 5 seconds
-    chiefRefreshIntervals.pending = setInterval(() => {
-        fetch('/api/chief-engineer/pending-approval')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.requests.length > 0) {
-                    updatePendingApprovalList(data.requests);
-                }
-            })
-            .catch(error => console.error('Pending approval refresh error:', error));
     }, 5000);
     
     // Auto-refresh recent activity every 5 seconds
@@ -338,32 +313,6 @@ function setupChiefAutoRefresh() {
     }, 5000);
     
     console.log('✅ Chief Engineer Dashboard auto-refresh intervals set up');
-}
-
-function updatePendingApprovalList(requests) {
-    if (requests.length > 0) {
-        document.getElementById('pendingApprovalSection').style.display = 'block';
-        let html = '';
-        requests.forEach(req => {
-            html += `
-                <div class="alert alert-warning">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="alert-heading">${req.ship_name}</h6>
-                            <p class="mb-1">${req.request_type || req.maintenance_type || 'Maintenance Request'}</p>
-                            <small class="text-muted">Request ID: ${req.request_id}</small>
-                        </div>
-                        <button class="btn btn-sm btn-warning" onclick="viewRequestDetails('${req.request_id}')">
-                            <i class="fas fa-eye me-1"></i> View
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        document.getElementById('pendingApprovalList').innerHTML = html;
-    } else {
-        document.getElementById('pendingApprovalSection').style.display = 'none';
-    }
 }
 
 function updateRecentActivityDisplay(activities) {
@@ -426,16 +375,12 @@ function updateRequestsTable(requests) {
             
             const statusBadge = req.status === 'completed' ? 'success' :
                               req.status === 'in_progress' ? 'primary' :
-                              req.status === 'approved' ? 'info' :
-                              req.status === 'pending_captain' ? 'warning' :
                               req.status === 'submitted' ? 'secondary' :
                               req.status === 'rejected' ? 'danger' : 'secondary';
 
             const statusText = req.status === 'completed' ? 'Completed' :
                              req.status === 'in_progress' ? 'In Progress' :
-                             req.status === 'approved' ? 'Approved' :
-                             req.status === 'pending_captain' ? 'Pending Captain Approval' :
-                             req.status === 'submitted' ? 'Submitted to Port Engineer' :
+                             req.status === 'submitted' ? 'Submitted to Harbour Master' :
                              req.status === 'rejected' ? 'Rejected' : 'Pending';
             
             html += `
@@ -459,18 +404,6 @@ function updateRequestsTable(requests) {
         
         table.innerHTML = html;
     }
-}
-
-function loadPendingApproval() {
-    fetch('/api/chief-engineer/pending-approval')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.requests.length > 0) {
-                updatePendingApprovalList(data.requests);
-            } else {
-                document.getElementById('pendingApprovalSection').style.display = 'none';
-            }
-        });
 }
 
 function loadRecentActivity() {
@@ -550,7 +483,7 @@ function loadSampleData() {
 function loadSampleRequests() {
     const requests = [
         { request_id: 'MR-20240125-001', ship_name: 'MV Ocean Carrier', request_type: 'Maintenance', criticality: 'high', status: 'in_progress' },
-        { request_id: 'MR-20240124-002', ship_name: 'MV Ocean Carrier', request_type: 'Part Replacement', criticality: 'urgent', status: 'pending_captain' },
+        { request_id: 'MR-20240124-002', ship_name: 'MV Ocean Carrier', request_type: 'Part Replacement', criticality: 'urgent', status: 'submitted' },
         { request_id: 'MR-20240123-003', ship_name: 'MV Ocean Carrier', request_type: 'Inspection', criticality: 'medium', status: 'completed' }
     ];
     updateRequestsTable(requests);

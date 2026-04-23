@@ -9505,7 +9505,7 @@ def api_manager_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE status IN ('submitted', 'pending', 'pending_captain', 'approved')
+            WHERE status IN ('submitted', 'pending', 'approved')
         """)
         pending_requests_result = c.fetchone()
         pending_requests = pending_requests_result['count'] if pending_requests_result else 0
@@ -10094,7 +10094,7 @@ def api_manager_pending_maintenance():
                    requested_by_email AS requester_email,
                    created_at, description
             FROM maintenance_requests
-            WHERE status IN ('submitted', 'pending', 'pending_captain', 'approved')
+            WHERE status IN ('submitted', 'pending', 'approved')
             ORDER BY
                 CASE priority
                     WHEN 'critical' THEN 1
@@ -10646,7 +10646,7 @@ def api_chief_engineer_dashboard_data():
         total_row = c.fetchone()
         total_requests = dict(total_row).get('count', 0) if total_row else 0
         
-        # Pending captain approval (requests waiting for captain approval)
+        # Submitted for harbour master review
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
@@ -10656,7 +10656,7 @@ def api_chief_engineer_dashboard_data():
                 OR requested_by = ?
                 OR requested_by_email = ?
             )
-            AND status = 'pending_captain'
+            AND status = 'submitted'
         """, (current_user.id, current_user.id, current_user.email, current_user.email))
         pending_row = c.fetchone()
         pending_approval = dict(pending_row).get('count', 0) if pending_row else 0
@@ -10773,7 +10773,7 @@ def api_chief_engineer_my_requests():
 @login_required
 @role_required(['chief_engineer'])
 def api_chief_engineer_pending_approval():
-    """Get requests pending captain approval."""
+    """Get requests submitted for harbour master review."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
@@ -10786,7 +10786,7 @@ def api_chief_engineer_pending_approval():
                 OR requested_by = ?
                 OR requested_by = ?
                 OR requested_by_email = ?
-            ) AND status = 'pending_captain'
+            ) AND status = 'submitted'
             ORDER BY created_at DESC
         """, (current_user.id, current_user.id, current_user.email, current_user.email))
         
@@ -10860,28 +10860,25 @@ def api_captain_dashboard_data():
         total_row = c.fetchone()
         total_requests = dict(total_row).get('count', 0) if total_row else 0
         
-        # Pending approval (requests awaiting captain review)
+        # Pending approval (legacy requests awaiting captain review)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests mr
             LEFT JOIN users u ON mr.submitted_by = u.user_id
-            WHERE mr.status IN ('submitted', 'pending_captain')
-              AND (
-                    u.role = 'chief_engineer'
-                    OR (mr.submitted_by IS NULL AND mr.requested_by IS NOT NULL)
-                  )
-        """)
+            WHERE mr.status = 'submitted'
+              AND (submitted_by = ? OR requested_by = ? OR requested_by = ?)
+        """, (current_user.id, current_user.id, current_user.email))
         pend_row = c.fetchone()
         pending_approval = dict(pend_row).get('count', 0) if pend_row else 0
         
-        # Approved (submitted to port)
+        # Submitted (to harbour master)
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'approved'
+            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'submitted'
         """, (current_user.id, current_user.id, current_user.email))
-        appr_row = c.fetchone()
-        approved = dict(appr_row).get('count', 0) if appr_row else 0
+        subm_row = c.fetchone()
+        submitted = dict(subm_row).get('count', 0) if subm_row else 0
         
         # In progress
         c.execute("""
@@ -10914,8 +10911,6 @@ def api_captain_dashboard_data():
             'success': True,
             'data': {
                 'total_requests': total_requests,
-                'pending_approval': pending_approval,
-                'approved': approved,
                 'in_progress': in_progress,
                 'completed': completed,
                 'rejected': rejected
@@ -10923,50 +10918,6 @@ def api_captain_dashboard_data():
         })
     except Exception as e:
         app.logger.error(f"Error getting captain dashboard data: {e}")
-        return jsonify({'success': False, 'error': str(e)})
-    finally:
-        conn.close()
-
-@app.route('/api/captain/pending-approval')
-@login_required
-@role_required(['captain'])
-def api_captain_pending_approval():
-    """Get requests pending captain approval."""
-    conn = get_db_connection()
-    try:
-        c = conn.cursor()
-        c.execute("""
-            SELECT mr.request_id, mr.ship_name, mr.maintenance_type, mr.request_type, mr.priority, mr.criticality,
-                   mr.status, mr.created_at, mr.requested_by, mr.submitted_by, mr.description,
-                   COALESCE(u.first_name || ' ' || u.last_name, mr.requested_by_name) AS requested_by_name
-            FROM maintenance_requests mr
-            LEFT JOIN users u ON mr.submitted_by = u.user_id
-            WHERE mr.status IN ('submitted', 'pending_captain')
-              AND (
-                    u.role = 'chief_engineer'
-                    OR (mr.submitted_by IS NULL AND mr.requested_by IS NOT NULL)
-                  )
-            ORDER BY
-                CASE mr.criticality
-                    WHEN 'emergency' THEN 1
-                    WHEN 'urgent' THEN 2
-                    WHEN 'high' THEN 3
-                    WHEN 'medium' THEN 4
-                    ELSE 5
-                END,
-                mr.created_at DESC
-        """)
-        
-        requests = []
-        for row in c.fetchall():
-            request_data = dict(row)
-            if not request_data.get('requested_by_name'):
-                request_data['requested_by_name'] = 'Chief Engineer'
-            requests.append(request_data)
-        
-        return jsonify({'success': True, 'requests': requests})
-    except Exception as e:
-        app.logger.error(f"Error getting pending approval requests: {e}")
         return jsonify({'success': False, 'error': str(e)})
     finally:
         conn.close()
@@ -11003,115 +10954,6 @@ def api_captain_vessel_requests():
         return jsonify({'success': True, 'requests': requests})
     except Exception as e:
         app.logger.error(f"Error getting vessel requests: {e}")
-        return jsonify({'success': False, 'error': str(e)})
-    finally:
-        conn.close()
-
-@app.route('/api/captain/approve-request/<request_id>', methods=['POST'])
-@login_required
-@role_required(['captain'])
-def api_captain_approve_request(request_id):
-    """Approve a maintenance request and submit to Harbour Master."""
-    conn = get_db_connection()
-    try:
-        data = request.get_json()
-        comments = data.get('comments', '')
-        
-        c = conn.cursor()
-        
-        # Captain approval forwards the request into the port engineer queue.
-        c.execute("""
-            UPDATE maintenance_requests
-            SET status = 'submitted',
-                workflow_status = 'submitted',
-                approved_by = ?,
-                approved_at = ?,
-                captain_comments = ?
-            WHERE request_id = ?
-        """, (current_user.id, datetime.now(), comments, request_id))
-        
-        conn.commit()
-        
-        # Notify port engineer pipeline roles.
-        c.execute("SELECT user_id FROM users WHERE role IN ('port_engineer', 'port_manager') AND is_active = 1")
-        recipients = c.fetchall()
-        for recipient in recipients:
-            create_notification(
-                recipient['user_id'],
-                'Maintenance Request Ready for Review',
-                f'Maintenance request {request_id} has been approved by the Captain and submitted to Port Engineering.',
-                'info',
-                '/maintenance-request'
-            )
-        
-        # Notify Chief Engineer
-        c.execute("SELECT requested_by FROM maintenance_requests WHERE request_id = ?", (request_id,))
-        req_data = c.fetchone()
-        if req_data and req_data['requested_by']:
-            c.execute("SELECT user_id FROM users WHERE email = ?", (req_data['requested_by'],))
-            ce_user = c.fetchone()
-            if ce_user:
-                create_notification(
-                    ce_user['user_id'],
-                    'Request Approved by Captain',
-                    f'Your maintenance request {request_id} has been approved by the Captain and submitted to Port Engineering.',
-                    'success',
-                    '/dashboard'
-                )
-        
-        log_activity('request_approved_by_captain', f'Request {request_id} approved by captain')
-        
-        return jsonify({'success': True, 'message': 'Request approved and submitted to Port Engineering'})
-    except Exception as e:
-        app.logger.error(f"Error approving request: {e}")
-        return jsonify({'success': False, 'error': str(e)})
-    finally:
-        conn.close()
-
-@app.route('/api/captain/reject-request/<request_id>', methods=['POST'])
-@login_required
-@role_required(['captain'])
-def api_captain_reject_request(request_id):
-    """Reject a maintenance request."""
-    conn = get_db_connection()
-    try:
-        data = request.get_json()
-        rejection_reason = data.get('rejection_reason', '')
-        
-        c = conn.cursor()
-        
-        # Update request status to rejected
-        c.execute("""
-            UPDATE maintenance_requests
-            SET status = 'rejected',
-                rejection_reason = ?,
-                rejected_by = ?,
-                rejected_at = ?
-            WHERE request_id = ?
-        """, (rejection_reason, current_user.id, datetime.now(), request_id))
-        
-        conn.commit()
-        
-        # Notify Chief Engineer
-        c.execute("SELECT requested_by FROM maintenance_requests WHERE request_id = ?", (request_id,))
-        req_data = c.fetchone()
-        if req_data and req_data['requested_by']:
-            c.execute("SELECT user_id FROM users WHERE email = ?", (req_data['requested_by'],))
-            ce_user = c.fetchone()
-            if ce_user:
-                create_notification(
-                    ce_user['user_id'],
-                    'Request Rejected by Captain',
-                    f'Your maintenance request {request_id} has been rejected. Reason: {rejection_reason}',
-                    'warning',
-                    '/dashboard'
-                )
-        
-        log_activity('request_rejected_by_captain', f'Request {request_id} rejected by captain')
-        
-        return jsonify({'success': True, 'message': 'Request rejected'})
-    except Exception as e:
-        app.logger.error(f"Error rejecting request: {e}")
         return jsonify({'success': False, 'error': str(e)})
     finally:
         conn.close()
@@ -12769,14 +12611,11 @@ def api_create_maintenance_request():
             if current_user.is_authenticated:
                 requester_id = current_user.id
                 submitted_by_id = current_user.id  # Track who submitted it
-                if current_user.role == 'chief_engineer':
-                    # Chief engineer requests await captain review first.
-                    initial_status = 'pending_captain'
-                elif current_user.role == 'captain':
-                    # Captain submissions go directly to port engineer workflow.
+                if current_user.role in ['chief_engineer', 'captain']:
+                    # Chief engineer and captain submissions go directly to harbour master review.
                     initial_status = 'submitted'
             else:
-                # External/unauthenticated submissions bypass captain approval.
+                # External/unauthenticated submissions start in direct review queue.
                 initial_status = 'pending'
                 
             app.logger.info(f"After auth check - requester_id: {requester_id}, submitted_by_id: {submitted_by_id}, initial_status: {initial_status}")
@@ -14988,7 +14827,7 @@ def api_pending_maintenance_approvals():
                     mr.status
                 FROM maintenance_requests mr
                 LEFT JOIN users u ON mr.submitted_by = u.user_id
-                WHERE mr.status IN ('submitted', 'pending', 'pending_captain')
+                WHERE mr.status IN ('submitted', 'pending')
                 AND (mr.approved IS NULL OR mr.approved = 0)
                 AND mr.rejection_reason IS NULL
                 ORDER BY 
