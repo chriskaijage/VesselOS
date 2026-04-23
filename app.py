@@ -8974,6 +8974,45 @@ def add_vessel():
             try:
                 conn = get_db_connection()
                 c = conn.cursor()
+
+                # Ensure vessels table has all required optional columns for legacy databases.
+                vessel_missing_columns = [
+                    ("engine_type", "TEXT"),
+                    ("number_of_engines", "INTEGER"),
+                    ("propeller_type", "TEXT"),
+                    ("boiler", "TEXT"),
+                    ("fuel_consumption_service", "REAL"),
+                    ("fuel_consumption_eco", "REAL"),
+                    ("auxiliary_consumption", "REAL"),
+                    ("sfoc", "REAL"),
+                    ("shaft_power", "REAL"),
+                    ("propulsion_efficiency", "REAL"),
+                    ("eedi_value", "REAL"),
+                    ("required_eedi", "REAL"),
+                    ("eedi_compliance", "TEXT"),
+                    ("cii_rating", "TEXT"),
+                    ("co2_emissions", "REAL"),
+                    ("sox_compliance", "TEXT"),
+                    ("energy_saving_devices", "TEXT"),
+                    ("trading_area", "TEXT"),
+                    ("maximum_sea_state", "TEXT"),
+                    ("temperature_limits", "TEXT"),
+                    ("ballast_treatment", "TEXT"),
+                    ("port_of_registry", "TEXT"),
+                    ("hull_material", "TEXT"),
+                    ("class_society", "TEXT"),
+                    ("class_notation", "TEXT"),
+                    ("summer_draft", "REAL"),
+                    ("technical_manager", "TEXT"),
+                    ("ism_manager", "TEXT"),
+                    ("pi_club", "TEXT"),
+                ]
+                for col_name, col_type in vessel_missing_columns:
+                    try:
+                        c.execute(f"ALTER TABLE vessels ADD COLUMN {col_name} {col_type}")
+                    except sqlite3.OperationalError:
+                        # Column already exists on up-to-date databases.
+                        pass
                 
                 # Use shipyard_location mapping
                 shipyard_location = place_of_build
@@ -16674,18 +16713,11 @@ def initialize():
 # Automatically initialize database on first request
 @app.before_request
 def before_first_request_func():
-    """Initialize database if not already done"""
+    """Initialize database schema (including migrations) once per process."""
     if not hasattr(app, 'db_initialized'):
         try:
-            # Check if database exists and has tables
-            conn = get_db_connection()
-            c = conn.cursor()
-            c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-            if c.fetchone() is None:
-                conn.close()
-                init_db()
-            else:
-                conn.close()
+            # Run full init once so existing databases receive ALTER TABLE migrations.
+            init_db()
             app.db_initialized = True
         except Exception as e:
             print(f"[WARNING] Warning during database check: {e}")
