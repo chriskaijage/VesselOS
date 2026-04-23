@@ -11185,11 +11185,12 @@ def api_declare_emergency():
             managers = c.fetchall()
             
             for manager in managers:
+                manager = dict(manager) if manager else {}
                 notification_message = f'Emergency {emergency_id}: {emergency_type} on {ship_name}'
                 if not current_user.is_authenticated:
                     notification_message += f'\nReported by: {reporter_info}'
                 create_notification(
-                    manager['user_id'],
+                    manager.get('user_id'),
                     'New Emergency Declared',
                     notification_message,
                     'urgent',
@@ -11472,8 +11473,9 @@ def api_update_emergency_status(emergency_id):
                 c.execute("SELECT user_id FROM users WHERE role = 'harbour_master' AND is_active = 1")
                 managers = c.fetchall()
                 for manager in managers:
+                    manager = dict(manager) if manager else {}
                     create_notification(
-                        manager['user_id'],
+                        manager.get('user_id'),
                         'Emergency Authorized',
                         f'Emergency {emergency_id} has been authorized and requires action.',
                         'urgent',
@@ -16352,68 +16354,8 @@ if __name__ == '__main__':
     # Initialize database
     init_db()
     
-    print("\n" + "="*70)
-    print("[SHIP] VESSELOSMARITIME MANAGEMENT PLATFORM - READY")
-    print("="*70)
-    print("[OK] System Initialized")
-    print("[DATABASE] Database: SQLite with dynamic schema management")
-    
-    print("[FILE] File Upload: Up to 100MB supported")
-    print("[REPORTS] Reports: CSV generation")
-    print("[SECURITY] Role-based access control")
-    print("[PROFILE] Profile System: Fully functional with picture upload")
-    print("[SIGNATURE] Digital Signature: Upload and drawing capability")
-    print("[DOCUMENTS] Document Management: View, Download, Rename, Delete")
-    print("[MESSAGING] Messaging System: Complete with attachments and replies")
-    print("[SENT] Sent Messages: New feature to view sent messages")
-    print("[THREADS] Threads View: Conversation threads functionality")
-    print("[CONVERSATIONS] Conversations: Floating panel conversation support")
-    print("[QUICK] Quick Send: Quick message sending from floating panel")
-    print("[REPLY] Quick Reply: Quick replies from conversation threads")
-    print("[SEARCH] User Search: Search users for messaging")
-    print("[PRINT] Print Profile: Professional print functionality")
-    print("\n[FIXES] FIXES APPLIED:")
-    print("   [OK] Fixed Network error in messaging system")
-    print("   [OK] Added Threads functionality with /api/messaging/threads")
-    print("   [OK] Added Conversations for floating panel")
-    print("   [OK] Fixed sent messages query with proper grouping")
-    print("   [OK] Added messaging-center route")
-    print("   [OK] Fixed attachment handling with JSON storage")
-    print("   [OK] Improved search functionality in inbox")
-    print("   [OK] Added conversation thread viewing")
-    print("   [OK] ADDED MISSING ROUTES FOR FLOATING PANEL:")
-    print("       - /api/messaging/conversations")
-    print("       - /api/messaging/conversation/<thread_id>")
-    print("       - /api/messaging/quick-send")
-    print("       - /api/messaging/quick-reply")
-    print("       - /api/messaging/search-users")
-    print("\n[ENDPOINTS] Access Points:")
-    print("   [URL] Login:          http://localhost:5000/login")
-    print("   [URL] Register:       http://localhost:5000/register")
-    print("   [URL] Profile:        http://localhost:5000/profile")
-    print("   [URL] Dashboard:      http://localhost:5000/dashboard")
-    print("   [URL] Messaging:      http://localhost:5000/messaging-center")
-    print("   [URL] Monitor:        http://localhost:5000/monitor")
-    print("   [URL] Sent Messages:  http://localhost:5000/api/messaging/sent")
-    print("   [URL] Threads:        http://localhost:5000/api/messaging/threads")
-    print("   [URL] Conversations:  http://localhost:5000/api/messaging/conversations")
-    print("   [URL] Attachment DL:  http://localhost:5000/api/messaging/download-attachment/<id>")
-    print("\n[ACCOUNTS] Default Accounts:")
-    print("   [LOGIN] Port Engineer:  port_engineer@marine.com / Engineer@2026")
-    print("   [LOGIN] DMPO HQ: dmpo@marine.com / Quality@2026")
-    print("   [LOGIN] Harbour Master: harbour_master@marine.com / Harbour@2026")
-    print("\n[RULES] Messaging Rules:")
-    print("   [RULE] Port Engineers & Harbour Masters can send")
-    print("   [RULE] DMPO HQ cannot send (receive only)")
-    print("   [RULE] File attachments up to 20MB")
-    print("   [RULE] Replies allowed only for 'Message' type")
-    print("   [RULE] Sent messages can be filtered and searched")
-    print("   [RULE] Threads show conversation history")
-    print("   [RULE] Floating panel has quick send and reply")
-    print("   [RULE] Conversations load quickly in floating panel")
-    print("="*70 + "\n")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Application initialized successfully
+    app.run(host='0.0.0.0', port=5000)
 
 # ==================== REAL-TIME MONITORING & AUDIT ROUTES ====================
 
