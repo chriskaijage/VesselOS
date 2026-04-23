@@ -10088,7 +10088,8 @@ def api_manager_emergency_requests():
             SELECT request_id, ship_name, maintenance_type, priority, status, requested_by,
                    created_at, description
             FROM maintenance_requests
-            WHERE priority = 'emergency' AND status IN ('pending', 'approved')
+            WHERE (priority = 'critical' OR criticality = 'emergency')
+              AND status IN ('pending', 'approved', 'submitted')
             ORDER BY created_at DESC
             LIMIT 10
         """)
@@ -12642,7 +12643,12 @@ def api_create_maintenance_request():
             'repair': 'Emergency Repair',
             'inspection': 'Technical Inspection'
         }
-        maintenance_type = request_type_map.get(request_type, request_type)
+        normalized_request_type = (request_type or '').strip().lower()
+        maintenance_type = request_type_map.get(normalized_request_type, request_type)
+
+        # All variants submitted through this form are emergency maintenance requests.
+        if normalized_request_type in {'maintenance', 'part', 'repair', 'inspection'}:
+            maintenance_type = 'Emergency Maintenance Request'
 
         # Map criticality to priority
         priority_map = {
@@ -16564,14 +16570,18 @@ def api_maintenance_cleanup():
             c = conn.cursor()
             
             # Find test requests using fuzzy matching
-            test_keywords = ['test', 'demo', 'sample', 'example', 'debug', 'temporary']
+            test_keywords = [
+                'test', 'demo', 'sample', 'example', 'debug', 'temporary',
+                'dummy', 'qa', 'uat', 'sandbox'
+            ]
             
             deleted_count = 0
             request_ids_to_delete = []
             
             # Query to find test requests
             c.execute("""
-                SELECT request_id, ship_name, description, created_at
+                SELECT request_id, ship_name, maintenance_type, request_type, description,
+                       requested_by_name, requested_by_email, company, notes, created_at
                 FROM maintenance_requests
                 ORDER BY created_at DESC
             """)
@@ -16579,11 +16589,25 @@ def api_maintenance_cleanup():
             requests = c.fetchall()
             
             for req in requests:
-                request_id, ship_name, description, created_at = req
-                combined_text = f"{ship_name} {description}".lower()
+                (
+                    request_id, ship_name, maintenance_type, request_type, description,
+                    requested_by_name, requested_by_email, company, notes, created_at
+                ) = req
+                combined_text = " ".join([
+                    str(ship_name or ''),
+                    str(maintenance_type or ''),
+                    str(request_type or ''),
+                    str(description or ''),
+                    str(requested_by_name or ''),
+                    str(requested_by_email or ''),
+                    str(company or ''),
+                    str(notes or '')
+                ]).lower()
                 
                 # Check if any test keywords are in the request
-                if any(keyword in combined_text for keyword in test_keywords):
+                has_keyword_match = any(keyword in combined_text for keyword in test_keywords)
+                has_test_id_pattern = str(request_id or '').lower().startswith(('mrq00', 'test', 'demo'))
+                if has_keyword_match or has_test_id_pattern:
                     request_ids_to_delete.append(request_id)
                     app.logger.info(f"Marking test request for deletion: {request_id} - {ship_name}")
             
