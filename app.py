@@ -9505,7 +9505,7 @@ def api_manager_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE status IN ('submitted', 'pending', 'pending_captain')
+            WHERE status IN ('submitted', 'pending', 'pending_captain', 'approved')
         """)
         pending_requests_result = c.fetchone()
         pending_requests = pending_requests_result['count'] if pending_requests_result else 0
@@ -10089,9 +10089,12 @@ def api_manager_pending_maintenance():
         c = conn.cursor()
         c.execute("""
             SELECT request_id, ship_name, maintenance_type, priority, status, requested_by,
-                   requested_by_name, requested_by_email, created_at, description
+                   requested_by_name, requested_by_email,
+                   requested_by_name AS requester_name,
+                   requested_by_email AS requester_email,
+                   created_at, description
             FROM maintenance_requests
-            WHERE status IN ('submitted', 'pending', 'pending_captain')
+            WHERE status IN ('submitted', 'pending', 'pending_captain', 'approved')
             ORDER BY
                 CASE priority
                     WHEN 'critical' THEN 1
@@ -10633,8 +10636,13 @@ def api_chief_engineer_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
-        """, (current_user.id, current_user.id, current_user.email))
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            )
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         total_row = c.fetchone()
         total_requests = dict(total_row).get('count', 0) if total_row else 0
         
@@ -10642,8 +10650,14 @@ def api_chief_engineer_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain')
-        """, (current_user.id, current_user.id, current_user.email))
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            )
+            AND status = 'pending_captain'
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         pending_row = c.fetchone()
         pending_approval = dict(pending_row).get('count', 0) if pending_row else 0
         
@@ -10651,8 +10665,13 @@ def api_chief_engineer_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'in_progress'
-        """, (current_user.id, current_user.id, current_user.email))
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            ) AND status = 'in_progress'
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         inprog_row = c.fetchone()
         in_progress = dict(inprog_row).get('count', 0) if inprog_row else 0
         
@@ -10660,8 +10679,13 @@ def api_chief_engineer_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'completed'
-        """, (current_user.id, current_user.id, current_user.email))
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            ) AND status = 'completed'
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         comp_row = c.fetchone()
         completed = dict(comp_row).get('count', 0) if comp_row else 0
         
@@ -10669,8 +10693,13 @@ def api_chief_engineer_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'approved'
-        """, (current_user.id, current_user.id, current_user.email))
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            ) AND status = 'approved'
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         appr_row = c.fetchone()
         approved = dict(appr_row).get('count', 0) if appr_row else 0
 
@@ -10678,8 +10707,13 @@ def api_chief_engineer_dashboard_data():
         c.execute("""
             SELECT COUNT(*) as count
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'rejected'
-        """, (current_user.id, current_user.id, current_user.email))
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            ) AND status = 'rejected'
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         rej_row = c.fetchone()
         rejected = dict(rej_row).get('count', 0) if rej_row else 0
         
@@ -10710,12 +10744,18 @@ def api_chief_engineer_my_requests():
         c = conn.cursor()
         c.execute("""
             SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
-                   status, created_at, requested_by, submitted_by
+                   COALESCE(status, workflow_status, 'pending') AS status,
+                   created_at, requested_by, submitted_by
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            )
             ORDER BY created_at DESC
             LIMIT 50
-        """, (current_user.id, current_user.id, current_user.email))
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         
         requests = []
         for row in c.fetchall():
@@ -10741,9 +10781,14 @@ def api_chief_engineer_pending_approval():
             SELECT request_id, ship_name, maintenance_type, request_type, priority, criticality,
                    status, created_at, requested_by, submitted_by, severity
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain', 'pending')
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            ) AND status = 'pending_captain'
             ORDER BY created_at DESC
-        """, (current_user.id, current_user.id, current_user.email))
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         
         requests = []
         for row in c.fetchall():
@@ -10768,10 +10813,15 @@ def api_chief_engineer_recent_activity():
         c.execute("""
             SELECT request_id, ship_name, status, updated_at
             FROM maintenance_requests
-            WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
+            WHERE (
+                submitted_by = ?
+                OR requested_by = ?
+                OR requested_by = ?
+                OR requested_by_email = ?
+            )
             ORDER BY updated_at DESC
             LIMIT 10
-        """, (current_user.id, current_user.id, current_user.email))
+        """, (current_user.id, current_user.id, current_user.email, current_user.email))
         
         activities = []
         for row in c.fetchall():
@@ -10969,10 +11019,11 @@ def api_captain_approve_request(request_id):
         
         c = conn.cursor()
         
-        # Update request status to approved (ready for Harbour Master)
+        # Captain approval forwards the request into the port engineer queue.
         c.execute("""
             UPDATE maintenance_requests
-            SET status = 'approved',
+            SET status = 'submitted',
+                workflow_status = 'submitted',
                 approved_by = ?,
                 approved_at = ?,
                 captain_comments = ?
@@ -10981,14 +11032,14 @@ def api_captain_approve_request(request_id):
         
         conn.commit()
         
-        # Notify Harbour Master
-        c.execute("SELECT user_id FROM users WHERE role = 'harbour_master' AND is_active = 1")
-        harbour_masters = c.fetchall()
-        for hm in harbour_masters:
+        # Notify port engineer pipeline roles.
+        c.execute("SELECT user_id FROM users WHERE role IN ('port_engineer', 'port_manager') AND is_active = 1")
+        recipients = c.fetchall()
+        for recipient in recipients:
             create_notification(
-                hm['user_id'],
-                'New Approved Maintenance Request',
-                f'Maintenance request {request_id} has been approved by the Captain and is ready for assignment.',
+                recipient['user_id'],
+                'Maintenance Request Ready for Review',
+                f'Maintenance request {request_id} has been approved by the Captain and submitted to Port Engineering.',
                 'info',
                 '/maintenance-request'
             )
@@ -11003,14 +11054,14 @@ def api_captain_approve_request(request_id):
                 create_notification(
                     ce_user['user_id'],
                     'Request Approved by Captain',
-                    f'Your maintenance request {request_id} has been approved by the Captain and submitted to the Harbour Master.',
+                    f'Your maintenance request {request_id} has been approved by the Captain and submitted to Port Engineering.',
                     'success',
                     '/dashboard'
                 )
         
         log_activity('request_approved_by_captain', f'Request {request_id} approved by captain')
         
-        return jsonify({'success': True, 'message': 'Request approved and submitted to Harbour Master'})
+        return jsonify({'success': True, 'message': 'Request approved and submitted to Port Engineering'})
     except Exception as e:
         app.logger.error(f"Error approving request: {e}")
         return jsonify({'success': False, 'error': str(e)})
