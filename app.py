@@ -10360,7 +10360,8 @@ def api_chief_engineer_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
         """, (current_user.id, current_user.id, current_user.email))
-        total_requests = c.fetchone()['count']
+        total_row = c.fetchone()
+        total_requests = dict(total_row).get('count', 0) if total_row else 0
         
         # Pending captain approval (requests waiting for captain approval)
         c.execute("""
@@ -10368,7 +10369,8 @@ def api_chief_engineer_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain')
         """, (current_user.id, current_user.id, current_user.email))
-        pending_approval = c.fetchone()['count']
+        pending_row = c.fetchone()
+        pending_approval = dict(pending_row).get('count', 0) if pending_row else 0
         
         # In progress
         c.execute("""
@@ -10376,7 +10378,8 @@ def api_chief_engineer_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'in_progress'
         """, (current_user.id, current_user.id, current_user.email))
-        in_progress = c.fetchone()['count']
+        inprog_row = c.fetchone()
+        in_progress = dict(inprog_row).get('count', 0) if inprog_row else 0
         
         # Completed
         c.execute("""
@@ -10384,7 +10387,8 @@ def api_chief_engineer_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'completed'
         """, (current_user.id, current_user.id, current_user.email))
-        completed = c.fetchone()['count']
+        comp_row = c.fetchone()
+        completed = dict(comp_row).get('count', 0) if comp_row else 0
         
         # Approved
         c.execute("""
@@ -10392,7 +10396,8 @@ def api_chief_engineer_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'approved'
         """, (current_user.id, current_user.id, current_user.email))
-        approved = c.fetchone()['count']
+        appr_row = c.fetchone()
+        approved = dict(appr_row).get('count', 0) if appr_row else 0
 
         # Rejected
         c.execute("""
@@ -10400,7 +10405,8 @@ def api_chief_engineer_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'rejected'
         """, (current_user.id, current_user.id, current_user.email))
-        rejected = c.fetchone()['count']
+        rej_row = c.fetchone()
+        rejected = dict(rej_row).get('count', 0) if rej_row else 0
         
         return jsonify({
             'success': True,
@@ -10526,7 +10532,8 @@ def api_captain_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?)
         """, (current_user.id, current_user.id, current_user.email))
-        total_requests = c.fetchone()['count']
+        total_row = c.fetchone()
+        total_requests = dict(total_row).get('count', 0) if total_row else 0
         
         # Pending approval (requests awaiting review)
         c.execute("""
@@ -10534,7 +10541,8 @@ def api_captain_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status IN ('submitted', 'pending_captain')
         """, (current_user.id, current_user.id, current_user.email))
-        pending_approval = c.fetchone()['count']
+        pend_row = c.fetchone()
+        pending_approval = dict(pend_row).get('count', 0) if pend_row else 0
         
         # Approved (submitted to port)
         c.execute("""
@@ -10542,7 +10550,8 @@ def api_captain_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'approved'
         """, (current_user.id, current_user.id, current_user.email))
-        approved = c.fetchone()['count']
+        appr_row = c.fetchone()
+        approved = dict(appr_row).get('count', 0) if appr_row else 0
         
         # In progress
         c.execute("""
@@ -10550,7 +10559,8 @@ def api_captain_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'in_progress'
         """, (current_user.id, current_user.id, current_user.email))
-        in_progress = c.fetchone()['count']
+        inprog_row = c.fetchone()
+        in_progress = dict(inprog_row).get('count', 0) if inprog_row else 0
         
         # Completed
         c.execute("""
@@ -10558,7 +10568,8 @@ def api_captain_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'completed'
         """, (current_user.id, current_user.id, current_user.email))
-        completed = c.fetchone()['count']
+        comp_row = c.fetchone()
+        completed = dict(comp_row).get('count', 0) if comp_row else 0
 
         # Rejected
         c.execute("""
@@ -10566,7 +10577,8 @@ def api_captain_dashboard_data():
             FROM maintenance_requests
             WHERE (submitted_by = ? OR requested_by = ? OR requested_by = ?) AND status = 'rejected'
         """, (current_user.id, current_user.id, current_user.email))
-        rejected = c.fetchone()['count']
+        rej_row = c.fetchone()
+        rejected = dict(rej_row).get('count', 0) if rej_row else 0
         
         return jsonify({
             'success': True,
@@ -12290,6 +12302,7 @@ def api_maintenance_requests():
 # ==================== MAINTENANCE REQUEST ========================
 
 @app.route('/api/maintenance-requests', methods=['POST'])
+@login_required
 def api_create_maintenance_request():
     """
     Create a new maintenance/repair request for vessel equipment.
