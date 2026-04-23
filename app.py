@@ -8683,71 +8683,93 @@ def add_vessel():
             flag_state = request.form.get('flag_state')
             year_built = request.form.get('year_built')
             builder = request.form.get('builder')
-            shipyard_location = request.form.get('shipyard_location')
+            shipyard_location = request.form.get('place_of_build')
             gross_tonnage = request.form.get('gross_tonnage')
             net_tonnage = request.form.get('net_tonnage')
-            deadweight_tonnage = request.form.get('deadweight_tonnage')
+            deadweight_tonnage = request.form.get('deadweight')
             length_overall = request.form.get('length_overall')
-            length_between_perpendiculars = request.form.get('length_between_perpendiculars')
+            length_between_perpendiculars = request.form.get('length_between_perpendiculars', '')
             breadth = request.form.get('breadth')
             depth = request.form.get('depth')
             
             # Ownership & Management
-            owner_name = request.form.get('owner_name')
+            owner_name = request.form.get('registered_owner')
             owner_address = request.form.get('owner_address')
-            owner_phone = request.form.get('owner_phone')
-            owner_email = request.form.get('owner_email')
-            manager_name = request.form.get('manager_name')
-            manager_address = request.form.get('manager_address')
-            manager_phone = request.form.get('manager_phone')
-            manager_email = request.form.get('manager_email')
-            operator_name = request.form.get('operator_name')
-            operator_phone = request.form.get('operator_phone')
-            operator_email = request.form.get('operator_email')
-            insurer_name = request.form.get('insurer_name')
-            insurer_policy_number = request.form.get('insurer_policy_number')
+            owner_phone = request.form.get('owner_phone', '')
+            owner_email = request.form.get('owner_email', '')
+            manager_name = request.form.get('ship_manager')
+            manager_address = request.form.get('manager_address', '')
+            manager_phone = request.form.get('manager_phone', '')
+            manager_email = request.form.get('manager_email', '')
+            operator_name = request.form.get('commercial_operator')
+            operator_phone = request.form.get('operator_phone', '')
+            operator_email = request.form.get('operator_email', '')
+            insurer_name = request.form.get('hull_machinery_insurer')
+            insurer_policy_number = request.form.get('insurer_policy_number', '')
             
             # Propulsion & Machinery
-            main_engine_model = request.form.get('main_engine_model')
-            main_engine_power = request.form.get('main_engine_power')
-            main_engine_rpm = request.form.get('main_engine_rpm')
+            main_engine_model = request.form.get('main_engine_make')
+            main_engine_power = request.form.get('mcr')
+            main_engine_rpm = request.form.get('rated_speed')
             fuel_type = request.form.get('fuel_type')
-            auxiliary_engines = request.form.get('auxiliary_engines')
-            generator_power = request.form.get('generator_power')
-            propulsion_type = request.form.get('propulsion_type')
+            auxiliary_engines = request.form.get('number_of_engines')
+            generator_power = request.form.get('generator_power', '')
+            propulsion_type = request.form.get('propulsion_type', '')
             bollard_pull = request.form.get('bollard_pull')
             
             # Performance
-            maximum_speed = request.form.get('maximum_speed')
+            maximum_speed = request.form.get('maximum_speed', '')
             service_speed = request.form.get('service_speed')
-            average_fuel_consumption = request.form.get('average_fuel_consumption')
-            fuel_consumption_per_ton_mile = request.form.get('fuel_consumption_per_ton_mile')
+            average_fuel_consumption = request.form.get('average_fuel_consumption', '')
+            fuel_consumption_per_ton_mile = request.form.get('fuel_consumption_per_ton_mile', '')
             
             # Energy & Emissions
-            energy_efficiency_index = request.form.get('energy_efficiency_index')
-            carbon_intensity_indicator = request.form.get('carbon_intensity_indicator')
-            sox_emissions_compliant = request.form.get('sox_emissions_compliant')
-            nox_tier = request.form.get('nox_tier')
-            eedi_baseline_percentage = request.form.get('eedi_baseline_percentage')
+            energy_efficiency_index = request.form.get('energy_efficiency_index', '')
+            carbon_intensity_indicator = request.form.get('carbon_intensity_indicator', '')
+            sox_emissions_compliant = request.form.get('sox_emissions_compliant', '')
+            nox_tier = request.form.get('nox_tier', '')
+            eedi_baseline_percentage = request.form.get('eedi_baseline_percentage', '')
             
             # Operations
-            ballast_water_treatment = request.form.get('ballast_water_treatment')
-            trading_area_restriction = request.form.get('trading_area_restriction')
-            ice_class = request.form.get('ice_class')
-            dry_dock_interval = request.form.get('dry_dock_interval')
-            next_dry_dock_date = request.form.get('next_dry_dock_date')
-            last_dry_dock_date = request.form.get('last_dry_dock_date')
-            monitoring_system = request.form.get('monitoring_system')
-            performance_reporting_compliant = request.form.get('performance_reporting_compliant')
+            ballast_water_treatment = request.form.get('ballast_water_treatment', '')
+            trading_area_restriction = request.form.get('trading_area_restriction', '')
+            ice_class = request.form.get('ice_class', '')
+            dry_dock_interval = request.form.get('dry_dock_interval', '')
+            next_dry_dock_date = request.form.get('next_dry_dock_date', '')
+            last_dry_dock_date = request.form.get('last_dry_dock_date', '')
+            monitoring_system = request.form.get('monitoring_system', '')
+            performance_reporting_compliant = request.form.get('performance_reporting_compliant', '')
             
             # Remarks
-            remarks = request.form.get('remarks')
+            remarks = request.form.get('remarks', '')
             
             # Initial Performance Baseline (Optional)
-            baseline_speed = request.form.get('baseline_speed')
-            baseline_fuel_consumption = request.form.get('baseline_fuel_consumption')
-            baseline_co2_emissions = request.form.get('baseline_co2_emissions')
-            baseline_load_factor = request.form.get('baseline_load_factor')
+            baseline_speed = request.form.get('baseline_speed', '')
+            baseline_fuel_consumption = request.form.get('baseline_fuel_consumption', '')
+            baseline_co2_emissions = request.form.get('baseline_co2_emissions', '')
+            baseline_load_factor = request.form.get('baseline_load_factor', '')
+            
+            # Convert auxiliary_engines to integer if provided
+            try:
+                auxiliary_engines = int(auxiliary_engines) if auxiliary_engines else None
+            except (ValueError, TypeError):
+                auxiliary_engines = None
+            
+            # Convert numeric fields
+            try:
+                year_built = int(year_built) if year_built else None
+            except (ValueError, TypeError):
+                year_built = None
+            
+            try:
+                main_engine_rpm = int(main_engine_rpm) if main_engine_rpm else None
+            except (ValueError, TypeError):
+                main_engine_rpm = None
+            
+            try:
+                dry_dock_interval = int(dry_dock_interval) if dry_dock_interval else None
+            except (ValueError, TypeError):
+                dry_dock_interval = None
             
             # Validate required fields
             if not all([vessel_name, imo_number, vessel_type, flag_state]):
